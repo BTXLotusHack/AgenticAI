@@ -98,6 +98,8 @@
 .platform-state { color:#617168; font-size:.8rem; font-weight:700; }
 .platform-state--loading { color:var(--loopin-green); }
 .platform-state--error { color:#9a6610; }
+.platform-state--empty { color:#68756f; }
+.platform-state--permission,.platform-state--stale { color:#7a5a19; }
 .platform-route-line { display:flex; min-height:5.4rem; align-items:center; gap:.8rem; color:#52645a; overflow:hidden; }
 .platform-route-line i { height:2px; flex:1; min-width:2rem; background:repeating-linear-gradient(90deg,var(--loopin-green) 0 8px,transparent 8px 14px); }
 .platform-route-line strong,.platform-route-line span { white-space:nowrap; }

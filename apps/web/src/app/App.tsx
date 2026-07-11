@@ -8,14 +8,21 @@ import { LandingFooter } from '../components/LandingFooter';
 import { LandingNav } from '../components/LandingNav';
 import {
   AuthPage,
+  CommunityRouteSlotPage,
   DashboardPage,
   DynamicLiveTripPage,
   DynamicSummaryPage,
   ExplorePage,
   ItineraryPage,
+  ModerationRouteSlotPage,
   NowPage,
   OnboardingPage,
+  NotificationSettingsRouteSlotPage,
+  PartnersRouteSlotPage,
   PlaceDetailPage,
+  PlaceReviewsRouteSlotPage,
+  PrivacySettingsRouteSlotPage,
+  ProfileRouteSlotPage,
   SettingsPage,
   ShareTripPage,
   TripOverviewPage,
@@ -61,6 +68,13 @@ export function App() {
         <Route element={<PlaceDetailPage />} path="/app/places/:placeId" />
         <Route element={<NowPage />} path="/app/now" />
         <Route element={<SettingsPage />} path="/app/settings" />
+        <Route element={<CommunityRouteSlotPage />} path="/app/community" />
+        <Route element={<PlaceReviewsRouteSlotPage />} path="/app/places/:placeId/reviews" />
+        <Route element={<ProfileRouteSlotPage />} path="/app/profile" />
+        <Route element={<PrivacySettingsRouteSlotPage />} path="/app/settings/privacy" />
+        <Route element={<NotificationSettingsRouteSlotPage />} path="/app/settings/notifications" />
+        <Route element={<ModerationRouteSlotPage />} path="/app/admin/moderation" />
+        <Route element={<PartnersRouteSlotPage />} path="/app/partners" />
         <Route element={<Suspense fallback={<ProductFallback />}><TripSetupPage /></Suspense>} path="/trip/new" />
         <Route element={<Suspense fallback={<ProductFallback />}><LiveTripPage /></Suspense>} path="/trips/TRIP001/live" />
         <Route element={<Suspense fallback={<ProductFallback />}><TripSummaryPage /></Suspense>} path="/trips/TRIP001/summary" />

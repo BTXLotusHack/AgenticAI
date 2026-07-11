@@ -104,4 +104,46 @@ describe('Agent 1 product routes', () => {
     expect(screen.getByText(/retention preference/i)).toBeVisible();
     expect(screen.getByText(/notification quiet hours/i)).toBeVisible();
   });
+
+  it.each([
+    ['/app/community', /community workspace/i],
+    ['/app/places/POI001/reviews', /place reviews/i],
+    ['/app/profile', /profile/i],
+    ['/app/settings/privacy', /privacy settings/i],
+    ['/app/settings/notifications', /notification settings/i],
+    ['/app/admin/moderation', /moderation queue/i],
+    ['/app/partners', /partner workspace/i],
+  ])('reserves Agent 4 route slot %s', async (path, heading) => {
+    renderRoute(path);
+
+    expect(await screen.findByRole('heading', { name: heading })).toBeVisible();
+    expect(screen.getAllByText(/permission boundary/i).length).toBeGreaterThan(0);
+  });
+
+  it('does not fall back to TRIP001 facts for unknown dynamic trip ids', async () => {
+    const liveRoute = renderRoute('/app/trips/TRIP404/live');
+
+    expect(await screen.findByRole('heading', { name: /live trip unavailable/i })).toBeVisible();
+    expect(screen.getByText(/trip not found or live access is unavailable/i)).toBeVisible();
+    expect(screen.queryByRole('heading', { name: /live members/i })).not.toBeInTheDocument();
+
+    liveRoute.unmount();
+    renderRoute('/app/trips/TRIP404/summary');
+
+    expect(await screen.findByRole('heading', { name: /summary unavailable/i })).toBeVisible();
+    expect(screen.getByText(/no measured summary is available for this trip fixture/i)).toBeVisible();
+    expect(screen.queryByText(/the convoy is together again/i)).not.toBeInTheDocument();
+  });
+
+  it('labels stale and empty trip data from the typed fixture contracts', async () => {
+    const tripRoute = renderRoute('/app/trips/TRIP002');
+
+    expect(await screen.findByRole('heading', { name: /weekend food loop/i })).toBeVisible();
+    expect(screen.getByText(/stale route plan/i)).toBeVisible();
+
+    tripRoute.unmount();
+    renderRoute('/app/trips/TRIP002/itinerary');
+
+    expect(await screen.findByText(/no tasco stops are staged for this trip/i)).toBeVisible();
+  });
 });

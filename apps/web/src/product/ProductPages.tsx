@@ -33,7 +33,7 @@ function ProductShell({ children }: { readonly children: ReactNode }) {
             </NavLink>
           ))}
         </nav>
-        <Link className="platform-topbar__account" to="/app/settings">
+        <Link className="platform-topbar__account" to="/app/profile">
           Fixture user
         </Link>
       </header>
@@ -66,6 +66,14 @@ function LoadingState({ label }: { readonly label: string }) {
 
 function ErrorState({ label }: { readonly label: string }) {
   return <p className="platform-state platform-state--error">{label}</p>;
+}
+
+function EmptyState({ label }: { readonly label: string }) {
+  return <p className="platform-state platform-state--empty">{label}</p>;
+}
+
+function PermissionState({ label }: { readonly label: string }) {
+  return <p className="platform-state platform-state--permission">{label}</p>;
 }
 
 function TripRouteLine({ trip }: { readonly trip: TripPlanSummary }) {
@@ -194,9 +202,11 @@ export function DashboardPage() {
                 <Link to={`/app/trips/${trip.id}`}>{trip.title}</Link>
                 <span>{trip.lifecycleState}</span>
                 <span>{trip.readinessSummary}</span>
+                <span>{trip.stale ? 'stale route plan' : 'fresh fixture'}</span>
               </li>
             ))}
           </ul>
+          {trips.data?.length === 0 ? <EmptyState label="No trips match the current workspace." /> : null}
         </article>
         <article className="platform-panel">
           <h2>AI planner prompt</h2>
@@ -236,9 +246,11 @@ export function TripsPage() {
               <Link to={`/app/trips/${trip.id}`}>{trip.title}</Link>
               <span>{trip.lifecycleState}</span>
               <span>{trip.memberCount} members</span>
+              <span>{trip.stale ? 'stale route plan' : 'fresh fixture'}</span>
             </li>
           ))}
         </ul>
+        {trips.data?.length === 0 ? <EmptyState label="No trips are available in fixture mode." /> : null}
       </section>
     </ProductShell>
   );
@@ -295,6 +307,7 @@ export function TripOverviewPage() {
           <article className="platform-panel platform-panel--wide">
             <h2>Route and stops</h2>
             <TripRouteLine trip={data} />
+            {data.stale ? <p className="platform-state platform-state--stale">Stale route plan. Refresh required before departure.</p> : null}
             <dl className="platform-metrics">
               <div><dt>Distance</dt><dd>{Math.round(data.route.distanceMeters / 1000)} km</dd></div>
               <div><dt>Duration</dt><dd>{data.route.durationMinutes} min</dd></div>
@@ -312,8 +325,10 @@ export function TripOverviewPage() {
           </article>
           <article className="platform-panel">
             <h2>Live snapshot</h2>
-            <p>{live.data?.state ?? 'waiting for current snapshot'}</p>
-            <p>Permission scoped to trip members.</p>
+            {live.isLoading ? <LoadingState label="Loading current snapshot." /> : null}
+            {live.data ? <p>{live.data.state}</p> : null}
+            {!live.isLoading && !live.data ? <ErrorState label="Live snapshot unavailable." /> : null}
+            <PermissionState label="Permission boundary: live locations stay scoped to authorized trip members." />
           </article>
         </section>
       ) : null}
@@ -324,6 +339,7 @@ export function TripOverviewPage() {
 export function ItineraryPage() {
   const { tripId = 'TRIP001' } = useParams();
   const trip = useTrip(tripId);
+  const stops = trip.data?.route.stops ?? [];
   return (
     <ProductShell>
       <PageIntro eyebrow={tripId} title="Itinerary editor.">
@@ -331,8 +347,11 @@ export function ItineraryPage() {
       </PageIntro>
       <section className="platform-panel">
         <h2>Day 1 stops</h2>
+        {trip.isLoading ? <LoadingState label="Loading itinerary." /> : null}
+        {!trip.isLoading && !trip.data ? <ErrorState label="Trip not found." /> : null}
+        {!trip.isLoading && trip.data && stops.length === 0 ? <EmptyState label="No Tasco stops are staged for this trip." /> : null}
         <ol className="itinerary-list">
-          {(trip.data?.route.stops ?? []).map((stop) => (
+          {stops.map((stop) => (
             <li key={stop.id}>
               <strong>{stop.place.name}</strong>
               <span>{stop.plannedWindow}</span>
@@ -357,12 +376,12 @@ export function ShareTripPage() {
       <section className="platform-grid">
         <article className="platform-panel">
           <h2>Invite link</h2>
-          <p>loopin.local/join/TRIP001-DEMO</p>
+          <p>loopin.local/join/{tripId}-DEMO</p>
           <button className="button button--primary" type="button">Copy invite</button>
         </article>
         <article className="platform-panel">
           <h2>QR</h2>
-          <div className="qr-block" aria-label="QR placeholder">TRIP001</div>
+          <div className="qr-block" aria-label="QR placeholder">{tripId}</div>
         </article>
         <article className="platform-panel">
           <h2>Roles</h2>
@@ -377,24 +396,43 @@ export function DynamicLiveTripPage() {
   const { tripId = 'TRIP001' } = useParams();
   const trip = useTrip(tripId);
   const live = useLiveTrip(tripId);
+  const data = trip.data;
+  const snapshot = live.data;
+  const isLoading = trip.isLoading || live.isLoading;
+  const title = data
+    ? `${data.route.origin.name} -> ${data.route.destination.name}`
+    : isLoading
+      ? 'Loading live trip.'
+      : 'Live trip unavailable';
   return (
     <ProductShell>
-      <PageIntro eyebrow={`${tripId} · Contract-driven live`} title={`${trip.data?.route.origin.name ?? 'Hà Nội'} → ${trip.data?.route.destination.name ?? 'Hạ Long'}`}>
+      <PageIntro eyebrow={`${tripId} - Contract-driven live`} title={title}>
         Current members are rendered from LiveMemberSnapshot fixture contracts with visible freshness and confidence.
       </PageIntro>
-      <section className="platform-panel platform-panel--wide">
-        <h2>Live members</h2>
-        <ul className="platform-list">
-          {(live.data?.members ?? []).map((member) => (
-            <li key={member.memberId}>
-              <span>{member.displayName}</span>
-              <span>{member.vehicleLabel}</span>
-              <span>{member.freshnessLabel}</span>
-              <span>confidence {member.confidence}</span>
-            </li>
-          ))}
-        </ul>
-      </section>
+      {isLoading ? <LoadingState label="Loading live trip." /> : null}
+      {!isLoading && (!data || !snapshot) ? (
+        <section className="platform-panel platform-panel--wide">
+          <h2>Permission boundary</h2>
+          <ErrorState label="Trip not found or live access is unavailable." />
+          <p>Live state requires a matching trip fixture and trip-scoped authorization.</p>
+        </section>
+      ) : null}
+      {data && snapshot ? (
+        <section className="platform-panel platform-panel--wide">
+          <h2>Live members</h2>
+          {snapshot.members.length === 0 ? <EmptyState label="No live members are available for this trip." /> : null}
+          <ul className="platform-list">
+            {snapshot.members.map((member) => (
+              <li key={member.memberId}>
+                <span>{member.displayName}</span>
+                <span>{member.vehicleLabel}</span>
+                <span>{member.freshnessLabel}</span>
+                <span>confidence {member.confidence}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
     </ProductShell>
   );
 }
@@ -402,27 +440,44 @@ export function DynamicLiveTripPage() {
 export function DynamicSummaryPage() {
   const { tripId = 'TRIP001' } = useParams();
   const trip = useTrip(tripId);
+  const data = trip.data;
+  const hasMeasuredSummary = data?.id === 'TRIP001';
+  const title = trip.isLoading
+    ? 'Loading summary.'
+    : hasMeasuredSummary
+      ? 'The convoy is together again.'
+      : 'Summary unavailable';
   return (
     <ProductShell>
-      <PageIntro eyebrow={`${tripId} · Contract summary`} title="The convoy is together again.">
+      <PageIntro eyebrow={`${tripId} - Contract summary`} title={title}>
         Summary-by-trip mode separates measured facts from future AI explanation.
       </PageIntro>
-      <section className="platform-grid">
-        <article className="platform-panel">
+      {trip.isLoading ? <LoadingState label="Loading summary." /> : null}
+      {!trip.isLoading && !hasMeasuredSummary ? (
+        <section className="platform-panel platform-panel--wide">
           <h2>Measured facts</h2>
-          <p>1 confirmed split · 1 resolved split.</p>
-          <p>Peak route gap 900 m.</p>
-        </article>
-        <article className="platform-panel">
-          <h2>Approved regroup</h2>
-          <p>{trip.data?.route.stops[0]?.place.name ?? 'Minh Châu Rest Stop'} · POI001.</p>
-          <p>No arbitrary POI was created by the UI.</p>
-        </article>
-        <article className="platform-panel">
-          <h2>Template summary</h2>
-          <p>The group separated, approved a verified forward stop, and reconnected on the planned route.</p>
-        </article>
-      </section>
+          <EmptyState label="No measured summary is available for this trip fixture." />
+          <PermissionState label="Permission boundary: completed trip history is visible only for authorized members." />
+        </section>
+      ) : null}
+      {hasMeasuredSummary ? (
+        <section className="platform-grid">
+          <article className="platform-panel">
+            <h2>Measured facts</h2>
+            <p>1 confirmed split - 1 resolved split.</p>
+            <p>Peak route gap 900 m.</p>
+          </article>
+          <article className="platform-panel">
+            <h2>Approved regroup</h2>
+            <p>{data?.route.stops[0]?.place.name ?? 'Minh Chau Rest Stop'} - POI001.</p>
+            <p>No arbitrary POI was created by the UI.</p>
+          </article>
+          <article className="platform-panel">
+            <h2>Template summary</h2>
+            <p>The group separated, approved a verified forward stop, and reconnected on the planned route.</p>
+          </article>
+        </section>
+      ) : null}
     </ProductShell>
   );
 }
@@ -490,6 +545,141 @@ export function PlaceDetailPage() {
         <ErrorState label="Place not found." />
       )}
     </ProductShell>
+  );
+}
+
+function ReservedRouteSlotPage({
+  eyebrow,
+  title,
+  body,
+}: {
+  readonly eyebrow: string;
+  readonly title: string;
+  readonly body: string;
+}) {
+  return (
+    <ProductShell>
+      <PageIntro eyebrow={eyebrow} title={title}>
+        {body}
+      </PageIntro>
+      <section className="platform-grid">
+        <article className="platform-panel platform-panel--wide">
+          <h2>Permission boundary</h2>
+          <PermissionState label="Permission boundary: this surface stays read-only in fixture mode." />
+          <p>Authorized route, place, profile and settings data are not connected in fixture mode.</p>
+        </article>
+        <article className="platform-panel">
+          <h2>Fixture state</h2>
+          <p>Review, profile and partner actions are unavailable in this fixture.</p>
+        </article>
+      </section>
+    </ProductShell>
+  );
+}
+
+export function CommunityRouteSlotPage() {
+  return (
+    <ReservedRouteSlotPage
+      body="Group activity, trip notes and place discussion are held behind a permission boundary in this build."
+      eyebrow="Community"
+      title="Community workspace."
+    />
+  );
+}
+
+export function PlaceReviewsRouteSlotPage() {
+  const { placeId = 'POI001' } = useParams();
+  const place = usePlace(placeId);
+  const community = usePlaceCommunitySummary(placeId);
+  const data = place.data;
+  return (
+    <ProductShell>
+      <PageIntro eyebrow={placeId} title="Place reviews.">
+        Review summaries stay separate from Tasco place facts and route actions.
+      </PageIntro>
+      {place.isLoading ? <LoadingState label="Loading Tasco place." /> : null}
+      {!place.isLoading && !data ? <ErrorState label="Place not found." /> : null}
+      {data ? (
+        <section className="platform-grid">
+          <article className="platform-panel platform-panel--wide">
+            <h2>{data.name}</h2>
+            <p>{data.address}</p>
+            <p>{data.sourceVersion}</p>
+          </article>
+          <article className="platform-panel">
+            <h2>Review status</h2>
+            <p>{community.data?.starAverage ?? 0} stars - {community.data?.reviewCount ?? 0} reviews.</p>
+            <PermissionState label="Permission boundary: review creation is not enabled in fixture mode." />
+          </article>
+        </section>
+      ) : null}
+    </ProductShell>
+  );
+}
+
+export function ProfileRouteSlotPage() {
+  return (
+    <ReservedRouteSlotPage
+      body="Identity, preferences and trip history are visible only through the fixture profile boundary."
+      eyebrow="Profile"
+      title="Profile."
+    />
+  );
+}
+
+export function PrivacySettingsRouteSlotPage() {
+  const policy = useLocationVisibilityPolicy();
+  return (
+    <ProductShell>
+      <PageIntro eyebrow="Settings" title="Privacy settings.">
+        Location visibility and retention preferences remain explicit before production identity is connected.
+      </PageIntro>
+      <section className="platform-grid">
+        <article className="platform-panel">
+          <h2>Location sharing</h2>
+          <p>{policy.data?.tripVisibility ?? 'trip-members'}</p>
+          <PermissionState label="Permission boundary: live location is trip-scoped." />
+        </article>
+        <article className="platform-panel">
+          <h2>Place presence</h2>
+          <p>{policy.data?.placePresenceVisibility ?? 'off'}</p>
+        </article>
+        <article className="platform-panel">
+          <h2>Retention</h2>
+          <p>{policy.data?.retentionPreference ?? '30-days'}</p>
+        </article>
+      </section>
+    </ProductShell>
+  );
+}
+
+export function NotificationSettingsRouteSlotPage() {
+  return (
+    <ReservedRouteSlotPage
+      body="Trip safety alerts stay visible while noncritical updates can be quieted by preference."
+      eyebrow="Settings"
+      title="Notification settings."
+    />
+  );
+}
+
+export function ModerationRouteSlotPage() {
+  return (
+    <ReservedRouteSlotPage
+      body="Administrative queues require an authorized role; moderation actions are unavailable in fixture mode."
+      eyebrow="Admin"
+      title="Moderation queue."
+    />
+  );
+}
+
+export function PartnersRouteSlotPage() {
+  return (
+    <ReservedRouteSlotPage
+      body="Organization onboarding and partner controls are reserved for authorized partner users."
+      eyebrow="Partners"
+      title="Partner workspace."
+    />
   );
 }
 
