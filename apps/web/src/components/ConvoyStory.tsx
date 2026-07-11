@@ -75,6 +75,7 @@ function PhaseControls({
 export function ConvoyStory() {
   const [phase, setPhase] = useState<ConvoyPhase>('together');
   const scrollRegion = useRef<HTMLDivElement>(null);
+  const hasManualSelection = useRef(false);
   const reduceMotion = useReducedMotion();
   const scene = getConvoyScene(phase);
   const { scrollYProgress } = useScroll({
@@ -83,11 +84,16 @@ export function ConvoyStory() {
   });
 
   useMotionValueEvent(scrollYProgress, 'change', (progress) => {
-    if (reduceMotion) return;
+    if (reduceMotion || hasManualSelection.current) return;
     const nextPhase: ConvoyPhase =
       progress < 0.34 ? 'together' : progress < 0.7 ? 'separated' : 'regrouped';
     setPhase((current) => (current === nextPhase ? current : nextPhase));
   });
+
+  const selectPhase = (nextPhase: ConvoyPhase) => {
+    hasManualSelection.current = true;
+    setPhase(nextPhase);
+  };
 
   const frontCount = scene.vehicles.filter(
     (vehicle) => vehicle.component === 'front',
@@ -124,7 +130,7 @@ export function ConvoyStory() {
               </span>
             </div>
 
-            <PhaseControls onSelect={setPhase} phase={phase} />
+            <PhaseControls onSelect={selectPhase} phase={phase} />
 
             <div
               className="route-stage"

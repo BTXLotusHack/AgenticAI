@@ -8,7 +8,7 @@ test('product routes render without mobile app-nav overflow', async ({ page }) =
   const overflow = await page.evaluate(() => ({
     page: document.documentElement.scrollWidth > window.innerWidth + 1,
     nav: (() => {
-      const nav = document.querySelector('.platform-nav');
+      const nav = document.querySelector('.product-mobile-nav');
       return nav ? nav.scrollWidth > nav.clientWidth + 1 : true;
     })(),
   }));
