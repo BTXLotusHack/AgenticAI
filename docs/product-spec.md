@@ -119,6 +119,15 @@ DRAFT → READY → ACTIVE → PAUSED → COMPLETED → ARCHIVED
 - Present only validated proof and avoid fabricated statistics, testimonials, partnerships or pricing.
 - Meet the responsive, accessibility, motion and performance requirements in `docs/frontend-standards.md`.
 
+### F-11 Community and partner platform
+
+- Show Tasco-backed place facts separately from user-generated ratings, comments and reports.
+- Let users opt in to approximate place presence that never exposes active trip live location publicly.
+- Provide profile, privacy, notification and block-list settings for community surfaces.
+- Support trusted-moderator report queues and actions; moderator authority must come from verified auth context.
+- Present partner value through consumer trips, tourism groups, event transport and fleet pilots without fabricated proof.
+- Limit partner analytics to aggregated or anonymized patterns unless a separate consent and contract authorizes more.
+
 ## 6. Notification examples
 
 ### Rear section
@@ -155,4 +164,5 @@ DRAFT → READY → ACTIVE → PAUSED → COMPLETED → ARCHIVED
 - Commands to accelerate or brake
 - General social messaging while driving
 - Public exposure of live locations
+- Public exposure of active trip membership or precise trip movement through community features
 - LLM-generated routes or regroup POIs without map and policy validation

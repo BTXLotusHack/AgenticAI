@@ -192,6 +192,27 @@ GET    /v1/trips/{tripId}/timeline
 DELETE /v1/trips/{tripId}/history
 ```
 
+### Community, profile and privacy
+
+```text
+GET    /v1/places/{placeId}/community-summary
+GET    /v1/places/{placeId}/reviews
+POST   /v1/places/{placeId}/reviews
+PATCH  /v1/reviews/{reviewId}
+DELETE /v1/reviews/{reviewId}
+POST   /v1/reports
+GET    /v1/moderation/reports
+POST   /v1/moderation/reports/{reportId}/actions
+GET    /v1/users/me/profile
+PATCH  /v1/users/me/profile
+GET    /v1/users/me/privacy
+PATCH  /v1/users/me/privacy
+GET    /v1/presence/places/{placeId}
+PATCH  /v1/users/me/presence-settings
+```
+
+Community review and presence payloads are user-generated. Tasco place facts remain provider-sourced and must not be overwritten by review text, ratings or report metadata. Place presence is approximate, opt-in and block-list aware; it never exposes active trip live state.
+
 ## 8. Real-time channels
 
 ```text
