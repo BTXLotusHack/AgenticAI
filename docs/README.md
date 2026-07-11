@@ -41,6 +41,8 @@ The umbrella design record is [2026-07-11 Loopin Group Drive Platform Design](su
 - Proposed infrastructure must include a cost and scale rationale.
 - Architectural changes that cross document boundaries require an Architecture Decision Record in `docs/adr/` when implementation begins.
 - No document may describe AI as the sole detector or approver of a driving-safety action.
+- Every unit of work is performed on a new branch from `dev` and committed after proportional verification.
+- Ordinary pull requests target `dev`; only approved release promotion targets `main`.
 
 ## Status terminology
 

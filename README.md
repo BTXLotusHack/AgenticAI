@@ -162,6 +162,8 @@ Start with the [documentation index](docs/README.md).
 
 Contributors should also read [CONTRIBUTING.md](CONTRIBUTING.md). Automated contributors must follow [AGENTS.md](AGENTS.md).
 
+Development uses short-lived branches created from `dev`. Every completed unit of work is committed on its own branch, every ordinary pull request targets `dev`, and release promotion occurs through an explicitly approved `dev` to `main` pull request.
+
 ## Scope discipline
 
 The hackathon demonstration must prove one complete path: create a trip, join vehicles, stream simulated or real GPS, detect a persistent component split, alert front and rear sections differently, recommend a safe regroup point, reconnect, and summarize the trip.
