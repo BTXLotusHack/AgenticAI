@@ -40,7 +40,11 @@ function transitionTracker(
   calculatedAt: string,
   policy: ConvoyPolicy,
 ): EdgeTracker {
-  if (!reliable) return previous ?? { state: "unknown", stateSince: calculatedAt };
+  if (!reliable) {
+    return previous
+      ? { state: previous.state, stateSince: previous.stateSince }
+      : { state: "unknown", stateSince: calculatedAt };
+  }
 
   const current = previous ?? { state: "healthy", stateSince: calculatedAt };
   const band = thresholdBand(speedKmh, policy);

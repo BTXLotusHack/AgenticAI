@@ -76,6 +76,17 @@ describe("calculateGraph", () => {
     expect(later.graph.overallState).toBe("degraded");
   });
 
+  it("resets pending break persistence when confidence is interrupted", () => {
+    const initial = calculateAt(undefined, splitNodes(), 0);
+    const lowConfidence = splitNodes().map((item) => item.memberId === "M004" ? { ...item, confidence: "low" as const } : item);
+    const interrupted = calculateAt(initial.state, lowConfidence, 15);
+    const resumed = calculateAt(interrupted.state, splitNodes(), 30);
+    const finallyBroken = calculateAt(resumed.state, splitNodes(), 60);
+
+    expect(resumed.graph.edges[2]?.state).not.toBe("broken");
+    expect(finallyBroken.graph.edges[2]?.state).toBe("broken");
+  });
+
   it("recovers a broken edge only after the reconnect window", () => {
     const initial = calculateAt(undefined, splitNodes(), 0);
     const stretched = calculateAt(initial.state, splitNodes(), 15);
