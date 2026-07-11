@@ -327,7 +327,7 @@ The landing page remains code-split from product routes. The demo scenario packa
 
 - Cognito identity and real authorization.
 - API Gateway, IoT, Kinesis, DynamoDB, EventBridge, SQS, AppSync, and S3 adapters.
-- Expo background GPS and native alert delivery.
+- Flutter background GPS and native alert delivery.
 - Tasco route geometry, map matching, ETA, traffic, and POI APIs.
 - Production trip persistence, join codes, leadership transfer, export, and deletion.
 - Bedrock explanation and Transcribe voice input.

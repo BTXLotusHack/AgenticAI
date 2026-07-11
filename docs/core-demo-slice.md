@@ -87,7 +87,7 @@ The workbook samples are spaced too widely and include a convenience `distance_f
 
 The initial telemetry Lambda will validate MQTT payloads, call the maps adapter, construct `ProjectedLocationV1`, load current trip state from DynamoDB, and invoke the same reducers. It conditionally stores the next revision and publishes derived graph/situation/notification events. Raw GPS continues independently to Firehose/S3.
 
-AppSync receives rate-controlled graph and situation deltas, not every raw GPS point. The React web app and Expo driver app fetch a snapshot before applying revisions. A revision gap triggers a new snapshot.
+AppSync receives rate-controlled graph and situation deltas, not every raw GPS point. The React web app and Flutter driver app fetch a snapshot before applying revisions. A revision gap triggers a new snapshot.
 
 The pure package has no AWS SDK, React, database, clock, network, or LLM dependency, so the telemetry processor can later move from Lambda to ECS or Managed Flink without changing client or event contracts.
 

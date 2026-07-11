@@ -30,7 +30,8 @@ For landing pages, websites, prototypes and visually led product work:
 ## Architectural invariants
 
 - React/Vite owns web presentation, not safety rules.
-- Expo owns device capture and driver experience, not authoritative convoy state.
+- Flutter owns device capture and driver experience, not authoritative convoy state.
+- Flutter/Dart models consume generated versioned contract artifacts and shared golden fixtures; do not hand-copy or reinterpret safety contracts.
 - Pure packages own graph, geo, policy and regroup logic.
 - AWS handlers adapt external events to pure domain operations.
 - DynamoDB owns current live state; PostgreSQL owns relational/geospatial history; S3 owns raw telemetry.

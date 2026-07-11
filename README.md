@@ -36,7 +36,7 @@ The product is designed for family road trips, motorcycle groups, tourism convoy
 | Surface | Stack | Purpose |
 |---|---|---|
 | Web | React 19, Vite, TypeScript, React Router, TanStack Query, Zustand, Tailwind CSS, shadcn/ui, MapLibre | Leader, coordinator, observer, trip planning, live map, incident management |
-| Mobile | Expo, React Native, TypeScript, Expo Router, Expo Location, Task Manager, SQLite | Driver tracking, offline buffer, voice, alerts, navigation and acknowledgements |
+| Mobile | Flutter, Dart, Riverpod, go_router, Drift/SQLite, Amplify Flutter Auth, native location/TTS/haptic adapters | Driver tracking, offline buffer, voice, alerts, navigation and acknowledgements |
 
 Participating drivers use the native mobile application because mobile browsers are not a reliable source of continuous background GPS. The web application can observe and coordinate trips.
 
@@ -69,7 +69,7 @@ The primary deployment region is `ap-southeast-1` (Singapore).
 
 ```mermaid
 flowchart LR
-    Driver["Expo driver app"] -->|"MQTT/WSS QoS 1"| IoT["AWS IoT Core"]
+    Driver["Flutter driver app"] -->|"MQTT/WSS QoS 1"| IoT["AWS IoT Core"]
     IoT --> Stream["Kinesis Data Streams"]
     Stream --> Processor["Telemetry Lambda"]
     Stream --> Lake["Firehose → S3"]
@@ -116,7 +116,7 @@ Default cohesion values and state transitions are specified in [Convoy Intellige
 loopin/
 ├── apps/
 │   ├── web/                       # Implemented landing, setup, live replay and summary
-│   ├── mobile/                    # Expo/React Native
+│   ├── mobile/                    # Flutter/Dart driver client
 │   └── simulator/                 # Runnable dataset-driven convoy simulation
 ├── services/
 │   ├── api/                       # API Lambda handlers
@@ -186,7 +186,7 @@ Implemented routes:
 | `/trips/TRIP001/live?autoplay=true` | Direct landing-page demo; creates a demo session, plays and pauses at the confirmed split |
 | `/trips/TRIP001/summary` | Measured facts and event timeline; refuses incomplete sessions |
 
-The live workspace supports previous/next, play/pause, restart and 1×/2×/4× playback. It stops at the confirmed split until POI001 is approved, then continues through reconnection and automatically opens the summary. Browser-only demo state is schema-validated in `sessionStorage` under `loopin.demo-session`; **Start another demo** clears it, while **Replay trip** resets the same approved scenario. This adapter is intentionally not production persistence or authentication.
+The live workspace supports previous/next, play/pause, restart and 1×/2×/4× playback. It stops at the confirmed split until POI001 is approved, then continues through reconnection and automatically opens the summary. Browser-only demo state is schema-validated in `sessionStorage` under `loopin:demo-session-v1`; **Start another demo** clears it, while **Replay trip** resets the same approved scenario. This adapter is intentionally not production persistence or authentication.
 
 Run the complete web verification pipeline:
 
@@ -228,6 +228,7 @@ Start with the [documentation index](docs/README.md).
 | [Runnable Convoy Core Demo](docs/core-demo-slice.md) | Implemented contracts, graph logic, golden replay and integration seams |
 | [Roadmap](docs/roadmap.md) | Hackathon slice, production hardening and scale milestones |
 | [Frontend Experience Standards](docs/frontend-standards.md) | Public-page art direction, motion, accessibility and visual QA |
+| [ADR 0001: Flutter Driver Client](docs/adr/0001-use-flutter-for-driver-client.md) | Mobile stack, platform adapters, generated contracts and device verification |
 
 Contributors should also read [CONTRIBUTING.md](CONTRIBUTING.md). Automated contributors must follow [AGENTS.md](AGENTS.md).
 

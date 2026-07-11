@@ -17,7 +17,7 @@ The architecture separates:
 | Component | Responsibility | Must not own |
 |---|---|---|
 | React web | Planning, coordination, observation and incident UI | Domain rules or raw telemetry ingestion |
-| Expo mobile | GPS capture, offline buffer, driver UX and voice | Convoy-wide authoritative state |
+| Flutter mobile | GPS capture, offline buffer, driver UX and voice | Convoy-wide authoritative state |
 | API Lambdas | Trip and membership commands and queries | Continuous telemetry processing |
 | Telemetry processor | Validation, map matching, route progress and current state | User-facing prose or regroup approval |
 | Convoy graph package | Nodes, adjacent edges and connected components | AWS access or UI state |
@@ -139,9 +139,12 @@ Move only the telemetry/graph processor to Managed Apache Flink or ECS when cons
 ## 8. Architecture decisions
 
 - React + Vite is used because the primary web experience is authenticated and interactive; static S3/CloudFront hosting minimizes the frontend cost floor.
-- Expo/React Native is used for drivers because reliable background GPS is not a dependable web-browser capability.
+- Flutter/Dart is used for drivers because reliable background GPS requires native platform services and the selected product direction favors one cross-platform mobile codebase.
+- Generated language-neutral schemas and shared golden fixtures prevent Dart contracts from drifting from the authoritative TypeScript/Zod boundaries.
 - Lambda is used initially because traffic is bursty and batchable.
 - DynamoDB is the authoritative hot-state store; PostgreSQL is not exposed to every GPS point.
 - PostgreSQL/PostGIS owns routes, POIs and relational history.
 - AppSync Events owns WebSocket scale; application Lambdas do not host persistent connections.
 - The legal/safety following minimum is distinct from the product's maximum convoy-cohesion threshold.
+
+The mobile selection, cross-language contract boundary and device-verification requirements are recorded in [ADR 0001](adr/0001-use-flutter-for-driver-client.md).

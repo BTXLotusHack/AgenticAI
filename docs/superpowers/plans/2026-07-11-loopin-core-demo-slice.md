@@ -260,7 +260,7 @@ const boundaryPair = `${ahead.memberId}:${behind.memberId}`
 The runnable core demo is the dependency for, but does not pretend to complete, these separately planned units:
 
 1. Web product shell: auth, trip creation/join/readiness, MapLibre live snapshot/deltas, incidents, leader approval, and landing-to-app conversion.
-2. Expo driver app: consent/readiness, foreground/background capture, SQLite offline queue, MQTT, voice/haptic alert presentation, and native TTS.
+2. Flutter driver app: consent/readiness, foreground/background capture, Drift/SQLite offline queue, MQTT, voice/haptic alert presentation, and native TTS.
 3. AWS foundation: CDK accounts/stacks, Cognito, API Gateway, Lambda, DynamoDB, IoT, Kinesis, Firehose/S3, EventBridge/SQS, AppSync Events, alarms, budgets, and OIDC CI.
 4. Maps/geospatial: Tasco adapter, route normalization, map matching, progress, ETA, POI normalization, PostGIS history, and deterministic fixture fallback.
 5. Production hardening: authorization/privacy deletion, push delivery, runbooks, load/failure testing, shadow policy calibration, and migration triggers for ECS/Flink.

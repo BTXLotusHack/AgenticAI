@@ -10,7 +10,7 @@ Build vertical slices that demonstrate complete behavior. Do not create a large 
 - Shared TypeScript, linting and test configuration
 - Versioned Zod contracts
 - AWS CDK environment/account structure
-- React/Vite shell and Expo shell
+- React/Vite shell and Flutter shell
 - Dataset import and simulator fixtures
 - CI with OIDC and CDK diff
 

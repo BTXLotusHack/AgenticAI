@@ -260,4 +260,4 @@ expect(controller.getSnapshot()).toMatchObject({ approvedCandidateId: "POI001", 
 
 ## Follow-on Integration
 
-After this branch is complete, the next branch implements the AWS/local service vertical slice. It replaces the demo-session and replay adapters behind existing interfaces while preserving `LocationTelemetryV1`, `ProjectedLocationV1`, `ConvoyGraph`, `Situation`, `NotificationRequest`, `RegroupRanking`, and client revision behavior. The later Expo slice publishes the same telemetry contract and renders member-specific notifications; it does not duplicate convoy-wide authority.
+After this branch is complete, the next branch implements the AWS/local service vertical slice. It replaces the demo-session and replay adapters behind existing interfaces while preserving `LocationTelemetryV1`, `ProjectedLocationV1`, `ConvoyGraph`, `Situation`, `NotificationRequest`, `RegroupRanking`, and client revision behavior. The later Flutter slice publishes the same generated telemetry contract and renders member-specific notifications; it does not duplicate convoy-wide authority.

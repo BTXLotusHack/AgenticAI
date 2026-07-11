@@ -23,6 +23,11 @@ Design records:
 - [2026-07-11 Loopin Group Drive Platform Design](superpowers/specs/2026-07-11-loopin-group-drive-platform-design.md)
 - [2026-07-11 Loopin Landing Page Design](superpowers/specs/2026-07-11-loopin-landing-page-design.md)
 - [2026-07-11 Loopin Core Demo Slice Plan](superpowers/plans/2026-07-11-loopin-core-demo-slice.md)
+- [2026-07-11 Loopin Flutter Driver Client Plan](superpowers/plans/2026-07-11-loopin-flutter-driver-client.md)
+
+Accepted architecture decisions:
+
+- [0001: Use Flutter for the driver client](adr/0001-use-flutter-for-driver-client.md)
 
 ## Ownership map
 
@@ -34,6 +39,7 @@ Design records:
 | GPS schema, stream processing and large-scale behavior | `realtime-telemetry.md` |
 | Entities, keys, events and HTTP operations | `data-and-api-contracts.md` |
 | AWS resources and deployment process | `aws-deployment.md` |
+| Flutter driver architecture and contract boundary | `adr/0001-use-flutter-for-driver-client.md` |
 | Driver guardrails, authorization and retention | `safety-security-privacy.md` |
 | Verification, SLOs, alarms and incident response | `testing-and-operations.md` |
 | Delivery phases and migration triggers | `roadmap.md` |
