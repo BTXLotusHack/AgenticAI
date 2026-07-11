@@ -2,19 +2,19 @@
 
 **Date:** 2026-07-12
 
-**Status:** Approved branch composition; this document defines the integration handoff, not an AWS deployment approval.
+**Status:** Approved PR handoff; this document defines the integration review, not an AWS deployment approval.
 
 ## Objective
 
-Create one remote branch that an infrastructure engineer can clone and use without reconstructing Loopin from disconnected feature branches. The branch combines the reviewed React/Vite frontend, Flutter foundation, deterministic convoy packages, production-shaped local service boundary, and the backend/Terraform scaffold already merged on `origin/dev`.
+Create one remote branch and draft pull request that an infrastructure engineer can review without reconstructing Loopin from disconnected feature branches. The branch supplies the reviewed React/Vite frontend, Flutter foundation, deterministic convoy packages and production-shaped local service boundary. The PR targets `dev`, where the backend/Terraform scaffold is already present, so the proposed PR result contains both bodies of work without merging `dev` into the feature branch.
 
 ## Branch and provenance
 
 - Branch: `codex/infra-handoff`.
 - Application parent: `f5d17aa`, the reviewed Flutter-foundation tip containing the complete web, domain, simulator, contracts, local services, and mobile foundation history.
-- Infrastructure parent: `origin/dev` at `1b5e8f4`, which contains merge commit `infra-be` and preserves its original backend/Terraform authorship.
-- Integration method: a normal merge of `origin/dev` into `codex/infra-handoff`; do not squash or copy files manually.
-- Collaboration target: any later pull request from this branch targets `dev`, never `main`.
+- Pull-request base: `origin/dev` at `1b5e8f4`, which already contains merge commit `infra-be` and preserves its original backend/Terraform authorship.
+- Integration method: do not merge `origin/dev` into `codex/infra-handoff`. Push the feature branch and let GitHub calculate the proposed merge against `dev`.
+- Collaboration target: create a draft pull request from `codex/infra-handoff` to `dev`, never `main`, and do not merge it automatically.
 
 ## Included work
 
@@ -24,15 +24,15 @@ Create one remote branch that an infrastructure engineer can clone and use witho
 | Mobile | `apps/mobile` | Flutter Android/iOS foundation and generated contracts; feature delivery remains in progress |
 | Domain and replay | `packages/convoy-core`, `packages/demo-scenarios`, `apps/simulator` | Authoritative tested graph, situation, notification, regroup, replay and summary behavior |
 | Application services | `services/application`, `services/local-dev` | Tested use-cases plus local HTTP/WebSocket adapters; fixture identity is forbidden outside local/test |
-| Team backend | `backend` from `origin/dev` | Lambda/Terraform scaffold to be hardened and connected to authoritative contracts/use-cases |
-| Infrastructure | `infra` from `origin/dev` | Terraform scaffold for Cognito, API Gateway, DynamoDB, Kinesis, IoT, AppSync and optional push |
+| Team backend | Already on PR base `dev` | Lambda/Terraform scaffold to be hardened and connected to authoritative contracts/use-cases |
+| Infrastructure | Already on PR base `dev` | Terraform scaffold for Cognito, API Gateway, DynamoDB, Kinesis, IoT, AppSync and optional push |
 | Documentation | `docs` | Architecture, safety, deployment and explicit handoff findings |
 
 ## Explicit exclusions
 
 - Do not restore `stash@{0}` (`wip/aws-service-adapters-handoff`). It contains an incomplete competing AWS adapter experiment and would create two production backend directions.
 - Do not claim that the local fixture-auth WebSocket server is deployable production infrastructure.
-- Do not run `terraform apply`, create AWS resources, push to `dev`, or open a pull request as part of branch assembly.
+- Do not run `terraform apply`, create AWS resources, push directly to `dev`, or merge the pull request.
 - Do not auto-accept Android SDK licenses or claim physical iOS/device validation.
 
 ## Required deployment warning
@@ -50,7 +50,7 @@ The merged branch is an engineering handoff, not a safe shared-dev deployment. T
 
 ## Handoff verification
 
-After the merge, verify all independent surfaces without AWS credentials:
+Verify the feature branch and both sides of the proposed PR without AWS credentials:
 
 ```powershell
 npm.cmd install
@@ -77,24 +77,25 @@ flutter build apk --debug
 Pop-Location
 
 git diff --check origin/dev...HEAD
+git merge-tree --write-tree origin/dev HEAD
 ```
 
 Terraform validation is a required infrastructure follow-up. If Terraform is not installed locally, record `terraform fmt -check`, `terraform init`, `terraform validate`, security scanning and a reviewed `terraform plan` as unverified rather than inferring success from static files.
 
 ## Remote handoff
 
-After the merge, verification and review are clean:
+After verification and review are clean:
 
 1. Push only `codex/infra-handoff` to `origin`.
-2. Do not create or merge a pull request automatically.
-3. Give the infrastructure engineer the branch name, commit hash, verification summary, and blocker document path.
-4. The engineer may branch from this handoff or propose a pull request to `dev` after closing the applicable security and deployment gates.
+2. Create a draft pull request with base `dev` and head `codex/infra-handoff`.
+3. Do not merge, auto-merge or retarget the pull request.
+4. Give the infrastructure engineer the branch name, PR URL, commit hash, verification summary and blocker document path.
+5. The infrastructure engineer reviews and closes the applicable security/deployment gates before marking the PR ready or merging it.
 
 ## Success criteria
 
-- One remote branch contains both current application work and the team's original backend/Terraform history.
+- One remote branch contains the current application work, while its draft PR targets the `dev` branch that owns the team's backend/Terraform history.
 - No reviewed application branch or stash is rewritten or deleted.
 - Frontend, backend, mobile, contracts and simulator verification pass locally.
 - Deployment blockers are explicit and cannot be mistaken for completed controls.
 - No AWS resources or pull requests are created during handoff assembly.
-
