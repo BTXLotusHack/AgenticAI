@@ -4,7 +4,8 @@
   "private": true,
   "workspaces": [
     "apps/*",
-    "packages/*"
+    "packages/*",
+    "services/*"
   ],
   "engines": {
     "node": ">=20.19.0"
@@ -22,6 +23,8 @@
     "mobile:test": "cd apps/mobile && flutter test",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present --",
+    "dev:maps": "npm run dev --workspace @loopin/maps-facade --",
+    "test:maps": "npm run test --workspace @loopin/tasco-maps -- --run && npm run test --workspace @loopin/maps-facade -- --run",
     "test:core": "npm run test --workspace @loopin/convoy-core -- --run && npm run test --workspace @loopin/demo-scenarios -- --run",
     "test:e2e": "npm run test:e2e --workspace @loopin/web"
   }
