@@ -10,7 +10,7 @@ Design a complete, AWS-deployed AI group-drive assistant that coordinates a line
 ## Approved direction
 
 - React + Vite web application delivered through S3 and CloudFront.
-- Expo/React Native driver application for reliable background GPS.
+- Flutter/Dart driver application for reliable background GPS, offline buffering and native alerts.
 - Serverless-first AWS backend using API Gateway, Lambda, IoT Core, Kinesis, DynamoDB, EventBridge, SQS and AppSync Events.
 - PostgreSQL/PostGIS for relational routes and safe POIs; S3 for raw telemetry.
 - Every vehicle is a route-projected graph node.
@@ -23,7 +23,7 @@ Design a complete, AWS-deployed AI group-drive assistant that coordinates a line
 ## Architecture summary
 
 ```text
-Expo GPS → IoT Core → Kinesis → telemetry Lambda → DynamoDB graph state
+Flutter GPS → IoT Core → Kinesis → telemetry Lambda → DynamoDB graph state
                                       ├→ Firehose/S3
                                       └→ EventBridge/SQS
                                            → situation/regroup Lambdas
@@ -31,7 +31,7 @@ Expo GPS → IoT Core → Kinesis → telemetry Lambda → DynamoDB graph state
                                            → Bedrock explanation queue
 
 React/Vite → CloudFront/S3
-React/Expo → Cognito → API Gateway/Lambda → PostgreSQL/DynamoDB
+React/Flutter → Cognito → API Gateway/Lambda → PostgreSQL/DynamoDB
 ```
 
 ## Specification map

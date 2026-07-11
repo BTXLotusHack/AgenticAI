@@ -36,7 +36,7 @@ The product is designed for family road trips, motorcycle groups, tourism convoy
 | Surface | Stack | Purpose |
 |---|---|---|
 | Web | React 19, Vite, TypeScript, React Router, TanStack Query, Zustand, Tailwind CSS, shadcn/ui, MapLibre | Leader, coordinator, observer, trip planning, live map, incident management |
-| Mobile | Expo, React Native, TypeScript, Expo Router, Expo Location, Task Manager, SQLite | Driver tracking, offline buffer, voice, alerts, navigation and acknowledgements |
+| Mobile | Flutter, Dart, Riverpod, go_router, Drift/SQLite, Amplify Flutter Auth, native location/TTS/haptic adapters | Driver tracking, offline buffer, voice, alerts, navigation and acknowledgements |
 
 Participating drivers use the native mobile application because mobile browsers are not a reliable source of continuous background GPS. The web application can observe and coordinate trips.
 
@@ -69,12 +69,13 @@ The primary deployment region is `ap-southeast-1` (Singapore).
 
 ```mermaid
 flowchart LR
-    Driver["Expo driver app"] -->|"MQTT/WSS QoS 1"| IoT["AWS IoT Core"]
+    Driver["Flutter driver app"] -->|"MQTT/WSS QoS 1"| IoT["AWS IoT Core"]
     IoT --> Stream["Kinesis Data Streams"]
-    Stream --> Processor["Telemetry Lambda"]
+    Stream --> Processor["Telemetry Lambda adapter"]
     Stream --> Lake["Firehose → S3"]
-    Processor --> Live["DynamoDB live state"]
-    Processor --> Bus["EventBridge"]
+    Processor --> Application["Application use-cases"]
+    Application --> Live["DynamoDB live state"]
+    Application --> Bus["EventBridge"]
     Bus --> Queue["SQS"]
     Queue --> Situation["Situation and regroup Lambdas"]
     Situation --> Geo["PostgreSQL + PostGIS"]
@@ -115,10 +116,11 @@ Default cohesion values and state transitions are specified in [Convoy Intellige
 ```text
 loopin/
 ├── apps/
-│   ├── web/                       # React + Vite
-│   ├── mobile/                    # Expo/React Native
-│   └── simulator/                 # Dataset-driven convoy simulation
+│   ├── web/                       # Implemented landing, setup, live replay and summary
+│   ├── mobile/                    # Flutter/Dart driver client
+│   └── simulator/                 # Runnable dataset-driven convoy simulation
 ├── services/
+│   ├── application/               # Implemented use-cases, ports and memory adapters
 │   ├── api/                       # API Lambda handlers
 │   ├── telemetry/                 # Kinesis telemetry processor
 │   ├── situation/                 # Detection engine handler
@@ -128,8 +130,10 @@ loopin/
 │   └── summaries/                 # Post-trip processing
 ├── packages/
 │   ├── contracts/                 # Versioned Zod schemas
-│   ├── domain/                    # Pure trip and role logic
-│   ├── convoy-graph/              # Nodes, edges and components
+│   ├── convoy-core/               # Implemented graph, safety, regroup and summaries
+│   ├── demo-scenarios/            # Shared golden frames and deterministic replay controller
+│   ├── domain/                    # Future broader trip and role logic
+│   ├── convoy-graph/              # Future split if scale/ownership requires it
 │   ├── geo/                       # Route progress and distance
 │   ├── safety-engine/             # Deterministic policies
 │   ├── regroup-engine/            # Candidate filtering and scoring
@@ -142,7 +146,91 @@ loopin/
 └── docs/
 ```
 
-This repository currently establishes the product and system specifications. Implementation commands will be documented after the scaffold exists; the documentation does not claim that undeveloped services are already runnable.
+The consumer landing page and deterministic setup/live/summary trip journey are implemented in `apps/web`. `packages/contracts` owns strict versioned external schemas and language-neutral telemetry examples. The convoy engine is implemented in `packages/convoy-core`; `services/application` owns authorized use-cases and replaceable repository/map/publisher ports; `packages/demo-scenarios` owns the shared golden frames and replay controller used by both the web experience and `apps/simulator`. The Flutter client, AWS adapters, Tasco adapter and CDK infrastructure remain approved designs that will be delivered as tested vertical slices rather than empty scaffolds.
+
+## Run the convoy demo
+
+```powershell
+npm.cmd install
+npm.cmd run test:core
+npm.cmd run simulate
+```
+
+Use `npm.cmd run simulate -- --json` for the complete graph, incident, notification, regroup, ingestion, and summary output. See [Runnable Convoy Core Demo](docs/core-demo-slice.md) for behavior, workbook provenance, limitations, and AWS integration seams.
+
+## Run local services
+
+Start the production-shaped in-memory HTTP and WebSocket adapters:
+
+```powershell
+npm.cmd run dev:services
+```
+
+The default endpoints are `http://127.0.0.1:8787` and `ws://127.0.0.1:8787/v1/realtime`. The runtime is seeded with TRIP001, canonical telemetry projections and regroup candidates; the summary is generated only after the replay reconnects the convoy. Local requests use explicit fixture bearer tokens such as `Bearer fixture:USER001`; the server fails closed when `LOOPIN_ENV` is anything other than `local` or `test`.
+
+Useful probes:
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:8787/healthz
+npm.cmd test --workspace @loopin/local-dev -- --run
+```
+
+The local runtime validates the same contracts and invokes the same application service intended for API Gateway, Kinesis, DynamoDB, and AppSync adapters. Browser WebSockets authenticate through a local-only fixture subprotocol and enforce the HTTP origin allowlist. Replay time comes from the server-owned golden adapter rather than the client payload. A leader explicitly completes the trip after reconnection before `/summary` becomes available. This runtime is not production authentication or persistence.
+
+## Run the web experience
+
+Requirements:
+
+- Node.js 20.19 or newer
+- npm 11 or newer
+
+From the repository root:
+
+```powershell
+npm.cmd install
+npm.cmd run dev
+```
+
+Vite prints the local address, normally <http://localhost:5173>. To bind an explicit host and port:
+
+```powershell
+npm.cmd run dev -- --host 127.0.0.1 --port 4173
+```
+
+Implemented routes:
+
+| Route | Behavior |
+|---|---|
+| `/` | Public landing page with setup and direct-demo entry points |
+| `/trip/new` | TRIP001 route, readiness and trip-scoped location-consent setup |
+| `/trips/TRIP001/live` | Deterministic live convoy workspace; requires a completed setup session |
+| `/trips/TRIP001/live?autoplay=true` | Direct landing-page demo; creates a demo session, plays and pauses at the confirmed split |
+| `/trips/TRIP001/summary` | Measured facts and event timeline; refuses incomplete sessions |
+
+The live workspace supports previous/next, play/pause, restart and 1×/2×/4× playback. It stops at the confirmed split until POI001 is approved, then continues through reconnection and automatically opens the summary. Browser-only demo state is schema-validated in `sessionStorage` under `loopin:demo-session-v1`; **Start another demo** clears it, while **Replay trip** resets the same approved scenario. This adapter is intentionally not production persistence or authentication.
+
+Run the complete web verification pipeline:
+
+```powershell
+npm.cmd run lint
+npm.cmd run typecheck
+npm.cmd test -- --run
+npm.cmd run build
+npx.cmd playwright install chromium
+npm.cmd run test:e2e
+```
+
+The Playwright gate runs the landing and complete trip journey across desktop, mobile and reduced-motion projects. It checks serious/critical WCAG violations, console errors, route behavior, the consent gate, degraded GPS, the exact `M003 → M004` split, four recipient messages, POI002 hard exclusion, POI001 approval, reconnection, summary facts and horizontal overflow down to 320 CSS pixels.
+
+Preview the production build:
+
+```powershell
+npm.cmd run preview -- --host 127.0.0.1 --port 4173
+```
+
+The web output is written to `apps/web/dist` and is compatible with the documented S3 and CloudFront deployment model.
+
+`test-results/`, `playwright-report/` and `dist/` are generated evidence/build artifacts and are not committed. Visual QA screenshots are reviewed through the browser workflow and kept outside source control.
 
 ## Documentation
 
@@ -158,7 +246,10 @@ Start with the [documentation index](docs/README.md).
 | [Data and API Contracts](docs/data-and-api-contracts.md) | Entities, DynamoDB keys, events and endpoints |
 | [Safety, Security and Privacy](docs/safety-security-privacy.md) | Guardrails, authorization, retention and threat controls |
 | [Testing and Operations](docs/testing-and-operations.md) | Simulator, verification, SLOs, alarms and runbooks |
+| [Runnable Convoy Core Demo](docs/core-demo-slice.md) | Implemented contracts, graph logic, golden replay and integration seams |
 | [Roadmap](docs/roadmap.md) | Hackathon slice, production hardening and scale milestones |
+| [Frontend Experience Standards](docs/frontend-standards.md) | Public-page art direction, motion, accessibility and visual QA |
+| [ADR 0001: Flutter Driver Client](docs/adr/0001-use-flutter-for-driver-client.md) | Mobile stack, platform adapters, generated contracts and device verification |
 
 Contributors should also read [CONTRIBUTING.md](CONTRIBUTING.md). Automated contributors must follow [AGENTS.md](AGENTS.md).
 
@@ -167,6 +258,8 @@ Contributors should also read [CONTRIBUTING.md](CONTRIBUTING.md). Automated cont
 The hackathon demonstration must prove one complete path: create a trip, join vehicles, stream simulated or real GPS, detect a persistent component split, alert front and rear sections differently, recommend a safe regroup point, reconnect, and summarize the trip.
 
 Production architecture is documented, but features are implemented in vertical slices rather than by creating many empty microservices.
+
+The current browser journey is a deterministic workbook-backed demonstration. It does not claim live Tasco map matching, production identity, shared multi-client state, MQTT ingestion, AppSync delivery, push notifications or background mobile GPS; those replace adapters behind the existing versioned contracts.
 
 ## External dependencies to validate
 

@@ -1,0 +1,133 @@
+{
+  "$id": "https://schemas.loopin.vn/contracts/location-telemetry-v1.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "properties": {
+    "accuracyMeters": {
+      "maximum": 5000,
+      "minimum": 0,
+      "type": "number"
+    },
+    "batteryPercent": {
+      "anyOf": [
+        {
+          "maximum": 100,
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "deviceId": {
+      "maxLength": 160,
+      "minLength": 1,
+      "type": "string"
+    },
+    "eventId": {
+      "maxLength": 160,
+      "minLength": 1,
+      "type": "string"
+    },
+    "headingDegrees": {
+      "anyOf": [
+        {
+          "exclusiveMaximum": 360,
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "latitude": {
+      "maximum": 90,
+      "minimum": -90,
+      "type": "number"
+    },
+    "longitude": {
+      "maximum": 180,
+      "minimum": -180,
+      "type": "number"
+    },
+    "memberId": {
+      "maxLength": 160,
+      "minLength": 1,
+      "type": "string"
+    },
+    "networkQuality": {
+      "enum": [
+        "good",
+        "weak",
+        "offline-replay"
+      ],
+      "type": "string"
+    },
+    "observedAt": {
+      "format": "date-time",
+      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+      "type": "string"
+    },
+    "schemaVersion": {
+      "const": 1,
+      "type": "number"
+    },
+    "sentAt": {
+      "format": "date-time",
+      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+      "type": "string"
+    },
+    "sequence": {
+      "maximum": 9007199254740991,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "source": {
+      "enum": [
+        "gps",
+        "simulator"
+      ],
+      "type": "string"
+    },
+    "speedKmh": {
+      "anyOf": [
+        {
+          "maximum": 300,
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "tripId": {
+      "maxLength": 160,
+      "minLength": 1,
+      "type": "string"
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "eventId",
+    "tripId",
+    "memberId",
+    "deviceId",
+    "sequence",
+    "observedAt",
+    "sentAt",
+    "latitude",
+    "longitude",
+    "accuracyMeters",
+    "speedKmh",
+    "headingDegrees",
+    "batteryPercent",
+    "networkQuality",
+    "source"
+  ],
+  "title": "LocationTelemetryV1",
+  "type": "object",
+  "x-schema-version": 1
+}

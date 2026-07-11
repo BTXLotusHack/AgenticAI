@@ -1,0 +1,2 @@
+packages/contracts/generated/*.json text eol=lf
+apps/mobile/lib/contracts/generated/*.dart text eol=lf

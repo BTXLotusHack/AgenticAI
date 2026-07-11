@@ -1,0 +1,75 @@
+{
+  "$id": "https://schemas.loopin.vn/contracts/projected-location-v1.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "properties": {
+    "eventId": {
+      "maxLength": 160,
+      "minLength": 1,
+      "type": "string"
+    },
+    "matchConfidence": {
+      "enum": [
+        "high",
+        "medium",
+        "low",
+        "unmatchable"
+      ],
+      "type": "string"
+    },
+    "memberId": {
+      "maxLength": 160,
+      "minLength": 1,
+      "type": "string"
+    },
+    "projectedAt": {
+      "format": "date-time",
+      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+      "type": "string"
+    },
+    "role": {
+      "enum": [
+        "leader",
+        "member"
+      ],
+      "type": "string"
+    },
+    "routeDeviationMeters": {
+      "minimum": 0,
+      "type": "number"
+    },
+    "routeProgressMeters": {
+      "minimum": 0,
+      "type": "number"
+    },
+    "schemaVersion": {
+      "const": 1,
+      "type": "number"
+    },
+    "sourceTelemetryEventId": {
+      "maxLength": 160,
+      "minLength": 1,
+      "type": "string"
+    },
+    "tripId": {
+      "maxLength": 160,
+      "minLength": 1,
+      "type": "string"
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "eventId",
+    "sourceTelemetryEventId",
+    "tripId",
+    "memberId",
+    "role",
+    "routeProgressMeters",
+    "routeDeviationMeters",
+    "matchConfidence",
+    "projectedAt"
+  ],
+  "title": "ProjectedLocationV1",
+  "type": "object",
+  "x-schema-version": 1
+}

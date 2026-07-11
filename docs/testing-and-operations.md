@@ -69,7 +69,34 @@ The supplied workbook contains:
 - Mock API examples
 - Public evaluation scenarios
 
-The simulator converts workbook rows into versioned telemetry and command events. It supports wall-clock, accelerated and step modes.
+The planned simulator converts workbook rows into versioned telemetry and command events. Its target adapters are wall-clock, accelerated and step modes.
+
+### Implemented golden replay
+
+`packages/demo-scenarios` now provides the accelerated deterministic TRIP001 frames and controller. It normalizes workbook identities, route, members, event intent and regroup POIs, then supplies 5-second fixture route projections to the pure convoy engine. `apps/simulator` and `apps/web` consume that shared package. Run:
+
+```powershell
+npm.cmd run test:core
+npm.cmd run simulate
+npm.cmd run simulate -- --json
+```
+
+The replay verifies duplicate and stale-sequence handling, offline history-only replay, low-confidence degradation, persistent stretch/split transitions, exact M003–M004 component boundaries, recipient-specific alerts, unsafe POI exclusion, POI001 selection, reconnect hysteresis and one measured summary. Wall-clock and interactive step controls remain future simulator adapters; they must reuse the same scenario runner and reducers.
+
+### Implemented web trip journey
+
+The browser demo exposes `/trip/new`, `/trips/TRIP001/live` and `/trips/TRIP001/summary`. A direct `/trips/TRIP001/live?autoplay=true` entry creates a schema-validated demo session and pauses at the confirmed split. The live page cannot approve a hard-excluded candidate or advance automatic playback beyond the split without an eligible regroup approval.
+
+Run the browser matrix from the repository root:
+
+```powershell
+npx.cmd playwright install chromium
+npm.cmd run test:e2e
+```
+
+The matrix currently runs 21 checks across desktop Chromium, mobile Chromium and reduced-motion Chromium. It proves the full setup-to-summary path, serious/critical WCAG scanning, console health, keyboard-operable semantic controls, reduced-motion completeness and overflow guards at 320, 360, 390, 768, 1024, 1280 and 1440 CSS pixels.
+
+Browser, trace, video and HTML-report artifacts are generated under `apps/web/test-results` and `apps/web/playwright-report` only when configured or when failures require evidence. They are ignored by Git and must not be included in commits. Browser-review screenshots are likewise external verification artifacts, not product assets.
 
 Required scenarios:
 
@@ -195,3 +222,28 @@ Every runbook identifies detection, user-visible degraded behavior, mitigation, 
 - Database migration is backward-compatible.
 - Rollback or feature-disable mechanism exists for changed safety policy.
 - Production smoke trip succeeds after deployment.
+
+For the implemented local vertical slice, run:
+
+```powershell
+npm.cmd run lint
+npm.cmd run typecheck
+npm.cmd test -- --run
+npm.cmd run build
+npm.cmd run test:e2e
+npm.cmd run simulate -- --json
+npm.cmd audit --audit-level=high
+```
+
+The web and simulator must agree on situation `split:TRIP001:M003:M004`, selected `POI001`, excluded `POI002`, final one-component/together state, one resolved split and a peak route gap of `900 m`.
+
+### Local service boundary
+
+Run the real-port HTTP/WebSocket integration checks with:
+
+```powershell
+npm.cmd test --workspace @loopin/local-dev -- --run
+npm.cmd run dev:services
+```
+
+The automated checks cover health, missing authentication, join and readiness, contract/media/body rejection, CORS and WebSocket-origin denial, browser-compatible fixture authentication, nonmember/member-channel authorization, membership revalidation, bounded active-socket shutdown, indeterminate deadlines, coordinate-free logs and realtime graph delivery. They also submit the canonical duplicate, stale, offline, weak, split and reconnect telemetry through HTTP, prove the exact `M003`–`M004` boundary and POI exclusions, approve POI001, explicitly complete at 75 seconds, verify contiguous subscriber revisions and role-specific rear alerts, and confirm the generated summary has one resolved split, eight notifications and a `900 m` maximum confirmed gap. Fixture credentials, trusted replay time and in-memory state are restricted to local/test use and do not substitute for Cognito, DynamoDB or deployed AWS smoke tests.

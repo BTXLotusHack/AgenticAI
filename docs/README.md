@@ -13,10 +13,25 @@ This directory is the system-design source of truth for Loopin. Documents are or
 7. [Safety, Security and Privacy](safety-security-privacy.md)
 8. [Testing and Operations](testing-and-operations.md)
 9. [Roadmap](roadmap.md)
+10. [Frontend Experience Standards](frontend-standards.md)
+11. [Runnable Convoy Core Demo](core-demo-slice.md)
 
 Cross-cutting project practices are defined in [CONTRIBUTING.md](../CONTRIBUTING.md) and [AGENTS.md](../AGENTS.md). Consequential implementation decisions belong in [Architecture Decision Records](adr/README.md).
 
-The umbrella design record is [2026-07-11 Loopin Group Drive Platform Design](superpowers/specs/2026-07-11-loopin-group-drive-platform-design.md).
+Design records:
+
+- [2026-07-11 Loopin Group Drive Platform Design](superpowers/specs/2026-07-11-loopin-group-drive-platform-design.md)
+- [2026-07-11 Loopin Landing Page Design](superpowers/specs/2026-07-11-loopin-landing-page-design.md)
+- [2026-07-11 Loopin Core Demo Slice Plan](superpowers/plans/2026-07-11-loopin-core-demo-slice.md)
+- [2026-07-11 Loopin Local and AWS Service Vertical Slice Plan](superpowers/plans/2026-07-11-loopin-aws-service-vertical-slice.md)
+- [2026-07-11 Loopin Flutter Driver Client Plan](superpowers/plans/2026-07-11-loopin-flutter-driver-client.md)
+- [2026-07-12 Infrastructure Handoff Branch Design](superpowers/specs/2026-07-12-loopin-infra-handoff-design.md)
+- [2026-07-12 Infrastructure Handoff Implementation Plan](superpowers/plans/2026-07-12-loopin-infra-handoff.md)
+- [Infrastructure Deployment Readiness Handoff](handoffs/infra-deployment-readiness.md)
+
+Accepted architecture decisions:
+
+- [0001: Use Flutter for the driver client](adr/0001-use-flutter-for-driver-client.md)
 
 ## Ownership map
 
@@ -28,9 +43,11 @@ The umbrella design record is [2026-07-11 Loopin Group Drive Platform Design](su
 | GPS schema, stream processing and large-scale behavior | `realtime-telemetry.md` |
 | Entities, keys, events and HTTP operations | `data-and-api-contracts.md` |
 | AWS resources and deployment process | `aws-deployment.md` |
+| Flutter driver architecture and contract boundary | `adr/0001-use-flutter-for-driver-client.md` |
 | Driver guardrails, authorization and retention | `safety-security-privacy.md` |
 | Verification, SLOs, alarms and incident response | `testing-and-operations.md` |
 | Delivery phases and migration triggers | `roadmap.md` |
+| Public-page art direction, motion, accessibility and visual QA | `frontend-standards.md` |
 
 ## Documentation rules
 

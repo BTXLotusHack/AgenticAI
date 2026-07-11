@@ -1,0 +1,23 @@
+{
+  "name": "@loopin/simulator",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc --noEmit",
+    "lint": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest",
+    "simulate": "tsx src/cli.ts"
+  },
+  "dependencies": {
+    "@loopin/convoy-core": "0.1.0",
+    "@loopin/demo-scenarios": "0.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "26.1.1",
+    "tsx": "^4.20.0",
+    "typescript": "5.9.3",
+    "vitest": "4.1.10"
+  }
+}
