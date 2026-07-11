@@ -1,0 +1,52 @@
+# Road-snapped position fanned out to live clients. Readable by IAM (the
+# processor Lambda selecting the mutation result) and Cognito users (clients
+# receiving the subscription).
+type RiderPosition @aws_iam @aws_cognito_user_pools {
+  teamId: ID!
+  riderId: ID!
+  lat: Float!
+  lng: Float!
+  snappedLat: Float!
+  snappedLng: Float!
+  headingDegrees: Float
+  matchConfidence: Float
+  observedAt: AWSDateTime!
+}
+
+input RiderPositionInput {
+  teamId: ID!
+  riderId: ID!
+  lat: Float!
+  lng: Float!
+  snappedLat: Float!
+  snappedLng: Float!
+  headingDegrees: Float
+  matchConfidence: Float
+  observedAt: AWSDateTime!
+}
+
+type Mutation {
+  # Called only by the telemetry processor Lambda via IAM (SigV4). Clients
+  # cannot invoke it — they only subscribe. This keeps the deterministic
+  # backend as the sole publisher of live positions.
+  publishRiderPosition(input: RiderPositionInput!): RiderPosition @aws_iam
+}
+
+type Subscription {
+  # Clients subscribe with their Cognito user-pool JWT. The teamId argument
+  # auto-filters the stream so a client only receives its own team's positions.
+  onRiderPosition(teamId: ID!): RiderPosition
+    @aws_subscribe(mutations: ["publishRiderPosition"])
+    @aws_cognito_user_pools
+}
+
+type Query {
+  # AppSync requires a Query root; the fast path does not use it.
+  _health: String @aws_iam @aws_cognito_user_pools
+}
+
+schema {
+  query: Query
+  mutation: Mutation
+  subscription: Subscription
+}
