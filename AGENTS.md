@@ -18,7 +18,6 @@ Do not infer that a designed component is already implemented. Inspect the repos
 - `main` is the only integration and pull-request base branch.
 - Before each unit, fetch `origin`, update local `main` with fast-forward only, and create a new `codex/<unit>` branch from `origin/main`.
 - Never commit directly to `main`; open a pull request from the unit branch to `main`.
-- Do not use `dev` as a base, target, staging branch, or release intermediary.
 - Commit every independently verifiable unit after fresh checks. Do not push or open a pull request without user authorization.
 
 ## Frontend experience rules

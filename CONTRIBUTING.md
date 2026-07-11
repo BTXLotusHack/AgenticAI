@@ -24,7 +24,6 @@ git switch -c codex/<short-unit-name>
 
 - Never commit directly to `main`.
 - Every feature, fix, documentation, or infrastructure pull request targets `main`.
-- Do not use `dev` as a base, target, staging branch, or promotion step.
 - Keep one independently verifiable unit per branch and focused commit.
 - Do not force-push a shared branch.
 
