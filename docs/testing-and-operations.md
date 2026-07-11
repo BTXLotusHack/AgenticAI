@@ -236,3 +236,14 @@ npm.cmd audit --audit-level=high
 ```
 
 The web and simulator must agree on situation `split:TRIP001:M003:M004`, selected `POI001`, excluded `POI002`, final one-component/together state, one resolved split and a peak route gap of `900 m`.
+
+### Local service boundary
+
+Run the real-port HTTP/WebSocket integration checks with:
+
+```powershell
+npm.cmd test --workspace @loopin/local-dev -- --run
+npm.cmd run dev:services
+```
+
+The automated checks cover health, missing authentication, join and readiness, contract rejection, CORS denial, telemetry acceptance, subscription authorization and realtime graph delivery. The runnable CLI is additionally probed for the seeded TRIP001 summary. Fixture bearer tokens and in-memory state are restricted to local/test use and do not substitute for Cognito, DynamoDB or deployed AWS smoke tests.

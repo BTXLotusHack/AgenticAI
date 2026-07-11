@@ -158,6 +158,26 @@ npm.cmd run simulate
 
 Use `npm.cmd run simulate -- --json` for the complete graph, incident, notification, regroup, ingestion, and summary output. See [Runnable Convoy Core Demo](docs/core-demo-slice.md) for behavior, workbook provenance, limitations, and AWS integration seams.
 
+## Run local services
+
+Start the production-shaped in-memory HTTP and WebSocket adapters:
+
+```powershell
+npm.cmd run dev:services
+```
+
+The default endpoints are `http://127.0.0.1:8787` and `ws://127.0.0.1:8787/v1/realtime`. The runtime is seeded with TRIP001 and the shared golden summary. Local requests use explicit fixture bearer tokens such as `Bearer fixture:USER001`; the server refuses to start this identity adapter outside `local` or `test` mode.
+
+Useful probes:
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:8787/healthz
+Invoke-RestMethod http://127.0.0.1:8787/v1/trips/TRIP001/summary `
+  -Headers @{ Authorization = 'Bearer fixture:USER001' }
+```
+
+The local runtime validates the same contracts and invokes the same application service intended for API Gateway, Kinesis, DynamoDB, and AppSync adapters. It is not production authentication or persistence.
+
 ## Run the web experience
 
 Requirements:

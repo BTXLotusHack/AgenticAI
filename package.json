@@ -13,6 +13,7 @@
   },
   "scripts": {
     "dev": "npm run dev --workspace @loopin/web --",
+    "dev:services": "npm run dev --workspace @loopin/local-dev --",
     "images:optimize": "npm run images:optimize --workspace @loopin/web",
     "build": "npm run build --workspaces --if-present",
     "preview": "npm run preview --workspace @loopin/web --",
