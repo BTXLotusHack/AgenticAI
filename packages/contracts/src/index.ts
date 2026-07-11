@@ -380,7 +380,6 @@ export const CompleteTripRequestV1Schema = z
     schemaVersion: z.literal(1),
     commandId: IdentifierSchema,
     idempotencyKey: IdentifierSchema,
-    completedAt: IsoDateTimeSchema,
   })
   .strict();
 

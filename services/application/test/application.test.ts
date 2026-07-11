@@ -111,6 +111,17 @@ async function driveToSplit(app: LoopinApplication, maps: FixtureMapsProvider) {
   return splitResult;
 }
 
+async function driveToResolution(app: LoopinApplication, maps: FixtureMapsProvider) {
+  await driveToSplit(app, maps);
+  for (const tick of [40, 45, 50, 55, 60, 65, 70]) {
+    for (let memberIndex = 0; memberIndex < 4; memberIndex += 1) {
+      const input = pair(memberIndex, tick);
+      maps.add(input.projection);
+      await app.processTelemetry({ userId: `USER00${memberIndex + 1}` }, input.telemetry, at(tick + 1));
+    }
+  }
+}
+
 describe("trip membership and authorization", () => {
   it("atomically reserves telemetry sequence, event TTL and command idempotency", async () => {
     const repository = new MemoryTripRepository([goldenState()]);
@@ -357,5 +368,17 @@ describe("ordered telemetry application flow", () => {
         idempotencyKey: "approve-expired",
       }),
     ).rejects.toMatchObject({ code: "conflict", message: "The regroup recommendation has expired." });
+  });
+
+  it("returns the original completion result when the clock advances on retry", async () => {
+    const clock = new FixedClock(at(75));
+    const { app, maps } = setup(new MemoryTripRepository([goldenState()]), clock);
+    await driveToResolution(app, maps);
+    const request = { schemaVersion: 1 as const, commandId: "complete-1", idempotencyKey: "complete-1" };
+    const completed = await app.completeTrip({ userId: "USER001" }, "TRIP001", request);
+    clock.set(at(80));
+    const retried = await app.completeTrip({ userId: "USER001" }, "TRIP001", request);
+    expect(retried).toEqual(completed);
+    expect(retried.summary.completedAt).toBe(at(75));
   });
 });

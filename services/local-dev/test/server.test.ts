@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import WebSocket from "ws";
 
 import {
@@ -16,6 +16,16 @@ import { LocalRealtimeHub, createLocalServer, type RunningLocalServer } from "..
 import { createDefaultLocalRuntime } from "../src/default-runtime";
 
 const running: RunningLocalServer[] = [];
+const originalLoopinEnvironment = process.env.LOOPIN_ENV;
+
+beforeAll(() => {
+  process.env.LOOPIN_ENV = "test";
+});
+
+afterAll(() => {
+  if (originalLoopinEnvironment === undefined) delete process.env.LOOPIN_ENV;
+  else process.env.LOOPIN_ENV = originalLoopinEnvironment;
+});
 
 afterEach(async () => {
   await Promise.all(running.splice(0).map((server) => server.close()));
@@ -141,6 +151,8 @@ describe("local service runtime", () => {
     const previous = process.env.LOOPIN_ENV;
     process.env.LOOPIN_ENV = "production";
     try {
+      expect(() => createLocalServer({ ...dependencies, allowedOrigins: [] })).toThrow("restricted to local and test");
+      delete process.env.LOOPIN_ENV;
       expect(() => createLocalServer({ ...dependencies, allowedOrigins: [] })).toThrow("restricted to local and test");
     } finally {
       if (previous === undefined) delete process.env.LOOPIN_ENV;
@@ -384,7 +396,6 @@ describe("local service runtime", () => {
         schemaVersion: 1,
         commandId: "http-complete-1",
         idempotencyKey: "http-complete-1",
-        completedAt: "2026-07-20T00:01:15.000Z",
       }),
     });
     expect(completed.status).toBe(200);
@@ -411,7 +422,7 @@ describe("local service runtime", () => {
     expect(statuses).toEqual(new Set(["accepted", "duplicate", "stale-sequence", "history-only"]));
     await waitUntil(() => stateMessages.some((message) => message.eventType === "TripCompleted") && rearMessages.length >= 2);
     const revisions = stateMessages.map((message) => message.snapshotRevision);
-    expect(revisions.every((revision, index) => index === 0 || revision > revisions[index - 1]!)).toBe(true);
+    expect(revisions.every((revision, index) => index === 0 || revision === revisions[index - 1]! + 1)).toBe(true);
     expect(rearMessages.map((message) =>
       (message.payload.notification as { audience: string }).audience)).toEqual(["rear-boundary", "resolution"]);
     const finalSnapshot = await (await fetch(`${server.url}/v1/trips/TRIP001/live-snapshot`, {

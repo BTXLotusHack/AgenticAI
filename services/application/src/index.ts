@@ -47,6 +47,7 @@ import {
 } from "@loopin/convoy-core";
 
 export type Identity = { readonly userId: string };
+const MAX_REJECTION_RECEIPTS = 2_048;
 
 export class ApplicationError extends Error {
   constructor(
@@ -456,7 +457,7 @@ export class LoopinApplication {
             rejectionReceipts: [...activeRejectionReceipts, {
               key: rejectionKey,
               expiresAt: new Date(Date.parse(receivedAt) + 24 * 60 * 60_000).toISOString(),
-            }],
+            }].slice(-MAX_REJECTION_RECEIPTS),
             rejectedTelemetryCount: state.rejectedTelemetryCount + 1,
           };
           if (!(await this.dependencies.repository.putIfVersion(next, state.version))) continue;
@@ -667,15 +668,17 @@ export class LoopinApplication {
     identity: Identity,
     tripId: string,
     rawRequest: CompleteTripRequestV1,
+    trustedCompletedAt?: string,
   ): Promise<CompleteTripResponseV1> {
     const request = CompleteTripRequestV1Schema.parse(rawRequest);
+    const completedAt = trustedCompletedAt ?? this.dependencies.clock.now();
     for (let attempt = 0; attempt < 4; attempt += 1) {
       const state = await this.requireTrip(tripId);
       const member = memberForIdentity(state, identity);
       if (member.role !== "leader") throw new ApplicationError("forbidden", "Only the trip leader may complete the trip.");
-      const fingerprint = JSON.stringify({ command: "complete-trip", tripId, completedAt: request.completedAt, userId: identity.userId });
+      const fingerprint = JSON.stringify({ command: "complete-trip", tripId, userId: identity.userId });
       const receipt = state.commandReceipts.find((candidate) =>
-        candidate.idempotencyKey === request.idempotencyKey && Date.parse(candidate.expiresAt) > Date.parse(request.completedAt));
+        candidate.idempotencyKey === request.idempotencyKey && Date.parse(candidate.expiresAt) > Date.parse(completedAt));
       if (receipt && receipt.fingerprint !== fingerprint) {
         throw new ApplicationError("conflict", "The idempotency key was already used for a different command.");
       }
@@ -683,13 +686,13 @@ export class LoopinApplication {
       if (!state.startedAt || state.situation?.lifecycle !== "resolved" || !state.graphState) {
         throw new ApplicationError("conflict", "The trip cannot be completed before the convoy is reconnected.");
       }
-      if (Date.parse(request.completedAt) < Date.parse(state.startedAt)) {
+      if (Date.parse(completedAt) < Date.parse(state.startedAt)) {
         throw new ApplicationError("invalid-request", "Trip completion cannot precede trip start.");
       }
       const summary = summarizeTrip({
         tripId,
         startedAt: state.startedAt,
-        completedAt: request.completedAt,
+        completedAt,
         situations: [state.situation],
         regroupRecommendationCount: state.regroupRecommendationCount,
         notificationRequestCount: state.notificationRequestCount,
@@ -699,8 +702,8 @@ export class LoopinApplication {
         schemaVersion: 1,
         eventId: `trip-completed:${tripId}:${request.commandId}`,
         eventType: "TripCompleted",
-        occurredAt: request.completedAt,
-        producedAt: request.completedAt,
+        occurredAt: completedAt,
+        producedAt: completedAt,
         correlationId: request.commandId,
         tripId,
         producer: "loopin-application",
@@ -714,17 +717,17 @@ export class LoopinApplication {
         graphRevision: state.graphState.graph.graphRevision,
         audience: { kind: "trip" },
         eventType: "TripCompleted",
-        occurredAt: request.completedAt,
-        expiresAt: new Date(Date.parse(request.completedAt) + 15 * 60_000).toISOString(),
+        occurredAt: completedAt,
+        expiresAt: new Date(Date.parse(completedAt) + 15 * 60_000).toISOString(),
         payload: { summary },
       });
-      const expiresAt = new Date(Date.parse(request.completedAt) + 24 * 60 * 60_000).toISOString();
+      const expiresAt = new Date(Date.parse(completedAt) + 24 * 60 * 60_000).toISOString();
       const next: TripState = {
         ...state,
         version: state.version + 1,
         snapshotRevision: state.snapshotRevision + 1,
         summary,
-        commandReceipts: [...state.commandReceipts.filter((candidate) => Date.parse(candidate.expiresAt) > Date.parse(request.completedAt)), {
+        commandReceipts: [...state.commandReceipts.filter((candidate) => Date.parse(candidate.expiresAt) > Date.parse(completedAt)), {
           idempotencyKey: request.idempotencyKey,
           fingerprint,
           recommendationId: `summary:${tripId}`,
@@ -736,7 +739,7 @@ export class LoopinApplication {
         ],
       };
       if (await this.dependencies.repository.putIfVersion(next, state.version, {
-        now: request.completedAt,
+        now: completedAt,
         command: { idempotencyKey: request.idempotencyKey, fingerprint, expiresAt },
       })) {
         await this.flushOutbox(tripId);

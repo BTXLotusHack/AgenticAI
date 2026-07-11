@@ -13,7 +13,7 @@
   },
   "scripts": {
     "dev": "npm run dev --workspace @loopin/web --",
-    "dev:services": "npm run dev --workspace @loopin/local-dev --",
+    "dev:services": "cross-env LOOPIN_ENV=local npm run dev --workspace @loopin/local-dev --",
     "images:optimize": "npm run images:optimize --workspace @loopin/web",
     "build": "npm run build --workspaces --if-present",
     "preview": "npm run preview --workspace @loopin/web --",
@@ -23,5 +23,8 @@
     "test:core": "npm run test --workspace @loopin/convoy-core -- --run && npm run test --workspace @loopin/simulator -- --run",
     "simulate": "npm run simulate --workspace @loopin/simulator --",
     "test:e2e": "npm run test:e2e --workspace @loopin/web"
+  },
+  "devDependencies": {
+    "cross-env": "10.1.0"
   }
 }

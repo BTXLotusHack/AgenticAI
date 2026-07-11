@@ -23,6 +23,7 @@ type LocalServerDependencies = {
   readonly allowedOrigins: readonly string[];
   readonly deadlineMs?: number;
   readonly logger?: { log(record: Readonly<Record<string, unknown>>): void };
+  readonly trustedCompletionAt?: string;
 };
 
 export type RunningLocalServer = {
@@ -241,7 +242,7 @@ function requireIdentity(request: IncomingMessage): Identity {
 }
 
 export function createLocalServer(dependencies: LocalServerDependencies) {
-  const configuredEnvironment = process.env.LOOPIN_ENV ?? "local";
+  const configuredEnvironment = process.env.LOOPIN_ENV;
   if (configuredEnvironment !== "local" && configuredEnvironment !== "test") {
     throw new Error("The fixture identity runtime is restricted to local and test environments.");
   }
@@ -303,7 +304,7 @@ export function createLocalServer(dependencies: LocalServerDependencies) {
       const completion = /^\/v1\/trips\/([^/]+)\/complete$/.exec(url.pathname);
       if (request.method === "POST" && completion) {
         return sendJson(response, 200, await withDeadline(
-          dependencies.app.completeTrip(identity, completion[1]!, await readJson(request) as never),
+          dependencies.app.completeTrip(identity, completion[1]!, await readJson(request) as never, dependencies.trustedCompletionAt),
           dependencies.deadlineMs ?? 9_000,
         ), origin);
       }

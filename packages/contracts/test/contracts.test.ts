@@ -138,8 +138,7 @@ describe("service boundary contracts", () => {
       schemaVersion: 1,
       commandId: "complete-1",
       idempotencyKey: "complete:TRIP001",
-      completedAt: "2026-07-20T00:01:15.000Z",
-    })).toMatchObject({ completedAt: "2026-07-20T00:01:15.000Z" });
+    })).toMatchObject({ idempotencyKey: "complete:TRIP001" });
   });
 
   it("validates authoritative situations and member notifications", () => {

@@ -46,7 +46,7 @@ export function createDefaultLocalRuntime() {
     domainEvents: new RecordingPublisher<EventEnvelope>(),
     clock: new FixedClock("2026-07-20T00:00:36.000Z"),
   });
-  return { app, repository, maps, realtime };
+  return { app, repository, maps, realtime, trustedCompletionAt: "2026-07-20T00:01:15.000Z" };
 }
 
 export function createDefaultLocalServer(
