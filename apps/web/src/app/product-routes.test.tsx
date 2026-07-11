@@ -102,13 +102,13 @@ describe('Agent 1 product routes', () => {
     expect(screen.getByText(/route refresh failed/i)).toBeVisible();
 
     renderRoute('/app/explore');
-    expect(await screen.findByText(/loading tasco places/i)).toBeVisible();
+    expect(await screen.findByRole('region', { name: /tasco map preview/i })).toBeVisible();
     expect(screen.getByText(/no hidden gems match/i)).toBeVisible();
 
     renderRoute('/app/settings');
     expect(await screen.findByText(/location visibility/i)).toBeVisible();
     expect(screen.getByText(/retention preference/i)).toBeVisible();
-    expect(screen.getByText(/notification quiet hours/i)).toBeVisible();
+    expect(screen.getByRole('link', { name: /notifications/i })).toBeVisible();
   });
 
   it.each([

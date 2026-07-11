@@ -16,6 +16,7 @@ import { PageHeader } from '../shared/product/PageHeader';
 export { AuthPage, OnboardingPage } from './AuthPages';
 export { DashboardPage, TripsPage } from './TripLibraryPages';
 export { ItineraryPage, ShareTripPage, TripOverviewPage, TripPlannerPage } from './TripPages';
+export { ExplorePage, NowPage, PlaceDetailPage, SettingsPage } from './DiscoveryPages';
 
 function ProductShell({ children }: { readonly children: ReactNode }) {
   return <AppShell>{children}</AppShell>;
@@ -361,7 +362,7 @@ export function DynamicSummaryPage() {
   );
 }
 
-export function ExplorePage() {
+export function LegacyExplorePage() {
   const places = usePlaceSearch('rest stop');
   return (
     <ProductShell>
@@ -396,7 +397,7 @@ export function ExplorePage() {
   );
 }
 
-export function PlaceDetailPage() {
+export function LegacyPlaceDetailPage() {
   const { placeId = 'POI001' } = useParams();
   const place = usePlace(placeId);
   const community = usePlaceCommunitySummary(placeId);
@@ -562,7 +563,7 @@ export function PartnersRouteSlotPage() {
   );
 }
 
-export function NowPage() {
+export function LegacyNowPage() {
   return (
     <ProductShell>
       <PageIntro eyebrow="Now" title="Day-of-trip command center.">
@@ -587,7 +588,7 @@ export function NowPage() {
   );
 }
 
-export function SettingsPage() {
+export function LegacySettingsPage() {
   const policy = useLocationVisibilityPolicy();
   return (
     <ProductShell>
