@@ -28,9 +28,11 @@ describe('LiveTripPage', () => {
 
   it('creates a trip-scoped session for the landing-page demo entry', async () => {
     render(
-      <MemoryRouter initialEntries={['/trips/TRIP001/live?autoplay=true']}>
-        <App />
-      </MemoryRouter>,
+      <StrictMode>
+        <MemoryRouter initialEntries={['/trips/TRIP001/live?autoplay=true']}>
+          <App />
+        </MemoryRouter>
+      </StrictMode>,
     );
 
     expect(await screen.findByRole('heading', { name: /hà nội.*hạ long/i })).toBeVisible();

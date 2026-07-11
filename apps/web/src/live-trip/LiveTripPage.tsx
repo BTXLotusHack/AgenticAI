@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { createInitialDemoSession } from '../demo-session/schema';
 import { readDemoSession } from '../demo-session/storage';
@@ -10,12 +10,9 @@ import { useReplayController } from './useReplayController';
 
 function ActiveTrip({ autoplay, session }: { readonly autoplay: boolean; readonly session: NonNullable<ReturnType<typeof readDemoSession>> }) {
   const navigate = useNavigate();
-  const started = useRef(false);
   const { approveRegroup, completeTrip, controller, snapshot } = useReplayController(session);
   useEffect(() => {
-    if (!autoplay || started.current) return;
-    started.current = true;
-    controller.play();
+    if (autoplay) controller.play();
   }, [autoplay, controller]);
   useEffect(() => {
     if (snapshot.phase !== 'completed') return;
