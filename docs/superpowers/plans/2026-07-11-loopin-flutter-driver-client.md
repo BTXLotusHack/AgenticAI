@@ -70,10 +70,10 @@ packages/contracts/
 
 ## Task 1: Cross-language contract pipeline
 
-**Branch:** `codex/flutter-contracts`
+**Branch:** `codex/flutter-contract-generation`
 
-1. Add failing TypeScript tests that require deterministic JSON Schema exports for `LocationTelemetryV1`, event envelopes, projected locations, graph snapshots, situations and notification requests.
-2. Implement `packages/contracts` using Zod 4 JSON Schema export with stable IDs, schema versions and sorted output.
+1. Extend the service-slice contract tests to require deterministic JSON Schema exports for `LocationTelemetryV1`, event envelopes, projected locations, graph snapshots, situations and notification requests.
+2. Add Zod 4 JSON Schema export to the existing `packages/contracts` workspace with stable IDs, schema versions and sorted output.
 3. Add a pinned `quicktype-core` generator that emits one null-safe Dart contract library with a generated-file header.
 4. Export valid, invalid-version, duplicate, stale and history-only JSON examples from the existing core tests and golden scenario.
 5. Add a drift check: regeneration must produce no Git diff; Dart parses every valid example and rejects incompatible versions before mobile feature work proceeds.

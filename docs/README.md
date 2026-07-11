@@ -23,6 +23,7 @@ Design records:
 - [2026-07-11 Loopin Group Drive Platform Design](superpowers/specs/2026-07-11-loopin-group-drive-platform-design.md)
 - [2026-07-11 Loopin Landing Page Design](superpowers/specs/2026-07-11-loopin-landing-page-design.md)
 - [2026-07-11 Loopin Core Demo Slice Plan](superpowers/plans/2026-07-11-loopin-core-demo-slice.md)
+- [2026-07-11 Loopin Local and AWS Service Vertical Slice Plan](superpowers/plans/2026-07-11-loopin-aws-service-vertical-slice.md)
 - [2026-07-11 Loopin Flutter Driver Client Plan](superpowers/plans/2026-07-11-loopin-flutter-driver-client.md)
 
 Accepted architecture decisions:
