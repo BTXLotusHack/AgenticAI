@@ -3,8 +3,10 @@ import {
   PutCommand,
   QueryCommand,
   TransactWriteCommand,
+  UpdateCommand,
 } from "@aws-sdk/lib-dynamodb";
 import type { Invite } from "../../contracts/invite.js";
+import type { UserProfile } from "../../contracts/profile.js";
 import type { Team, TeamMembership } from "../../contracts/team.js";
 import { HttpError } from "../http/response.js";
 import { ddb, tableName } from "./client.js";
@@ -120,13 +122,82 @@ export async function putInvite(invite: Invite): Promise<void> {
 /** Look up a user's stored SNS platform endpoint for push delivery. */
 export async function getUserSnsEndpoint(userId: string): Promise<string | null> {
   const res = await ddb.send(
-    new GetCommand({
-      TableName: tableName(),
-      Key: { PK: `USER#${userId}`, SK: "METADATA" },
-    }),
+    new GetCommand({ TableName: tableName(), Key: keys.userMetadata(userId) }),
   );
   const meta = res.Item as UserMetadata | undefined;
   return meta?.snsEndpointArn ?? null;
+}
+
+/**
+ * Upsert the caller's profile onto their USER#<id>/METADATA item.
+ *
+ * Uses an UpdateExpression (not Put) so profile writes never clobber other
+ * attributes on the shared item — notably `snsEndpointArn` written by the push
+ * flow. Optional fields the caller omitted are REMOVEd so the stored profile
+ * reflects exactly what was submitted (PUT replace semantics). `type` is a
+ * DynamoDB reserved word, hence the name placeholder.
+ */
+export async function putProfile(profile: UserProfile): Promise<void> {
+  const sets = [
+    "#type = :type",
+    "userId = :userId",
+    "displayName = :displayName",
+    "locale = :locale",
+    "updatedAt = :updatedAt",
+  ];
+  const removes: string[] = [];
+  const values: Record<string, unknown> = {
+    ":type": "User",
+    ":userId": profile.userId,
+    ":displayName": profile.displayName,
+    ":locale": profile.locale,
+    ":updatedAt": profile.updatedAt,
+  };
+
+  if (profile.vehicleType !== undefined) {
+    sets.push("vehicleType = :vehicleType");
+    values[":vehicleType"] = profile.vehicleType;
+  } else {
+    removes.push("vehicleType");
+  }
+  if (profile.phone !== undefined) {
+    sets.push("phone = :phone");
+    values[":phone"] = profile.phone;
+  } else {
+    removes.push("phone");
+  }
+
+  const updateExpression =
+    `SET ${sets.join(", ")}` + (removes.length ? ` REMOVE ${removes.join(", ")}` : "");
+
+  await ddb.send(
+    new UpdateCommand({
+      TableName: tableName(),
+      Key: keys.userMetadata(profile.userId),
+      UpdateExpression: updateExpression,
+      ExpressionAttributeNames: { "#type": "type" },
+      ExpressionAttributeValues: values,
+    }),
+  );
+}
+
+/** Read the caller's profile, or null when they have not set one yet. */
+export async function getProfile(userId: string): Promise<UserProfile | null> {
+  const res = await ddb.send(
+    new GetCommand({ TableName: tableName(), Key: keys.userMetadata(userId) }),
+  );
+  const item = res.Item;
+  // A user item may exist for push only (snsEndpointArn) without a profile;
+  // treat a missing displayName as "no profile set".
+  if (!item || typeof item["displayName"] !== "string") return null;
+  return {
+    userId,
+    displayName: item["displayName"] as string,
+    vehicleType: item["vehicleType"] as UserProfile["vehicleType"],
+    phone: item["phone"] as string | undefined,
+    locale: (item["locale"] as string | undefined) ?? "vi-VN",
+    updatedAt: item["updatedAt"] as string,
+  };
 }
 
 /** List a team's members (team-perspective query). */

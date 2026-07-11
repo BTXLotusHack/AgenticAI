@@ -8,6 +8,10 @@ variable "create_team_zip" { type = string }
 variable "create_team_hash" { type = string }
 variable "invite_user_zip" { type = string }
 variable "invite_user_hash" { type = string }
+variable "upsert_profile_zip" { type = string }
+variable "upsert_profile_hash" { type = string }
+variable "get_profile_zip" { type = string }
+variable "get_profile_hash" { type = string }
 
 # --- Shared Lambda execution role (control plane) -----------------------------
 resource "aws_iam_role" "api" {
@@ -42,6 +46,7 @@ resource "aws_iam_role_policy" "api" {
         Action = [
           "dynamodb:GetItem",
           "dynamodb:PutItem",
+          "dynamodb:UpdateItem",
           "dynamodb:Query",
           "dynamodb:TransactWriteItems",
         ]
@@ -116,6 +121,40 @@ resource "aws_lambda_function" "invite_user" {
   }
 }
 
+resource "aws_lambda_function" "upsert_profile" {
+  function_name    = "${var.name_prefix}-upsert-profile"
+  role             = aws_iam_role.api.arn
+  runtime          = "nodejs22.x"
+  handler          = "index.handler"
+  filename         = var.upsert_profile_zip
+  source_code_hash = var.upsert_profile_hash
+  timeout          = 10
+  memory_size      = 256
+
+  environment {
+    variables = {
+      TABLE_NAME = var.table_name
+    }
+  }
+}
+
+resource "aws_lambda_function" "get_profile" {
+  function_name    = "${var.name_prefix}-get-profile"
+  role             = aws_iam_role.api.arn
+  runtime          = "nodejs22.x"
+  handler          = "index.handler"
+  filename         = var.get_profile_zip
+  source_code_hash = var.get_profile_hash
+  timeout          = 10
+  memory_size      = 256
+
+  environment {
+    variables = {
+      TABLE_NAME = var.table_name
+    }
+  }
+}
+
 # --- Integrations + routes ----------------------------------------------------
 resource "aws_apigatewayv2_integration" "create_team" {
   api_id                 = aws_apigatewayv2_api.http.id
@@ -128,6 +167,20 @@ resource "aws_apigatewayv2_integration" "invite_user" {
   api_id                 = aws_apigatewayv2_api.http.id
   integration_type       = "AWS_PROXY"
   integration_uri        = aws_lambda_function.invite_user.invoke_arn
+  payload_format_version = "2.0"
+}
+
+resource "aws_apigatewayv2_integration" "upsert_profile" {
+  api_id                 = aws_apigatewayv2_api.http.id
+  integration_type       = "AWS_PROXY"
+  integration_uri        = aws_lambda_function.upsert_profile.invoke_arn
+  payload_format_version = "2.0"
+}
+
+resource "aws_apigatewayv2_integration" "get_profile" {
+  api_id                 = aws_apigatewayv2_api.http.id
+  integration_type       = "AWS_PROXY"
+  integration_uri        = aws_lambda_function.get_profile.invoke_arn
   payload_format_version = "2.0"
 }
 
@@ -147,6 +200,22 @@ resource "aws_apigatewayv2_route" "invite_user" {
   authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
 }
 
+resource "aws_apigatewayv2_route" "upsert_profile" {
+  api_id             = aws_apigatewayv2_api.http.id
+  route_key          = "PUT /me/profile"
+  target             = "integrations/${aws_apigatewayv2_integration.upsert_profile.id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+}
+
+resource "aws_apigatewayv2_route" "get_profile" {
+  api_id             = aws_apigatewayv2_api.http.id
+  route_key          = "GET /me/profile"
+  target             = "integrations/${aws_apigatewayv2_integration.get_profile.id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+}
+
 # --- Invoke permissions -------------------------------------------------------
 resource "aws_lambda_permission" "create_team" {
   statement_id  = "AllowApiGwCreateTeam"
@@ -160,6 +229,22 @@ resource "aws_lambda_permission" "invite_user" {
   statement_id  = "AllowApiGwInviteUser"
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.invite_user.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_apigatewayv2_api.http.execution_arn}/*/*"
+}
+
+resource "aws_lambda_permission" "upsert_profile" {
+  statement_id  = "AllowApiGwUpsertProfile"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.upsert_profile.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_apigatewayv2_api.http.execution_arn}/*/*"
+}
+
+resource "aws_lambda_permission" "get_profile" {
+  statement_id  = "AllowApiGwGetProfile"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.get_profile.function_name
   principal     = "apigateway.amazonaws.com"
   source_arn    = "${aws_apigatewayv2_api.http.execution_arn}/*/*"
 }

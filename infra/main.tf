@@ -27,6 +27,18 @@ data "archive_file" "invite_user" {
   output_path = "${path.module}/.build/invite-user.zip"
 }
 
+data "archive_file" "upsert_profile" {
+  type        = "zip"
+  source_dir  = "${path.module}/${var.backend_dist_dir}/upsert-profile"
+  output_path = "${path.module}/.build/upsert-profile.zip"
+}
+
+data "archive_file" "get_profile" {
+  type        = "zip"
+  source_dir  = "${path.module}/${var.backend_dist_dir}/get-profile"
+  output_path = "${path.module}/.build/get-profile.zip"
+}
+
 # --- Control-plane data store -------------------------------------------------
 
 module "data" {
@@ -88,6 +100,11 @@ module "api" {
   create_team_hash = data.archive_file.create_team.output_base64sha256
   invite_user_zip  = data.archive_file.invite_user.output_path
   invite_user_hash = data.archive_file.invite_user.output_base64sha256
+
+  upsert_profile_zip  = data.archive_file.upsert_profile.output_path
+  upsert_profile_hash = data.archive_file.upsert_profile.output_base64sha256
+  get_profile_zip     = data.archive_file.get_profile.output_path
+  get_profile_hash    = data.archive_file.get_profile.output_base64sha256
 }
 
 # --- Push notifications (optional; needs APNs/FCM credentials) -----------------
