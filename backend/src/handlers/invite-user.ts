@@ -1,12 +1,8 @@
-<<<<<<< Updated upstream
 import type {
   APIGatewayProxyEventV2WithJWTAuthorizer,
   APIGatewayProxyResultV2,
   Handler,
 } from "aws-lambda";
-=======
-import type { APIGatewayProxyHandlerV2 } from "aws-lambda";
->>>>>>> Stashed changes
 import { CreateInviteRequest } from "../contracts/invite.js";
 import { buildInvite } from "../domain/invite.js";
 import {
@@ -26,14 +22,10 @@ import { logger } from "../lib/logger.js";
  * TTL, then emits a best-effort high-priority push alert to the inviter's
  * device confirming the invitation was sent.
  */
-<<<<<<< Updated upstream
 export const handler: Handler<
   APIGatewayProxyEventV2WithJWTAuthorizer,
   APIGatewayProxyResultV2
 > = async (event) => {
-=======
-export const handler: APIGatewayProxyHandlerV2 = async (event) => {
->>>>>>> Stashed changes
   try {
     const caller = getCaller(event);
     const teamId = pathParam(event, "teamId");

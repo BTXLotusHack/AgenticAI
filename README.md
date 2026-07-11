@@ -50,17 +50,14 @@ Participating drivers use the native mobile application because mobile browsers 
 | Telemetry stream | Kinesis Data Streams |
 | Initial processing | Kinesis-triggered Lambda |
 | Live state and idempotency | DynamoDB with TTL |
-| Relational and geospatial data | PostgreSQL/PostGIS; RDS in development, Aurora PostgreSQL in production |
 | Domain events | EventBridge |
-| Background work and isolation | SQS with dead-letter queues |
 | Client real-time updates | AWS AppSync Events |
-| Raw telemetry | Firehose to S3 |
 | AI language layer | Amazon Bedrock |
 | Speech-to-text | Amazon Transcribe Streaming |
 | Vietnamese speech output | Native mobile TTS behind a provider interface |
 | Static web delivery | S3, CloudFront, Route 53 and AWS WAF |
 | Observability | CloudWatch, X-Ray and OpenTelemetry |
-| Infrastructure | AWS CDK in TypeScript |
+| Infrastructure | Terraform (`infra/`) |
 | Delivery | GitHub Actions with AWS OIDC |
 
 The primary deployment region is `ap-southeast-1` (Singapore).
@@ -69,27 +66,24 @@ The primary deployment region is `ap-southeast-1` (Singapore).
 
 ```mermaid
 flowchart LR
-    Driver["Flutter driver app"] -->|"MQTT/WSS QoS 1"| IoT["AWS IoT Core"]
-    IoT --> Stream["Kinesis Data Streams"]
-    Stream --> Processor["Telemetry Lambda adapter"]
-    Stream --> Lake["Firehose → S3"]
-    Processor --> Application["Application use-cases"]
-    Application --> Live["DynamoDB live state"]
-    Application --> Bus["EventBridge"]
-    Bus --> Queue["SQS"]
-    Queue --> Situation["Situation and regroup Lambdas"]
-    Situation --> Geo["PostgreSQL + PostGIS"]
-    Situation --> Realtime["AppSync Events"]
-    Situation --> Alerts["IoT and push alerts"]
-    Situation --> AIQueue["SQS AI queue"]
-    AIQueue --> AI["Lambda → Bedrock"]
-    AI --> Realtime
-    Realtime --> Driver
-    Realtime --> Web["React web app"]
-    Web --> API["API Gateway → Lambda"]
-    API --> Geo
-    API --> Live
+    subgraph Fast["Telemetry fast path"]
+        Driver["Flutter app"] -->|"MQTT/WSS QoS 1"| IoT["AWS IoT Core"]
+        IoT -->|IoT topic rule| Stream["Kinesis Data Streams"]
+        Stream --> Processor["telemetry-processor Lambda"]
+        Processor -->|"/trace_attributes"| Maps["Tasco Maps / Valhalla"]
+        Processor -->|publishRiderPosition| Realtime["AppSync GraphQL subscriptions"]
+        Realtime --> Web["React dashboard"]
+        Realtime --> Driver
+    end
+    subgraph Control["Transactional control path"]
+        Client["React / Flutter"] -->|"HTTP + Cognito JWT"| API["API Gateway"]
+        API --> Ctrl["create-team / invite-user Lambdas"]
+        Ctrl --> Dynamo["DynamoDB single-table"]
+        Ctrl -->|push| SNS["SNS → APNs / FCM"]
+    end
 ```
+
+The historical analytics store (Firehose/S3/Athena) and the SQS buffering layer are intentionally **out of scope** and not deployed.
 
 ## Convoy graph in one minute
 
@@ -116,66 +110,40 @@ Default cohesion values and state transitions are specified in [Convoy Intellige
 ```text
 loopin/
 ├── apps/
-│   ├── web/                       # Implemented landing, setup, live replay and summary
-│   ├── mobile/                    # Flutter/Dart driver client
-│   └── simulator/                 # Runnable dataset-driven convoy simulation
-├── services/
-│   ├── application/               # Implemented use-cases, ports and memory adapters
-│   ├── api/                       # API Lambda handlers
-│   ├── telemetry/                 # Kinesis telemetry processor
-│   ├── situation/                 # Detection engine handler
-│   ├── regroup/                   # Safe-stop recommendation handler
-│   ├── ai/                        # Bedrock language tasks
-│   ├── notifications/             # Recipient-specific delivery
-│   └── summaries/                 # Post-trip processing
+│   ├── web/            # React convoy demo (landing, setup, live replay, summary)
+│   └── mobile/         # Flutter client
 ├── packages/
-│   ├── contracts/                 # Versioned Zod schemas
-│   ├── convoy-core/               # Implemented graph, safety, regroup and summaries
-│   ├── demo-scenarios/            # Shared golden frames and deterministic replay controller
-│   ├── domain/                    # Future broader trip and role logic
-│   ├── convoy-graph/              # Future split if scale/ownership requires it
-│   ├── geo/                       # Route progress and distance
-│   ├── safety-engine/             # Deterministic policies
-│   ├── regroup-engine/            # Candidate filtering and scoring
-│   ├── maps-adapter/              # Tasco Maps abstraction
-│   ├── notifications/             # Bilingual templates
-│   ├── observability/
-│   └── test-fixtures/
-├── infrastructure/
-│   └── cdk/                       # AWS CDK stacks
+│   ├── contracts/      # Versioned Zod schemas + generated Dart models
+│   ├── convoy-core/    # Convoy graph, safety, regroup and summary engine
+│   └── demo-scenarios/ # Golden replay frames for the web demo
+├── backend/            # Standalone TypeScript Lambdas (telemetry-processor,
+│                       #   create-team, invite-user); esbuild → dist/<handler>
+├── infra/              # Terraform: IoT+Kinesis, AppSync, API Gateway+Cognito,
+│                       #   DynamoDB single-table, SNS (no Firehose/S3/Athena, no SQS)
 └── docs/
 ```
 
-The consumer landing page and deterministic setup/live/summary trip journey are implemented in `apps/web`. `packages/contracts` owns strict versioned external schemas and language-neutral telemetry examples. The convoy engine is implemented in `packages/convoy-core`; `services/application` owns authorized use-cases and replaceable repository/map/publisher ports; `packages/demo-scenarios` owns the shared golden frames and replay controller used by both the web experience and `apps/simulator`. The Flutter client, AWS adapters, Tasco adapter and CDK infrastructure remain approved designs that will be delivered as tested vertical slices rather than empty scaffolds.
+`backend/` + `infra/` are the deployable system described in [System Architecture](docs/system-architecture.md): the telemetry fast path and the transactional control path. `backend/` is self-contained (its own lockfile; imports no `@loopin/*` package). The convoy engine (`packages/convoy-core`, `packages/demo-scenarios`, `packages/contracts`) and the `apps/web` demo are a separate, larger product surface that the deployed spec does not run — they are retained because the web/mobile demo consumes them.
 
 ## Run the convoy demo
 
 ```powershell
 npm.cmd install
 npm.cmd run test:core
-npm.cmd run simulate
 ```
 
-Use `npm.cmd run simulate -- --json` for the complete graph, incident, notification, regroup, ingestion, and summary output. See [Runnable Convoy Core Demo](docs/core-demo-slice.md) for behavior, workbook provenance, limitations, and AWS integration seams.
+See [Runnable Convoy Core Demo](docs/core-demo-slice.md) for the convoy engine's behavior, workbook provenance, and limitations. The convoy engine is demo/product logic consumed by `apps/web`; it is not part of the deployed backend.
 
-## Run local services
+## Run the backend and infrastructure
 
-Start the production-shaped in-memory HTTP and WebSocket adapters:
+The deployable system lives in `backend/` (Lambda handlers) and `infra/` (Terraform):
 
 ```powershell
-npm.cmd run dev:services
+cd backend; npm.cmd install; npm.cmd run typecheck; npm.cmd test; npm.cmd run build
+cd ../infra; terraform init; terraform validate
 ```
 
-The default endpoints are `http://127.0.0.1:8787` and `ws://127.0.0.1:8787/v1/realtime`. The runtime is seeded with TRIP001, canonical telemetry projections and regroup candidates; the summary is generated only after the replay reconnects the convoy. Local requests use explicit fixture bearer tokens such as `Bearer fixture:USER001`; the server fails closed when `LOOPIN_ENV` is anything other than `local` or `test`.
-
-Useful probes:
-
-```powershell
-Invoke-RestMethod http://127.0.0.1:8787/healthz
-npm.cmd test --workspace @loopin/local-dev -- --run
-```
-
-The local runtime validates the same contracts and invokes the same application service intended for API Gateway, Kinesis, DynamoDB, and AppSync adapters. Browser WebSockets authenticate through a local-only fixture subprotocol and enforce the HTTP origin allowlist. Replay time comes from the server-owned golden adapter rather than the client payload. A leader explicitly completes the trip after reconnection before `/summary` becomes available. This runtime is not production authentication or persistence.
+`backend` bundles each handler to `dist/<handler>/index.js`; `infra` zips those and deploys with `terraform apply -var-file=environments/dev.tfvars`. See [backend/README.md](backend/README.md) and [infra/README.md](infra/README.md) for the fast path, control path and identity flow.
 
 ## Run the web experience
 

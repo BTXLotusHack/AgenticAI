@@ -4,16 +4,13 @@
   "private": true,
   "workspaces": [
     "apps/*",
-    "packages/*",
-    "services/*",
-    "infrastructure/*"
+    "packages/*"
   ],
   "engines": {
     "node": ">=20.19.0"
   },
   "scripts": {
     "dev": "npm run dev --workspace @loopin/web --",
-    "dev:services": "cross-env LOOPIN_ENV=local npm run dev --workspace @loopin/local-dev --",
     "images:optimize": "npm run images:optimize --workspace @loopin/web",
     "build": "npm run build --workspaces --if-present",
     "contracts:generate": "npm run generate --workspace @loopin/contracts",
@@ -25,11 +22,7 @@
     "mobile:test": "cd apps/mobile && flutter test",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present --",
-    "test:core": "npm run test --workspace @loopin/convoy-core -- --run && npm run test --workspace @loopin/simulator -- --run",
-    "simulate": "npm run simulate --workspace @loopin/simulator --",
+    "test:core": "npm run test --workspace @loopin/convoy-core -- --run && npm run test --workspace @loopin/demo-scenarios -- --run",
     "test:e2e": "npm run test:e2e --workspace @loopin/web"
-  },
-  "devDependencies": {
-    "cross-env": "10.1.0"
   }
 }
