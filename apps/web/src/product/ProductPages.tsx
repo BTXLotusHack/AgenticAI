@@ -17,6 +17,7 @@ export { AuthPage, OnboardingPage } from './AuthPages';
 export { DashboardPage, TripsPage } from './TripLibraryPages';
 export { ItineraryPage, ShareTripPage, TripOverviewPage, TripPlannerPage } from './TripPages';
 export { ExplorePage, NowPage, PlaceDetailPage, SettingsPage } from './DiscoveryPages';
+export { DynamicLiveTripPage, DynamicSummaryPage } from './LiveProductPages';
 
 function ProductShell({ children }: { readonly children: ReactNode }) {
   return <AppShell>{children}</AppShell>;
@@ -272,7 +273,7 @@ export function LegacyShareTripPage() {
   );
 }
 
-export function DynamicLiveTripPage() {
+export function LegacyDynamicLiveTripPage() {
   const { tripId = 'TRIP001' } = useParams();
   const trip = useTrip(tripId);
   const live = useLiveTrip(tripId);
@@ -317,7 +318,7 @@ export function DynamicLiveTripPage() {
   );
 }
 
-export function DynamicSummaryPage() {
+export function LegacyDynamicSummaryPage() {
   const { tripId = 'TRIP001' } = useParams();
   const trip = useTrip(tripId);
   const data = trip.data;

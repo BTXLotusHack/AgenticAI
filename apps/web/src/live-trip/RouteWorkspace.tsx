@@ -3,7 +3,7 @@ import { SchematicRouteRenderer } from './SchematicRouteRenderer';
 
 export function RouteWorkspace({ frame }: { readonly frame: GoldenReplayFrameV1 }) {
   return (
-    <section aria-labelledby="route-workspace-title" className="route-workspace">
+    <section aria-label="Route and convoy position" aria-labelledby="route-workspace-title" className="route-workspace">
       <div className="workspace-heading"><div><p>R001 · Eastbound</p><h2 id="route-workspace-title">Shared route</h2></div><span>Simulated route projection</span></div>
       <div className="route-workspace__canvas" data-state={frame.graph.overallState}><SchematicRouteRenderer frame={frame} /></div>
       <div aria-live="polite" className="route-workspace__caption">
