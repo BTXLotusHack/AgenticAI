@@ -1,6 +1,6 @@
 # Infrastructure deployment readiness handoff
 
-**Status:** Draft engineering handoff. No AWS deployment has occurred. The pull request must remain draft and must not be merged until every applicable Critical blocker and deployment gate below is closed with reviewed evidence.
+**Status:** Draft engineering handoff. No AWS deployment has occurred. The pull request must be created as draft, remain draft, and not be merged until every applicable Critical blocker and deployment gate below is closed with reviewed evidence.
 
 ## Provenance and integration boundary
 
@@ -30,7 +30,7 @@ The positive backend results above are evidence from the completed read-only aud
 ## Critical blockers
 
 1. **AppSync cross-team subscription disclosure.** Cognito authentication alone allows a user-pool principal to request another team's location channel because subscription authorization does not verify active team membership. Add server-side channel authorization against current membership, deny by default, and test former, cross-team and malformed principals before any shared deployment.
-2. **Unbound and unprovisioned IoT telemetry identity.** Device/session provisioning, short-lived credentials, least-privilege topic policy, certificate/session revocation and topic-to-payload identity binding are absent. A publisher can therefore make an untrusted payload identity claim. Provision and bind identity server-side; never authorize telemetry from a client-supplied team/member identifier alone.
+2. **Unbound and unprovisioned IoT telemetry identity.** Device/session provisioning, short-lived credentials, least-privilege topic policy, credential/session revocation and topic-to-payload identity binding are absent. A publisher can therefore make an untrusted payload identity claim. Provision and bind identity server-side; never authorize telemetry from a client-supplied team/member identifier alone.
 3. **Unsafe local Terraform state.** The scaffold defaults to local, unlocked state. Bootstrap an encrypted, versioned remote backend with locking, restricted access, recovery and audited state migration before any shared or CI-driven plan/apply.
 4. **No frontend hosting or CI.** There is no reviewed S3/CloudFront/WAF frontend path and no workflow that builds, scans, promotes or rolls it back. The web artifact cannot be called deployable until hosting, cache/security headers, origin access, domain/TLS, invalidation and protected delivery are implemented and tested.
 
@@ -76,4 +76,4 @@ No Terraform CLI validation, security scan, saved plan or apply is evidenced by 
 - end-to-end web/mobile membership, telemetry, notification, regroup and deletion flows on supported devices;
 - alarms, rate limits, budgets, retention, backup, teardown and incident runbooks.
 
-No credentials, secrets or precise location traces belong in this document, the PR, CI logs or deployment evidence. The PR is draft, no AWS deployment has occurred, and it must not be merged until the applicable blockers and gates above have reviewed evidence.
+No credentials, secrets or precise location traces belong in this document, the future PR, CI logs or deployment evidence. No PR existed during this documentation task. It must be created as draft, remain draft, and not be merged until the applicable blockers and gates above have reviewed evidence. No AWS deployment has occurred.
