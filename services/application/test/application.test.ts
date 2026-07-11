@@ -179,6 +179,32 @@ describe("trip membership and authorization", () => {
     });
   });
 
+  it("keeps active rejection deduplication exact beyond the former aggregate cap", async () => {
+    const repository = new MemoryTripRepository([goldenState()]);
+
+    for (let index = 0; index < 2_050; index += 1) {
+      const current = (await repository.get("TRIP001"))!;
+      const result = await repository.recordRejectedIfVersion(
+        { ...current, version: current.version + 1, rejectedTelemetryCount: current.rejectedTelemetryCount + 1 },
+        current.version,
+        { key: `rejected:event-${index}`, expiresAt: at(100) },
+        at(1),
+      );
+      expect(result).toBe("recorded");
+    }
+
+    const current = (await repository.get("TRIP001"))!;
+    const replay = await repository.recordRejectedIfVersion(
+      { ...current, version: current.version + 1, rejectedTelemetryCount: current.rejectedTelemetryCount + 1 },
+      current.version,
+      { key: "rejected:event-0", expiresAt: at(100) },
+      at(2),
+    );
+
+    expect(replay).toBe("duplicate");
+    expect((await repository.get("TRIP001"))!.rejectedTelemetryCount).toBe(2_050);
+  });
+
   it("joins idempotently and updates only the caller's readiness", async () => {
     const { app } = setup();
     const identity = { userId: "USER005" };

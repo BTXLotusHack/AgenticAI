@@ -47,7 +47,6 @@ import {
 } from "@loopin/convoy-core";
 
 export type Identity = { readonly userId: string };
-const MAX_REJECTION_RECEIPTS = 2_048;
 
 export class ApplicationError extends Error {
   constructor(
@@ -77,7 +76,6 @@ export type TripState = {
   readonly outbox: readonly OutboxMessage[];
   readonly summary?: TripSummaryV1;
   readonly startedAt?: string;
-  readonly rejectionReceipts: ReadonlyArray<{ readonly key: string; readonly expiresAt: string }>;
   readonly rejectedTelemetryCount: number;
   readonly notificationRequestCount: number;
   readonly regroupRecommendationCount: number;
@@ -107,7 +105,6 @@ export function createTripState(input: CreateTripStateInput): TripState {
     notifications: [],
     commandReceipts: [],
     outbox: [],
-    rejectionReceipts: [],
     rejectedTelemetryCount: 0,
     notificationRequestCount: 0,
     regroupRecommendationCount: 0,
@@ -120,7 +117,15 @@ export interface TripRepository {
   get(tripId: string): Promise<TripState | undefined>;
   findByJoinCode(joinCode: string): Promise<TripState | undefined>;
   putIfVersion(state: TripState, expectedVersion: number, condition?: TripStateWriteCondition): Promise<boolean>;
+  recordRejectedIfVersion(
+    state: TripState,
+    expectedVersion: number,
+    receipt: RejectionReceipt,
+    now: string,
+  ): Promise<"recorded" | "duplicate" | "version-conflict">;
 }
+
+export type RejectionReceipt = { readonly key: string; readonly expiresAt: string };
 
 export type TripStateWriteCondition = {
   readonly now: string;
@@ -143,6 +148,7 @@ export class MemoryTripRepository implements TripRepository {
   private readonly eventReservations = new Map<string, string>();
   private readonly latestSequenceByMember = new Map<string, number>();
   private readonly commandReservations = new Map<string, { fingerprint: string; expiresAt: string }>();
+  private readonly rejectionReservations = new Map<string, string>();
 
   constructor(initial: readonly TripState[] = []) {
     initial.forEach((state) => this.states.set(state.tripId, structuredClone(state)));
@@ -191,6 +197,26 @@ export class MemoryTripRepository implements TripRepository {
       });
     }
     return true;
+  }
+
+  async recordRejectedIfVersion(
+    state: TripState,
+    expectedVersion: number,
+    receipt: RejectionReceipt,
+    now: string,
+  ): Promise<"recorded" | "duplicate" | "version-conflict"> {
+    const parsedNow = Date.parse(now);
+    for (const [key, expiresAt] of this.rejectionReservations) {
+      if (Date.parse(expiresAt) <= parsedNow) this.rejectionReservations.delete(key);
+    }
+    const reservationKey = `${state.tripId}:${receipt.key}`;
+    if (this.rejectionReservations.has(reservationKey)) return "duplicate";
+    if (state.version !== expectedVersion + 1 || this.states.get(state.tripId)?.version !== expectedVersion) {
+      return "version-conflict";
+    }
+    this.states.set(state.tripId, structuredClone(state));
+    this.rejectionReservations.set(reservationKey, receipt.expiresAt);
+    return "recorded";
   }
 }
 
@@ -449,19 +475,21 @@ export class LoopinApplication {
       const ingestion = acceptProjectedLocation(state.telemetryState, { telemetry, projection }, ingestionReceivedAt);
       if (["duplicate", "stale-sequence", "rejected"].includes(ingestion.status)) {
         const rejectionKey = `${ingestion.status}:${telemetry.eventId}`;
-        const activeRejectionReceipts = state.rejectionReceipts.filter((receipt) => Date.parse(receipt.expiresAt) > Date.parse(receivedAt));
-        if (!activeRejectionReceipts.some((receipt) => receipt.key === rejectionKey)) {
-          const next: TripState = {
-            ...state,
-            version: state.version + 1,
-            rejectionReceipts: [...activeRejectionReceipts, {
-              key: rejectionKey,
-              expiresAt: new Date(Date.parse(receivedAt) + 24 * 60 * 60_000).toISOString(),
-            }].slice(-MAX_REJECTION_RECEIPTS),
-            rejectedTelemetryCount: state.rejectedTelemetryCount + 1,
-          };
-          if (!(await this.dependencies.repository.putIfVersion(next, state.version))) continue;
-        }
+        const next: TripState = {
+          ...state,
+          version: state.version + 1,
+          rejectedTelemetryCount: state.rejectedTelemetryCount + 1,
+        };
+        const rejectionResult = await this.dependencies.repository.recordRejectedIfVersion(
+          next,
+          state.version,
+          {
+            key: rejectionKey,
+            expiresAt: new Date(Date.parse(receivedAt) + 24 * 60 * 60_000).toISOString(),
+          },
+          receivedAt,
+        );
+        if (rejectionResult === "version-conflict") continue;
         await this.flushOutbox(state.tripId);
         return { status: ingestion.status, snapshotRevision: state.snapshotRevision, notifications: [] };
       }
