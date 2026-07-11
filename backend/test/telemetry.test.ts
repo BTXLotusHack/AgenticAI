@@ -61,11 +61,7 @@ describe("toRiderPositions", () => {
     const snapped: SnappedPoint[] = [
       { input: base.coords, snappedLat: 10.771, snappedLng: 106.701, matchConfidence: 0.9 },
     ];
-<<<<<<< Updated upstream
     const pos = toRiderPositions(ordered, snapped)[0]!;
-=======
-    const [pos] = toRiderPositions(ordered, snapped);
->>>>>>> Stashed changes
     expect(pos).toMatchObject({
       snappedLat: 10.771,
       snappedLng: 106.701,
@@ -75,11 +71,7 @@ describe("toRiderPositions", () => {
   });
 
   it("falls back to raw coords when a snapped point is missing", () => {
-<<<<<<< Updated upstream
     const pos = toRiderPositions([base], [])[0]!;
-=======
-    const [pos] = toRiderPositions([base], []);
->>>>>>> Stashed changes
     expect(pos.snappedLat).toBe(base.coords[0]);
     expect(pos.matchConfidence).toBeNull();
   });
@@ -96,10 +88,6 @@ describe("latestPerRider", () => {
     );
     const latest = latestPerRider(positions);
     expect(latest).toHaveLength(1);
-<<<<<<< Updated upstream
     expect(latest[0]!.observedAt).toBe("2026-07-11T10:00:05.000Z");
-=======
-    expect(latest[0].observedAt).toBe("2026-07-11T10:00:05.000Z");
->>>>>>> Stashed changes
   });
 });
