@@ -56,6 +56,8 @@ DRAFT → READY → ACTIVE → PAUSED → COMPLETED → ARCHIVED
 - Store an offline route summary on participating devices.
 - Support AI-assisted destination suggestions from a curated POI dataset.
 - Keep destination suggestions separate from safety-critical regroup approval.
+- Use the current POI dataset handoff in [AI Trip Planning Data](ai-trip-planning-data.md)
+  when building destination discovery, meal-stop and attraction-planning flows.
 
 ### F-02 Membership and readiness
 

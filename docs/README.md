@@ -9,12 +9,13 @@ This directory is the system-design source of truth for Loopin. Documents are or
 3. [Convoy Intelligence](convoy-intelligence.md)
 4. [Real-time Telemetry](realtime-telemetry.md)
 5. [Data and API Contracts](data-and-api-contracts.md)
-6. [AWS Deployment](aws-deployment.md)
-7. [Safety, Security and Privacy](safety-security-privacy.md)
-8. [Testing and Operations](testing-and-operations.md)
-9. [Roadmap](roadmap.md)
-10. [Frontend Experience Standards](frontend-standards.md)
-11. [Runnable Convoy Core Demo](core-demo-slice.md)
+6. [AI Trip Planning Data](ai-trip-planning-data.md)
+7. [AWS Deployment](aws-deployment.md)
+8. [Safety, Security and Privacy](safety-security-privacy.md)
+9. [Testing and Operations](testing-and-operations.md)
+10. [Roadmap](roadmap.md)
+11. [Frontend Experience Standards](frontend-standards.md)
+12. [Runnable Convoy Core Demo](core-demo-slice.md)
 
 Cross-cutting project practices are defined in [CONTRIBUTING.md](../CONTRIBUTING.md) and [AGENTS.md](../AGENTS.md). Consequential implementation decisions belong in [Architecture Decision Records](adr/README.md).
 
@@ -47,6 +48,7 @@ Accepted architecture decisions:
 | Driver guardrails, authorization and retention | `safety-security-privacy.md` |
 | Verification, SLOs, alarms and incident response | `testing-and-operations.md` |
 | Delivery phases and migration triggers | `roadmap.md` |
+| AI trip-planning POI dataset handoff | `ai-trip-planning-data.md` |
 | Public-page art direction, motion, accessibility and visual QA | `frontend-standards.md` |
 
 ## Documentation rules

@@ -173,6 +173,44 @@ false` trong `config/crawl_plan.yaml`.
 Không dùng `--details` cho toàn bộ discovery trừ khi đã chấp nhận chi phí cao
 hơn. Enrichment nên chạy bằng Place ID sau khi dedupe.
 
+## Current dataset snapshot
+
+Latest validated snapshot for AI trip planning:
+
+```text
+raw_rows: 4169
+invalid_or_closed_rows: 0
+outside_search_area_rows: 618
+duplicate_rows: 192
+clean_unique_rows: 3359
+ai_dataset_rows: 3359
+locations_covered: 28
+segments_covered: 8
+query_groups_represented: 8
+```
+
+AI-ready place types:
+
+```text
+food:              1498
+attraction:         938
+healthcare:         209
+vehicle_repair:     199
+rest_stop:          184
+parking:            139
+fuel:               107
+accommodation:       85
+```
+
+`food` and `attraction` have no remaining coverage gaps against the configured
+audit threshold. Remaining gaps are mostly `accommodation` and support groups,
+so the dataset is enough to start AI trip-planning feature work without spending
+more crawl budget.
+
+See `../../docs/ai-trip-planning-data.md` for the feature handoff: what fields
+exist, how to load the dataset, what AI may use, and which safety boundaries
+still require deterministic map/routing validation.
+
 ## Clean, audit, validate
 
 ```powershell
