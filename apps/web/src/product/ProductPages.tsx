@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
@@ -12,8 +11,9 @@ import {
 } from '../api/hooks';
 import type { TripPlanSummary } from '../api/types';
 import { AppShell } from '../app/shell/AppShell';
-import { ProductBrand } from '../shared/ProductBrand';
 import { PageHeader } from '../shared/product/PageHeader';
+
+export { AuthPage, OnboardingPage } from './AuthPages';
 
 function ProductShell({ children }: { readonly children: ReactNode }) {
   return <AppShell>{children}</AppShell>;
@@ -58,122 +58,6 @@ function TripRouteLine({ trip }: { readonly trip: TripPlanSummary }) {
       <i />
       <span>{trip.route.destination.name}</span>
     </div>
-  );
-}
-
-export function AuthPage({ mode }: { readonly mode: 'login' | 'signup' | 'forgot' | 'reset' }) {
-  const [submitted, setSubmitted] = useState(false);
-  const content = {
-    login: {
-      title: 'Log in to Loopin',
-      body: 'Cognito-ready form boundary with local fixture auth for this branch.',
-      button: 'Continue',
-      showPassword: true,
-    },
-    signup: {
-      title: 'Create your Loopin account',
-      body: 'Collect only the fields needed to start trip planning.',
-      button: 'Create account',
-      showPassword: true,
-    },
-    forgot: {
-      title: 'Recover your account',
-      body: 'Request a recovery link through the future identity adapter.',
-      button: 'Send recovery link',
-      showPassword: false,
-    },
-    reset: {
-      title: 'Set a new password',
-      body: 'Local validation only; the identity adapter will own persistence.',
-      button: 'Update password',
-      showPassword: true,
-    },
-  }[mode];
-
-  return (
-    <main className="auth-page">
-      <ProductBrand />
-      <section aria-labelledby="auth-title" className="auth-panel">
-        <p className="product-kicker">Fixture auth boundary</p>
-        <h1 id="auth-title">{content.title}</h1>
-        <p>{content.body}</p>
-        <form
-          noValidate
-          onSubmit={(event) => {
-            event.preventDefault();
-            setSubmitted(true);
-          }}
-        >
-          <label>
-            Email
-            <input autoComplete="email" name="email" type="email" />
-          </label>
-          {content.showPassword ? (
-            <label>
-              Password
-              <input autoComplete={mode === 'login' ? 'current-password' : 'new-password'} name="password" type="password" />
-            </label>
-          ) : null}
-          {submitted ? (
-            <div aria-live="polite" className="auth-errors">
-              <p>Email is required.</p>
-              {content.showPassword ? <p>Password is required.</p> : null}
-            </div>
-          ) : null}
-          <button className="button button--primary" type="submit">
-            {content.button}
-          </button>
-        </form>
-        <nav aria-label="Other auth options" className="auth-links">
-          {mode === 'login' ? (
-            <>
-              <Link className="text-link auth-links__action" to="/forgot-password">
-                Forgot password?
-              </Link>
-              <p>
-                New to Loopin? <Link to="/signup">Create an account</Link>
-              </p>
-            </>
-          ) : null}
-          {mode === 'signup' ? (
-            <p>
-              Already have an account? <Link to="/login">Log in</Link>
-            </p>
-          ) : null}
-          {mode === 'forgot' || mode === 'reset' ? (
-            <Link className="text-link auth-links__action" to="/login">
-              Back to log in
-            </Link>
-          ) : null}
-        </nav>
-        <Link className="text-link" to="/onboarding">
-          Continue in fixture mode
-        </Link>
-      </section>
-    </main>
-  );
-}
-
-export function OnboardingPage() {
-  return (
-    <ProductShell>
-      <PageIntro eyebrow="Onboarding" title="Shape your travel profile.">
-        Capture travel style, interests, destination preferences, budget, companions and dietary needs before planning.
-      </PageIntro>
-      <section className="platform-panel">
-        <h2>Preference setup</h2>
-        <div className="preference-grid">
-          {['Family convoy', 'Food stops', 'Quiet routes', 'Motorcycle group', 'Sea views', 'Vegetarian friendly'].map((item) => (
-            <label key={item}>
-              <input type="checkbox" /> {item}
-            </label>
-          ))}
-        </div>
-        <button className="button button--primary" type="button">
-          Save fixture profile
-        </button>
-      </section>
-    </ProductShell>
   );
 }
 

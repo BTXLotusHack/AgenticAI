@@ -7,6 +7,7 @@ import { App } from './app/App';
 import './styles.css';
 import './styles/product-tokens.css';
 import './styles/product-shell.css';
+import './styles/product-pages.css';
 import './product.css';
 
 const rootElement = document.querySelector('#root');
