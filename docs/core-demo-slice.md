@@ -47,6 +47,7 @@ AWS, mobile, web, and map providers are adapters around these pure functions. Th
 | `notifications.ts` | Recipient policy, bilingual templates, dedupe and expiry |
 | `regroup.ts` | Candidate exclusions, score breakdown and deterministic ties |
 | `summary.ts` | Measured post-trip facts and template narrative |
+| `services/application` | Authorized trip use-cases, optimistic repository port, maps boundary and derived-event publishers |
 | `packages/demo-scenarios` | Shared workbook-backed golden frames and deterministic replay controller |
 | `apps/simulator` | CLI compatibility adapter and console/JSON output only |
 | `apps/web` | Browser session adapter and setup/live/regroup/summary presentation only |
@@ -86,7 +87,7 @@ The workbook samples are spaced too widely and include a convenience `distance_f
 
 ## AWS integration seam
 
-The initial telemetry Lambda will validate MQTT payloads, call the maps adapter, construct `ProjectedLocationV1`, load current trip state from DynamoDB, and invoke the same reducers. It conditionally stores the next revision and publishes derived graph/situation/notification events. Raw GPS continues independently to Firehose/S3.
+The implemented application service validates telemetry, authorizes the member, calls a maps port, loads versioned trip state, invokes the reducers, conditionally stores the next revision and publishes derived graph/situation/notification events. The initial telemetry Lambda will adapt MQTT/Kinesis records and DynamoDB to these same ports. Raw GPS continues independently to Firehose/S3.
 
 AppSync receives rate-controlled graph and situation deltas, not every raw GPS point. The React web app and Flutter driver app fetch a snapshot before applying revisions. A revision gap triggers a new snapshot.
 

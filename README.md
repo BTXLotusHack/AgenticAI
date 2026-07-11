@@ -119,6 +119,7 @@ loopin/
 │   ├── mobile/                    # Flutter/Dart driver client
 │   └── simulator/                 # Runnable dataset-driven convoy simulation
 ├── services/
+│   ├── application/               # Implemented use-cases, ports and memory adapters
 │   ├── api/                       # API Lambda handlers
 │   ├── telemetry/                 # Kinesis telemetry processor
 │   ├── situation/                 # Detection engine handler
@@ -144,7 +145,7 @@ loopin/
 └── docs/
 ```
 
-The consumer landing page and deterministic setup/live/summary trip journey are implemented in `apps/web`. `packages/contracts` owns strict versioned external schemas and language-neutral telemetry examples. The convoy engine is implemented in `packages/convoy-core`; `packages/demo-scenarios` owns the shared golden frames and replay controller used by both the web experience and `apps/simulator`. The mobile client, AWS services, maps adapter and CDK infrastructure remain approved designs that will be delivered as tested vertical slices rather than empty scaffolds.
+The consumer landing page and deterministic setup/live/summary trip journey are implemented in `apps/web`. `packages/contracts` owns strict versioned external schemas and language-neutral telemetry examples. The convoy engine is implemented in `packages/convoy-core`; `services/application` owns authorized use-cases and replaceable repository/map/publisher ports; `packages/demo-scenarios` owns the shared golden frames and replay controller used by both the web experience and `apps/simulator`. The Flutter client, AWS adapters, Tasco adapter and CDK infrastructure remain approved designs that will be delivered as tested vertical slices rather than empty scaffolds.
 
 ## Run the convoy demo
 
