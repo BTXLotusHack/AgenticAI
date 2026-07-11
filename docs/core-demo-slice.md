@@ -38,7 +38,8 @@ AWS, mobile, web, and map providers are adapters around these pure functions. Th
 
 | Module | Owns |
 |---|---|
-| `packages/convoy-core/src/contracts.ts` | Versioned boundary and domain types |
+| `packages/contracts` | Versioned Zod boundary schemas, service DTOs and language-neutral telemetry examples |
+| `packages/convoy-core/src/contracts.ts` | Compatibility re-export so domain consumers share the authoritative contract package |
 | `ingestion.ts` | Validation, idempotency, sequence, replay, confidence and connectivity |
 | `ordering.ts` | Stable route-progress order across GPS jitter and overtakes |
 | `graph.ts` | Uncertainty, edge state, graph revision and components |

@@ -1,4 +1,4 @@
-import type { Situation } from "./contracts";
+import type { Situation, TripSummaryV1 } from "./contracts";
 
 export type TripSummaryInput = {
   tripId: string;
@@ -8,26 +8,6 @@ export type TripSummaryInput = {
   regroupRecommendationCount: number;
   notificationRequestCount: number;
   rejectedTelemetryCount: number;
-};
-
-export type TripSummaryV1 = {
-  schemaVersion: 1;
-  tripId: string;
-  startedAt: string;
-  completedAt: string;
-  measuredFacts: {
-    durationSeconds: number;
-    confirmedSplitCount: number;
-    resolvedSplitCount: number;
-    regroupRecommendationCount: number;
-    notificationRequestCount: number;
-    rejectedTelemetryCount: number;
-    maximumConfirmedRouteGapMeters: number;
-  };
-  narrative: {
-    source: "deterministic-template";
-    text: string;
-  };
 };
 
 export function summarizeTrip(input: TripSummaryInput): TripSummaryV1 {

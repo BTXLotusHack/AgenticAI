@@ -128,7 +128,7 @@ loopin/
 │   └── summaries/                 # Post-trip processing
 ├── packages/
 │   ├── contracts/                 # Versioned Zod schemas
-│   ├── convoy-core/               # Implemented contracts, graph, safety, regroup and summaries
+│   ├── convoy-core/               # Implemented graph, safety, regroup and summaries
 │   ├── demo-scenarios/            # Shared golden frames and deterministic replay controller
 │   ├── domain/                    # Future broader trip and role logic
 │   ├── convoy-graph/              # Future split if scale/ownership requires it
@@ -144,7 +144,7 @@ loopin/
 └── docs/
 ```
 
-The consumer landing page and deterministic setup/live/summary trip journey are implemented in `apps/web`. The convoy engine is implemented in `packages/convoy-core`; `packages/demo-scenarios` owns the shared golden frames and replay controller used by both the web experience and `apps/simulator`. The mobile client, AWS services, maps adapter and CDK infrastructure remain approved designs that will be delivered as tested vertical slices rather than empty scaffolds.
+The consumer landing page and deterministic setup/live/summary trip journey are implemented in `apps/web`. `packages/contracts` owns strict versioned external schemas and language-neutral telemetry examples. The convoy engine is implemented in `packages/convoy-core`; `packages/demo-scenarios` owns the shared golden frames and replay controller used by both the web experience and `apps/simulator`. The mobile client, AWS services, maps adapter and CDK infrastructure remain approved designs that will be delivered as tested vertical slices rather than empty scaffolds.
 
 ## Run the convoy demo
 

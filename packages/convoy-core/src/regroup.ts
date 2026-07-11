@@ -1,15 +1,5 @@
-import type { PlaceCandidate } from "./contracts";
+import type { PlaceCandidate, RegroupExclusionCode } from "./contracts";
 import type { ConvoyPolicy } from "./policy";
-
-export type RegroupExclusionCode =
-  | "illegal"
-  | "unsafe-stop"
-  | "closed"
-  | "inaccessible"
-  | "insufficient-parking"
-  | "reverse-direction"
-  | "excessive-detour"
-  | "low-source-confidence";
 
 export type RegroupScoreBreakdown = {
   safety: number;
