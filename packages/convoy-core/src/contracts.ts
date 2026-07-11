@@ -113,6 +113,7 @@ export type SituationEvidence = {
   frontBoundaryMemberId?: string;
   rearBoundaryMemberId?: string;
   routeGapMeters?: number;
+  maximumRouteGapMeters?: number;
   etaGapSeconds?: number;
   durationSeconds: number;
   locationConfidence: LocationConfidence;

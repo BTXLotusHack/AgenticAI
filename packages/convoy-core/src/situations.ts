@@ -25,11 +25,18 @@ function affectedComponents(graph: ConvoyGraph, edge: ConvoyEdge): string[] {
     .map((component) => component.componentId);
 }
 
-function evidenceFor(graph: ConvoyGraph, edge: ConvoyEdge, sourceEventIds: readonly string[], confirmedAt: string): SituationEvidence {
+function evidenceFor(
+  graph: ConvoyGraph,
+  edge: ConvoyEdge,
+  sourceEventIds: readonly string[],
+  confirmedAt: string,
+  previousMaximumRouteGapMeters = 0,
+): SituationEvidence {
   return {
     frontBoundaryMemberId: edge.aheadMemberId,
     rearBoundaryMemberId: edge.behindMemberId,
     routeGapMeters: edge.routeGapMeters,
+    maximumRouteGapMeters: Math.max(previousMaximumRouteGapMeters, edge.routeGapMeters),
     ...(edge.etaGapSeconds === null ? {} : { etaGapSeconds: edge.etaGapSeconds }),
     durationSeconds: Math.max(0, (Date.parse(graph.calculatedAt) - Date.parse(confirmedAt)) / 1_000),
     locationConfidence: graph.overallState === "degraded" ? "low" : "high",
@@ -74,7 +81,7 @@ export function reduceSplitSituation(
       updatedAt: graph.calculatedAt,
       resolvedAt: graph.calculatedAt,
       evidence: edge
-        ? evidenceFor(graph, edge, mergedSourceEventIds, previous.confirmedAt)
+        ? evidenceFor(graph, edge, mergedSourceEventIds, previous.confirmedAt, previous.evidence.maximumRouteGapMeters ?? previous.evidence.routeGapMeters)
         : { ...previous.evidence, graphRevision: graph.graphRevision, sourceEventIds: mergedSourceEventIds },
     };
     return { transition: "resolved", situation };
@@ -85,7 +92,7 @@ export function reduceSplitSituation(
     updatedAt: graph.calculatedAt,
     affectedComponentIds: edge ? affectedComponents(graph, edge) : previous.affectedComponentIds,
     evidence: edge
-      ? evidenceFor(graph, edge, mergedSourceEventIds, previous.confirmedAt)
+      ? evidenceFor(graph, edge, mergedSourceEventIds, previous.confirmedAt, previous.evidence.maximumRouteGapMeters ?? previous.evidence.routeGapMeters)
       : { ...previous.evidence, graphRevision: graph.graphRevision, sourceEventIds: mergedSourceEventIds },
   };
   return { transition: "updated", situation };

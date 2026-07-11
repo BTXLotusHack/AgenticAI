@@ -14,11 +14,13 @@
   "scripts": {
     "dev": "npm run dev --workspace @loopin/web --",
     "images:optimize": "npm run images:optimize --workspace @loopin/web",
-    "build": "npm run build --workspace @loopin/web",
+    "build": "npm run build --workspaces --if-present",
     "preview": "npm run preview --workspace @loopin/web --",
-    "lint": "npm run lint --workspace @loopin/web",
-    "typecheck": "npm run typecheck --workspace @loopin/web",
-    "test": "npm run test --workspace @loopin/web --",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present --",
+    "test:core": "npm run test --workspace @loopin/convoy-core -- --run && npm run test --workspace @loopin/simulator -- --run",
+    "simulate": "npm run simulate --workspace @loopin/simulator --",
     "test:e2e": "npm run test:e2e --workspace @loopin/web"
   }
 }
