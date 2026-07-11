@@ -20,7 +20,7 @@ Deliver one production-shaped service path that accepts versioned member telemet
 - S3 receives encrypted raw telemetry through Firehose for replay and lifecycle retention.
 - Local development uses fake identity, fixture maps, in-memory repositories and a local WebSocket hub behind the same ports. Local-only shortcuts cannot be enabled in an AWS environment.
 - No backend handler reimplements graph, situation, regroup or notification rules from `@loopin/convoy-core`.
-- Every independently verifiable task uses a new `codex/` branch and a focused commit. A pull request targets `dev` only after explicit authorization.
+- Every independently verifiable task uses a new `codex/` branch and a focused commit. A pull request targets `main` only after explicit authorization.
 
 ## Runtime boundaries
 

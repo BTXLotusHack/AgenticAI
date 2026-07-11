@@ -18,7 +18,7 @@ Build a production-shaped Flutter driver client that joins TRIP001, publishes ve
 - Phone GPS remains coordination data, not collision-avoidance precision.
 - No message instructs speeding, sudden braking or stopping at an unverified place.
 - Background tracking is not considered complete from unit tests or an emulator alone.
-- Each independently verifiable unit uses a new `codex/` branch, a focused commit, and a PR targeting `dev` only after explicit authorization.
+- Each independently verifiable unit uses a new `codex/` branch, a focused commit, and a PR targeting `main` only after explicit authorization.
 
 ## Target stack
 

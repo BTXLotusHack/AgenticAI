@@ -10,7 +10,7 @@
 
 ## Global Constraints
 
-- Work remains on `codex/web-trip-demo`; every independently verifiable task ends in a focused commit; any pull request targets `dev`.
+- Work remains on `codex/web-trip-demo`; every independently verifiable task ends in a focused commit; any pull request targets `main`.
 - Preserve the existing landing art direction, imagery, analytics, accessibility, responsive behavior, and production budgets.
 - Product routes use Bricolage Grotesque and Figtree only, Loopin green as the normal accent, and amber only for uncertainty, separation, or review.
 - Product UI begins with the working surface and utility copy; no marketing hero, dashboard-card mosaic, fabricated proof, fake map precision, or nonfunctional production controls.
