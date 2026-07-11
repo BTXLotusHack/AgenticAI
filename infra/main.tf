@@ -49,6 +49,8 @@ module "realtime" {
   region           = var.region
   user_pool_id     = module.identity.user_pool_id
   user_pool_region = var.region
+  table_name       = module.data.table_name
+  table_arn        = module.data.table_arn
 }
 
 # --- Telemetry fast path (IoT + Kinesis + processor Lambda) -------------------
