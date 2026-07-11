@@ -185,7 +185,8 @@ export class TascoMapsClient {
   }
 
   async route(body: RouteRequest & { readonly requestId?: string }): Promise<RouteResponse> {
-    return this.post("/v1/route", RouteResponseSchema, RouteRequestSchema.parse(body), body.requestId);
+    const { requestId, ...routeRequest } = body;
+    return this.post("/v1/route", RouteResponseSchema, RouteRequestSchema.parse(routeRequest), requestId);
   }
 
   private async get<TSchema extends z.ZodType>(

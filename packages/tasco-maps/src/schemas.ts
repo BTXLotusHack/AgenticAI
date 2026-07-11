@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { TascoPlaceRefV1Schema, type TascoPlaceRefV1 } from "@loopin/contracts";
 
 export const TascoCoordinatesSchema = z
   .object({
@@ -29,6 +30,22 @@ export const PlaceResultSchema = z
   .strict();
 
 export type PlaceResult = z.infer<typeof PlaceResultSchema>;
+
+export function toTascoPlaceRef(place: PlaceResult, sourceVersion: string): TascoPlaceRefV1 {
+  const categories = [...new Set([place.category, ...(place.tags ?? [])])].filter((category) => category.length > 0);
+  return TascoPlaceRefV1Schema.parse({
+    id: place.id,
+    provider: "tasco",
+    name: place.name,
+    address: place.address,
+    coordinates: place.coordinates,
+    categories,
+    ...(place.rating !== undefined
+      ? { ratingSummary: { averageRating: place.rating, reviewCount: 0, source: "tasco" } }
+      : {}),
+    sourceVersion,
+  });
+}
 
 export const ErrorResponseSchema = z
   .object({

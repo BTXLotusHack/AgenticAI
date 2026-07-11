@@ -3,6 +3,15 @@ import { z } from "zod";
 const IdentifierSchema = z.string().min(1).max(160);
 const IsoDateTimeSchema = z.iso.datetime();
 
+export const GeoCoordinatesV1Schema = z
+  .object({
+    lat: z.number().gte(-90).lte(90),
+    lon: z.number().gte(-180).lte(180),
+  })
+  .strict();
+
+export type GeoCoordinatesV1 = z.infer<typeof GeoCoordinatesV1Schema>;
+
 export const LocationConfidenceSchema = z.enum(["high", "medium", "low"]);
 export type LocationConfidence = z.infer<typeof LocationConfidenceSchema>;
 
@@ -166,6 +175,100 @@ export const SituationSchema = z
   .strict();
 
 export type Situation = z.infer<typeof SituationSchema>;
+
+export const TascoRatingSummaryV1Schema = z
+  .object({
+    averageRating: z.number().gte(0).lte(5),
+    reviewCount: z.number().int().nonnegative(),
+    source: z.literal("tasco"),
+  })
+  .strict();
+
+export type TascoRatingSummaryV1 = z.infer<typeof TascoRatingSummaryV1Schema>;
+
+export const TascoPlaceRefV1Schema = z
+  .object({
+    id: IdentifierSchema,
+    provider: z.literal("tasco"),
+    name: z.string().min(1).max(240),
+    address: z.string().min(1).max(500),
+    coordinates: GeoCoordinatesV1Schema,
+    categories: z.array(z.string().min(1).max(120)).min(1).max(16),
+    ratingSummary: TascoRatingSummaryV1Schema.optional(),
+    sourceVersion: IdentifierSchema,
+  })
+  .strict();
+
+export type TascoPlaceRefV1 = z.infer<typeof TascoPlaceRefV1Schema>;
+
+export const TripStopV1Schema = z
+  .object({
+    stopId: IdentifierSchema,
+    place: TascoPlaceRefV1Schema,
+    plannedWindow: z
+      .object({
+        arrivalAt: IsoDateTimeSchema.optional(),
+        departureAt: IsoDateTimeSchema.optional(),
+      })
+      .strict()
+      .optional(),
+    notes: z.string().max(500).optional(),
+    locked: z.boolean(),
+    source: z.enum(["tasco-search", "leader", "system"]),
+  })
+  .strict();
+
+export type TripStopV1 = z.infer<typeof TripStopV1Schema>;
+
+export const TascoRouteSummaryV1Schema = z
+  .object({
+    distanceMeters: z.number().int().nonnegative(),
+    durationSeconds: z.number().int().nonnegative(),
+  })
+  .strict();
+
+export type TascoRouteSummaryV1 = z.infer<typeof TascoRouteSummaryV1Schema>;
+
+export const TascoRouteGeometryV1Schema = z
+  .object({
+    type: z.literal("LineString"),
+    coordinates: z.array(z.tuple([z.number().gte(-180).lte(180), z.number().gte(-90).lte(90)])).min(2),
+  })
+  .strict();
+
+export type TascoRouteGeometryV1 = z.infer<typeof TascoRouteGeometryV1Schema>;
+
+export const TascoRoutePreviewV1Schema = z
+  .object({
+    routeId: IdentifierSchema,
+    provider: z.literal("tasco"),
+    origin: TascoPlaceRefV1Schema,
+    destination: TascoPlaceRefV1Schema,
+    waypoints: z.array(TascoPlaceRefV1Schema),
+    summary: TascoRouteSummaryV1Schema,
+    geometry: TascoRouteGeometryV1Schema,
+    sourceVersion: IdentifierSchema,
+  })
+  .strict();
+
+export type TascoRoutePreviewV1 = z.infer<typeof TascoRoutePreviewV1Schema>;
+
+export const TripPlanSummaryV1Schema = z
+  .object({
+    tripId: IdentifierSchema,
+    title: z.string().min(1).max(120),
+    lifecycle: z.enum(["draft", "ready", "active", "completed", "archived"]),
+    origin: TascoPlaceRefV1Schema,
+    destination: TascoPlaceRefV1Schema,
+    stops: z.array(TripStopV1Schema),
+    routeSummary: TascoRouteSummaryV1Schema,
+    departureTime: IsoDateTimeSchema,
+    policyId: IdentifierSchema,
+    memberCount: z.number().int().nonnegative(),
+  })
+  .strict();
+
+export type TripPlanSummaryV1 = z.infer<typeof TripPlanSummaryV1Schema>;
 
 export const PlaceCandidateSchema = z
   .object({
@@ -336,6 +439,27 @@ export const JoinTripResponseV1Schema = z
   .strict();
 
 export type JoinTripResponseV1 = z.infer<typeof JoinTripResponseV1Schema>;
+
+export const JoinTripResultV1Schema = z
+  .object({
+    schemaVersion: z.literal(1),
+    tripId: IdentifierSchema,
+    memberId: IdentifierSchema,
+    role: z.enum(["leader", "member"]),
+    consentRequirements: z.array(z.enum(["location-while-driving", "driver-alerts", "background-location"])),
+    routeOfflineSummary: z
+      .object({
+        routeId: IdentifierSchema,
+        distanceMeters: z.number().int().nonnegative(),
+        durationSeconds: z.number().int().nonnegative(),
+        encodedGeometry: z.string().min(1),
+        sourceVersion: IdentifierSchema,
+      })
+      .strict(),
+  })
+  .strict();
+
+export type JoinTripResultV1 = z.infer<typeof JoinTripResultV1Schema>;
 
 export const SetReadinessRequestV1Schema = z
   .object({

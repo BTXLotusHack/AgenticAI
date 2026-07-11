@@ -1,0 +1,87 @@
+{
+  "$id": "https://schemas.loopin.vn/contracts/join-trip-result-v1.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "properties": {
+    "consentRequirements": {
+      "items": {
+        "enum": [
+          "location-while-driving",
+          "driver-alerts",
+          "background-location"
+        ],
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "memberId": {
+      "maxLength": 160,
+      "minLength": 1,
+      "type": "string"
+    },
+    "role": {
+      "enum": [
+        "leader",
+        "member"
+      ],
+      "type": "string"
+    },
+    "routeOfflineSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "distanceMeters": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "durationSeconds": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "encodedGeometry": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "routeId": {
+          "maxLength": 160,
+          "minLength": 1,
+          "type": "string"
+        },
+        "sourceVersion": {
+          "maxLength": 160,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "routeId",
+        "distanceMeters",
+        "durationSeconds",
+        "encodedGeometry",
+        "sourceVersion"
+      ],
+      "type": "object"
+    },
+    "schemaVersion": {
+      "const": 1,
+      "type": "number"
+    },
+    "tripId": {
+      "maxLength": 160,
+      "minLength": 1,
+      "type": "string"
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "tripId",
+    "memberId",
+    "role",
+    "consentRequirements",
+    "routeOfflineSummary"
+  ],
+  "title": "JoinTripResultV1",
+  "type": "object",
+  "x-schema-version": 1
+}

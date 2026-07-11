@@ -1,9 +1,15 @@
 import { z } from "zod";
+import {
+  GeoCoordinatesV1Schema,
+  TascoPlaceRefV1Schema,
+  type GeoCoordinatesV1,
+  type TascoPlaceRefV1,
+} from "@loopin/contracts";
 
 const IdentifierSchema = z.string().min(1).max(160);
 const IsoDateTimeSchema = z.iso.datetime();
 const IsoDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
-const TascoPlaceIdSchema = z.string().min(1).max(240).regex(/^tasco:/);
+const TascoPlaceIdSchema = z.string().min(1).max(240);
 
 export const TRIP_PLANNING_POLICY_V1 = {
   version: "trip-planning-v1",
@@ -34,31 +40,13 @@ export type CollaboratorRole = z.infer<typeof CollaboratorRoleSchema>;
 export const TravelModeSchema = z.enum(["auto", "pedestrian", "bicycle"]);
 export type TravelMode = z.infer<typeof TravelModeSchema>;
 
-export const TascoCoordinatesSchema = z
-  .object({
-    lat: z.number().gte(-90).lte(90),
-    lon: z.number().gte(-180).lte(180),
-  })
-  .strict();
+export const TascoCoordinatesSchema = GeoCoordinatesV1Schema;
 
-export type TascoCoordinates = z.infer<typeof TascoCoordinatesSchema>;
+export type TascoCoordinates = GeoCoordinatesV1;
 
-export const TascoPlaceReferenceV1Schema = z
-  .object({
-    schemaVersion: z.literal(1),
-    tascoPlaceId: TascoPlaceIdSchema,
-    name: z.string().min(1).max(240),
-    label: z.string().min(1).max(240),
-    address: z.string().min(1).max(500),
-    category: z.string().min(1).max(120),
-    coordinates: TascoCoordinatesSchema,
-    source: z.literal("tasco"),
-    rating: z.number().min(0).max(5).optional(),
-    tags: z.array(z.string().min(1)).optional(),
-  })
-  .strict();
+export const TascoPlaceReferenceV1Schema = TascoPlaceRefV1Schema;
 
-export type TascoPlaceReferenceV1 = z.infer<typeof TascoPlaceReferenceV1Schema>;
+export type TascoPlaceReferenceV1 = TascoPlaceRefV1;
 
 export const TripPreferencesV1Schema = z
   .object({

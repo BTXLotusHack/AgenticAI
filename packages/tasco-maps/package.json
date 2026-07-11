@@ -11,6 +11,7 @@
     "test": "vitest"
   },
   "dependencies": {
+    "@loopin/contracts": "0.1.0",
     "zod": "^4.0.0"
   },
   "devDependencies": {

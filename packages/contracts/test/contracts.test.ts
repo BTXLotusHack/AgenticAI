@@ -8,6 +8,7 @@ import {
   CompleteTripRequestV1Schema,
   EventEnvelopeSchema,
   JoinTripRequestV1Schema,
+  JoinTripResultV1Schema,
   LiveSnapshotV1Schema,
   LocationTelemetryV1Schema,
   NotificationRequestSchema,
@@ -15,7 +16,11 @@ import {
   RealtimeEventV1Schema,
   SetReadinessRequestV1Schema,
   SituationSchema,
+  TascoPlaceRefV1Schema,
+  TascoRoutePreviewV1Schema,
   TripSummaryV1Schema,
+  TripPlanSummaryV1Schema,
+  TripStopV1Schema,
 } from "../src/index";
 
 const telemetry = {
@@ -115,6 +120,81 @@ describe("telemetry and event contracts", () => {
 });
 
 describe("service boundary contracts", () => {
+  const tascoPlace = {
+    id: "poi:poi001-minh-chau-rest-stop",
+    provider: "tasco",
+    name: "Minh Chau Rest Stop",
+    address: "QL5, Km 62, Hung Yen",
+    coordinates: { lat: 20.8724, lon: 106.0518 },
+    categories: ["rest_stop", "parking", "fuel"],
+    ratingSummary: { averageRating: 4.4, reviewCount: 128, source: "tasco" },
+    sourceVersion: "tasco-mock-2026-06-25",
+  } as const;
+
+  it("validates shared Tasco place, route and trip planning summaries", () => {
+    expect(TascoPlaceRefV1Schema.parse(tascoPlace)).toEqual(tascoPlace);
+    expect(TascoPlaceRefV1Schema.safeParse({ ...tascoPlace, provider: "caller" }).success).toBe(false);
+    expect(TascoPlaceRefV1Schema.safeParse({ ...tascoPlace, ratingSummary: { averageRating: 6, reviewCount: 1, source: "tasco" } }).success).toBe(false);
+
+    const stop = TripStopV1Schema.parse({
+      stopId: "STOP001",
+      place: tascoPlace,
+      plannedWindow: {
+        arrivalAt: "2026-07-20T03:20:00.000Z",
+        departureAt: "2026-07-20T03:50:00.000Z",
+      },
+      notes: "Leader-approved rest stop.",
+      locked: true,
+      source: "tasco-search",
+    });
+    expect(stop.place.id).toBe("poi:poi001-minh-chau-rest-stop");
+
+    const routePreview = TascoRoutePreviewV1Schema.parse({
+      routeId: "route:r001-primary",
+      provider: "tasco",
+      origin: { ...tascoPlace, id: "poi:origin", name: "Ha Noi", categories: ["city"] },
+      destination: { ...tascoPlace, id: "poi:destination", name: "Ha Long", categories: ["city"] },
+      waypoints: [tascoPlace],
+      summary: { distanceMeters: 156000, durationSeconds: 9000 },
+      geometry: { type: "LineString", coordinates: [[105.8542, 21.0285], [106.0518, 20.8724]] },
+      sourceVersion: "tasco-mock-2026-06-25",
+    });
+    expect(routePreview.summary.distanceMeters).toBe(156000);
+
+    const tripSummary = TripPlanSummaryV1Schema.parse({
+      tripId: "TRIP001",
+      title: "Ha Noi to Ha Long",
+      lifecycle: "ready",
+      origin: routePreview.origin,
+      destination: routePreview.destination,
+      stops: [stop],
+      routeSummary: routePreview.summary,
+      departureTime: "2026-07-20T02:00:00.000Z",
+      policyId: "policy-v1",
+      memberCount: 4,
+    });
+    expect(tripSummary.stops[0]?.place.provider).toBe("tasco");
+  });
+
+  it("validates join results with consent and offline route requirements", () => {
+    expect(
+      JoinTripResultV1Schema.parse({
+        schemaVersion: 1,
+        tripId: "TRIP001",
+        memberId: "M004",
+        role: "member",
+        consentRequirements: ["location-while-driving", "driver-alerts"],
+        routeOfflineSummary: {
+          routeId: "route:r001-primary",
+          distanceMeters: 156000,
+          durationSeconds: 9000,
+          encodedGeometry: "fixture-polyline",
+          sourceVersion: "tasco-mock-2026-06-25",
+        },
+      }),
+    ).toMatchObject({ memberId: "M004" });
+  });
+
   it("validates join, readiness and idempotent command requests", () => {
     expect(JoinTripRequestV1Schema.parse({ schemaVersion: 1, joinCode: "HALONG26", displayName: "An" })).toEqual({
       schemaVersion: 1,

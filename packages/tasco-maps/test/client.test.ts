@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { resolveTascoHeaders, TascoMapsClient, TascoMapsError } from "../src/index.js";
+import { resolveTascoHeaders, TascoMapsClient, TascoMapsError, toTascoPlaceRef } from "../src/index.js";
 
 function jsonResponse(body: unknown, status = 200, headers: Record<string, string> = {}): Response {
   return new Response(JSON.stringify(body), {
@@ -127,5 +127,73 @@ describe("TascoMapsClient", () => {
     expect(headers.authorization).toBe("Bearer fixture-token");
     expect(headers.apiKey).toBe("fixture-api-key");
     expect(headers.requestId).toBe("req-auth");
+  });
+
+  it("normalizes Tasco place results into the shared place reference contract", () => {
+    const place = toTascoPlaceRef({
+      id: "poi:poi001-minh-chau-rest-stop",
+      type: "poi",
+      name: "Minh Chau Rest Stop",
+      label: "Minh Chau Rest Stop",
+      address: "QL5, Km 62, Hung Yen",
+      category: "rest_stop",
+      coordinates: { lat: 20.8724, lon: 106.0518 },
+      source: "mock",
+      tags: ["parking", "fuel", "rest_stop"],
+      rating: 4.4,
+    }, "tasco-mock-2026-06-25");
+
+    expect(place).toEqual({
+      id: "poi:poi001-minh-chau-rest-stop",
+      provider: "tasco",
+      name: "Minh Chau Rest Stop",
+      address: "QL5, Km 62, Hung Yen",
+      coordinates: { lat: 20.8724, lon: 106.0518 },
+      categories: ["rest_stop", "parking", "fuel"],
+      ratingSummary: { averageRating: 4.4, reviewCount: 0, source: "tasco" },
+      sourceVersion: "tasco-mock-2026-06-25",
+    });
+  });
+
+  it("sends request ids as headers without polluting strict route payload validation", async () => {
+    let capturedBody: unknown;
+    let capturedRequestId: string | null = null;
+    const client = new TascoMapsClient({
+      baseUrl: "http://mock.local",
+      fetchImpl: async (_input, init) => {
+        capturedBody = JSON.parse(String(init?.body)) as unknown;
+        const headers = new Headers(init?.headers);
+        capturedRequestId = headers.get("X-Request-Id");
+        return jsonResponse({
+          routes: [{
+            routeId: "route:custom",
+            sourceIndex: 0,
+            summary: { distanceMeters: 1000, durationSeconds: 120 },
+            geometry: { type: "LineString", coordinates: [[105.8, 21.0], [105.9, 21.1]] },
+            maneuvers: [{
+              instruction: "Continue safely.",
+              distanceMeters: 1000,
+              durationSeconds: 120,
+              beginShapeIndex: 0,
+              endShapeIndex: 1,
+              streetNames: ["QL5"],
+            }],
+          }],
+          meta: { mode: "auto", alternates: 0 },
+        });
+      },
+    });
+
+    await client.route({
+      locations: [{ lat: 21.0285, lon: 105.8542 }, { lat: 20.9507, lon: 107.0732 }],
+      alternates: 0,
+      requestId: "req-route-1",
+    });
+
+    expect(capturedRequestId).toBe("req-route-1");
+    expect(capturedBody).toEqual({
+      locations: [{ lat: 21.0285, lon: 105.8542 }, { lat: 20.9507, lon: 107.0732 }],
+      alternates: 0,
+    });
   });
 });

@@ -152,10 +152,56 @@ POST   /v1/trips
 GET    /v1/trips
 GET    /v1/trips/{tripId}
 PATCH  /v1/trips/{tripId}
+POST   /v1/trips/{tripId}/stops
+PATCH  /v1/trips/{tripId}/stops/{stopId}
+DELETE /v1/trips/{tripId}/stops/{stopId}
+POST   /v1/trips/{tripId}/routes/refresh
+POST   /v1/trips/{tripId}/invites
+POST   /v1/trips/join
 POST   /v1/trips/{tripId}/start
 POST   /v1/trips/{tripId}/pause
 POST   /v1/trips/{tripId}/complete
 ```
+
+The local `@loopin/trips` service now exposes a pure HTTP-router boundary for these planning endpoints. It validates
+commands with the trip-planning domain package and is intended to be wrapped by API Gateway/Lambda adapters. The local
+handler is implemented and tested, but it is not a deployed AWS API until the backend adapter and authorization wiring
+are connected.
+
+Shared planning DTOs:
+
+```ts
+type TascoPlaceRef = {
+  id: string
+  provider: "tasco"
+  name: string
+  address: string
+  coordinates: { lat: number; lon: number }
+  categories: string[]
+  ratingSummary?: { averageRating: number; reviewCount: number; source: "tasco" }
+  sourceVersion: string
+}
+
+type TripPlanSummary = {
+  tripId: string
+  title: string
+  lifecycle: "draft" | "ready" | "active" | "completed" | "archived"
+  origin: TascoPlaceRef
+  destination: TascoPlaceRef
+  stops: TripStop[]
+  routeSummary: { distanceMeters: number; durationSeconds: number }
+  departureTime: string
+  policyId: string
+  memberCount: number
+}
+```
+
+Tasco-derived facts such as ratings, categories, route distance and route geometry must come from the Tasco facade or a
+trusted Tasco-backed adapter. Client preferences may influence search and route requests, but callers must not be allowed
+to submit their own provider ratings, source labels or route candidates as trusted facts.
+
+Join codes are opaque 16-character non-enumerable tokens. Idempotency reservations for trip commands have a bounded
+24-hour lifetime in the local repository and must use an equivalent TTL-backed record in DynamoDB when adapted to AWS.
 
 ### Membership
 

@@ -5,6 +5,10 @@ import { RouteRequestSchema, type ErrorResponse, type RouteRequest } from "@loop
 
 import { buildGoldenRoutes, buildRankQuery, findPlaceById, MOCK_PLACES, rankPlaces } from "./mock-data.js";
 
+const MAX_JSON_BODY_BYTES = 64 * 1_024;
+
+class RequestBodyTooLargeError extends Error {}
+
 export type TascoMockServerOptions = {
   readonly host?: string;
   readonly port?: number;
@@ -47,7 +51,13 @@ function sendError(
 
 async function readBody(request: IncomingMessage): Promise<string> {
   const chunks: Buffer[] = [];
-  for await (const chunk of request) chunks.push(Buffer.from(chunk));
+  let bytes = 0;
+  for await (const chunk of request) {
+    const buffer = Buffer.from(chunk);
+    bytes += buffer.byteLength;
+    if (bytes > MAX_JSON_BODY_BYTES) throw new RequestBodyTooLargeError("Request body is too large.");
+    chunks.push(buffer);
+  }
   return Buffer.concat(chunks).toString("utf8");
 }
 
@@ -176,11 +186,14 @@ export function createTascoMockServer(options: TascoMockServerOptions = {}): {
         let parsed: RouteRequest;
         try {
           parsed = RouteRequestSchema.parse(JSON.parse(await readBody(request)) as Record<string, unknown>);
-        } catch {
+        } catch (error) {
+          if (error instanceof RequestBodyTooLargeError) {
+            return sendError(response, 413, "invalid_request", "Request body is too large.", requestId);
+          }
           return sendError(response, 400, "invalid_request", "Invalid route request body.", requestId);
         }
         const alternates = parsed.alternates ?? 2;
-        return sendJson(response, 200, { routes: buildGoldenRoutes(alternates), meta: { mode: parsed.mode ?? "auto", alternates } }, requestId);
+        return sendJson(response, 200, { routes: buildGoldenRoutes(alternates, parsed.locations), meta: { mode: parsed.mode ?? "auto", alternates } }, requestId);
       }
 
       return sendError(response, 404, "not_found", "Route not found.", requestId);

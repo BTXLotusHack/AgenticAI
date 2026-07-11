@@ -11,6 +11,16 @@ import {
   transitionLifecycle,
 } from "../src/index.js";
 
+const viewpoint = {
+  id: "poi:ql5-viewpoint",
+  provider: "tasco" as const,
+  name: "QL5 Viewpoint",
+  address: "QL5, Viet Nam",
+  coordinates: { lat: 20.97, lon: 106.1 },
+  categories: ["viewpoint"],
+  sourceVersion: "tasco-mock-2026-06-25",
+};
+
 describe("lifecycle", () => {
   it("allows draft to published and published back to draft", () => {
     expect(transitionLifecycle("draft", "published")).toBe("published");
@@ -35,17 +45,8 @@ describe("permissions", () => {
     const updated = insertStop(day, {
       schemaVersion: 1,
       stopId: "STOP010",
-      tascoPlaceId: "tasco:poi:POI010",
-      place: {
-        schemaVersion: 1,
-        tascoPlaceId: "tasco:poi:POI010",
-        name: "QL5 Viewpoint",
-        label: "QL5 Viewpoint",
-        address: "QL5, Việt Nam",
-        category: "Viewpoint",
-        coordinates: { lat: 20.97, lon: 106.1 },
-        source: "tasco",
-      },
+      tascoPlaceId: viewpoint.id,
+      place: viewpoint,
       sequence: 2,
       dwellMinutes: 15,
     });
@@ -60,21 +61,12 @@ describe("ordering", () => {
     const updated = insertStop(day, {
       schemaVersion: 1,
       stopId: "STOP010",
-      tascoPlaceId: "tasco:poi:POI010",
-      place: {
-        schemaVersion: 1,
-        tascoPlaceId: "tasco:poi:POI010",
-        name: "QL5 Viewpoint",
-        label: "QL5 Viewpoint",
-        address: "QL5, Việt Nam",
-        category: "Viewpoint",
-        coordinates: { lat: 20.97, lon: 106.1 },
-        source: "tasco",
-      },
+      tascoPlaceId: viewpoint.id,
+      place: viewpoint,
       sequence: 1,
       dwellMinutes: 15,
     }, 1);
     expect(updated.stops[0]!.stopId).toBe("STOP010");
-    expect(updated.stops[1]!.tascoPlaceId).toBe(GOLDEN_PLACES.hanoiOldQuarter.tascoPlaceId);
+    expect(updated.stops[1]!.tascoPlaceId).toBe(GOLDEN_PLACES.hanoiOldQuarter.id);
   });
 });

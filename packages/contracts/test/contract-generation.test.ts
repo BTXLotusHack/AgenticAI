@@ -12,6 +12,11 @@ const schemaArtifacts = [
   "convoy-graph-v1.schema.json",
   "situation-v1.schema.json",
   "notification-request-v1.schema.json",
+  "tasco-place-ref-v1.schema.json",
+  "trip-stop-v1.schema.json",
+  "tasco-route-preview-v1.schema.json",
+  "trip-plan-summary-v1.schema.json",
+  "join-trip-result-v1.schema.json",
 ] as const;
 
 describe("cross-language contract generation", () => {
@@ -34,6 +39,8 @@ describe("cross-language contract generation", () => {
     expect(dart).toContain("LocationTelemetryV1");
     expect(dart).toContain("ConvoyGraphV1");
     expect(dart).toContain("NotificationRequestV1");
+    expect(dart).toContain("TripPlanSummaryV1");
+    expect(dart).toContain("JoinTripResultV1");
   });
 
   it("exports valid and ingestion-edge examples for cross-language verification", () => {
