@@ -112,6 +112,62 @@ async function driveToSplit(app: LoopinApplication, maps: FixtureMapsProvider) {
 }
 
 describe("trip membership and authorization", () => {
+  it("atomically reserves telemetry sequence, event TTL and command idempotency", async () => {
+    const repository = new MemoryTripRepository([goldenState()]);
+    const first = (await repository.get("TRIP001"))!;
+    const committed = await repository.putIfVersion({ ...first, version: 2 }, 1, {
+      now: at(1),
+      telemetry: {
+        eventId: "event-reserved",
+        memberId: "M001",
+        sequence: 10,
+        expiresAt: at(100),
+        advancesLiveSequence: true,
+      },
+    });
+    const second = (await repository.get("TRIP001"))!;
+    const duplicate = await repository.putIfVersion({ ...second, version: 3 }, 2, {
+      now: at(2),
+      telemetry: {
+        eventId: "event-reserved",
+        memberId: "M001",
+        sequence: 11,
+        expiresAt: at(100),
+        advancesLiveSequence: true,
+      },
+    });
+    const stale = await repository.putIfVersion({ ...second, version: 3 }, 2, {
+      now: at(2),
+      telemetry: {
+        eventId: "event-stale",
+        memberId: "M001",
+        sequence: 9,
+        expiresAt: at(100),
+        advancesLiveSequence: true,
+      },
+    });
+    const command = await repository.putIfVersion({ ...second, version: 3 }, 2, {
+      now: at(2),
+      command: { idempotencyKey: "command-key", fingerprint: "fingerprint-a", expiresAt: at(100) },
+    });
+    const third = (await repository.get("TRIP001"))!;
+    const commandConflict = await repository.putIfVersion({ ...third, version: 4 }, 3, {
+      now: at(3),
+      command: { idempotencyKey: "command-key", fingerprint: "fingerprint-b", expiresAt: at(100) },
+    });
+    const commandAfterExpiry = await repository.putIfVersion({ ...third, version: 4 }, 3, {
+      now: at(101),
+      command: { idempotencyKey: "command-key", fingerprint: "fingerprint-b", expiresAt: at(200) },
+    });
+
+    expect({ committed, duplicate, stale }).toEqual({ committed: true, duplicate: false, stale: false });
+    expect({ command, commandConflict, commandAfterExpiry }).toEqual({
+      command: true,
+      commandConflict: false,
+      commandAfterExpiry: true,
+    });
+  });
+
   it("joins idempotently and updates only the caller's readiness", async () => {
     const { app } = setup();
     const identity = { userId: "USER005" };
@@ -161,12 +217,16 @@ describe("ordered telemetry application flow", () => {
     class FailOnceRepository extends MemoryTripRepository {
       private shouldFail = true;
 
-      override async putIfVersion(state: Parameters<MemoryTripRepository["putIfVersion"]>[0], expectedVersion: number) {
+      override async putIfVersion(
+        state: Parameters<MemoryTripRepository["putIfVersion"]>[0],
+        expectedVersion: number,
+        condition?: Parameters<MemoryTripRepository["putIfVersion"]>[2],
+      ) {
         if (this.shouldFail) {
           this.shouldFail = false;
           return false;
         }
-        return super.putIfVersion(state, expectedVersion);
+        return super.putIfVersion(state, expectedVersion, condition);
       }
     }
 

@@ -102,11 +102,30 @@ export function createTripState(input: CreateTripStateInput): TripState {
 export interface TripRepository {
   get(tripId: string): Promise<TripState | undefined>;
   findByJoinCode(joinCode: string): Promise<TripState | undefined>;
-  putIfVersion(state: TripState, expectedVersion: number): Promise<boolean>;
+  putIfVersion(state: TripState, expectedVersion: number, condition?: TripStateWriteCondition): Promise<boolean>;
 }
+
+export type TripStateWriteCondition = {
+  readonly now: string;
+  readonly telemetry?: {
+    readonly eventId: string;
+    readonly memberId: string;
+    readonly sequence: number;
+    readonly expiresAt: string;
+    readonly advancesLiveSequence: boolean;
+  };
+  readonly command?: {
+    readonly idempotencyKey: string;
+    readonly fingerprint: string;
+    readonly expiresAt: string;
+  };
+};
 
 export class MemoryTripRepository implements TripRepository {
   private readonly states = new Map<string, TripState>();
+  private readonly eventReservations = new Map<string, string>();
+  private readonly latestSequenceByMember = new Map<string, number>();
+  private readonly commandReservations = new Map<string, { fingerprint: string; expiresAt: string }>();
 
   constructor(initial: readonly TripState[] = []) {
     initial.forEach((state) => this.states.set(state.tripId, structuredClone(state)));
@@ -123,9 +142,37 @@ export class MemoryTripRepository implements TripRepository {
     return state ? structuredClone(state) : undefined;
   }
 
-  async putIfVersion(state: TripState, expectedVersion: number): Promise<boolean> {
+  async putIfVersion(state: TripState, expectedVersion: number, condition?: TripStateWriteCondition): Promise<boolean> {
     if (state.version !== expectedVersion + 1 || this.states.get(state.tripId)?.version !== expectedVersion) return false;
+    if (condition) {
+      const now = Date.parse(condition.now);
+      for (const [key, expiresAt] of this.eventReservations) {
+        if (Date.parse(expiresAt) <= now) this.eventReservations.delete(key);
+      }
+      for (const [key, reservation] of this.commandReservations) {
+        if (Date.parse(reservation.expiresAt) <= now) this.commandReservations.delete(key);
+      }
+      if (condition.telemetry) {
+        if (this.eventReservations.has(condition.telemetry.eventId)) return false;
+        const sequenceKey = `${state.tripId}:${condition.telemetry.memberId}`;
+        const latest = this.latestSequenceByMember.get(sequenceKey);
+        if (condition.telemetry.advancesLiveSequence && latest !== undefined && condition.telemetry.sequence <= latest) return false;
+      }
+      if (condition.command && this.commandReservations.has(condition.command.idempotencyKey)) return false;
+    }
     this.states.set(state.tripId, structuredClone(state));
+    if (condition?.telemetry) {
+      this.eventReservations.set(condition.telemetry.eventId, condition.telemetry.expiresAt);
+      if (condition.telemetry.advancesLiveSequence) {
+        this.latestSequenceByMember.set(`${state.tripId}:${condition.telemetry.memberId}`, condition.telemetry.sequence);
+      }
+    }
+    if (condition?.command) {
+      this.commandReservations.set(condition.command.idempotencyKey, {
+        fingerprint: condition.command.fingerprint,
+        expiresAt: condition.command.expiresAt,
+      });
+    }
     return true;
   }
 }
@@ -346,7 +393,16 @@ export class LoopinApplication {
       }
       if (ingestion.status === "history-only") {
         const next = { ...state, version: state.version + 1, telemetryState: ingestion.state };
-        if (await this.dependencies.repository.putIfVersion(next, state.version)) {
+        if (await this.dependencies.repository.putIfVersion(next, state.version, {
+          now: receivedAt,
+          telemetry: {
+            eventId: telemetry.eventId,
+            memberId: telemetry.memberId,
+            sequence: telemetry.sequence,
+            expiresAt: new Date(Date.parse(receivedAt) + 24 * 60 * 60_000).toISOString(),
+            advancesLiveSequence: false,
+          },
+        })) {
           return { status: ingestion.status, snapshotRevision: state.snapshotRevision, notifications: [] };
         }
         continue;
@@ -395,7 +451,16 @@ export class LoopinApplication {
             )]
           : state.outbox,
       };
-      if (!(await this.dependencies.repository.putIfVersion(next, state.version))) continue;
+      if (!(await this.dependencies.repository.putIfVersion(next, state.version, {
+        now: receivedAt,
+        telemetry: {
+          eventId: telemetry.eventId,
+          memberId: telemetry.memberId,
+          sequence: telemetry.sequence,
+          expiresAt: new Date(Date.parse(receivedAt) + 24 * 60 * 60_000).toISOString(),
+          advancesLiveSequence: true,
+        },
+      }))) continue;
 
       await this.flushOutbox(next.tripId);
       return {
@@ -483,7 +548,14 @@ export class LoopinApplication {
           payload: event,
         }],
       };
-      if (await this.dependencies.repository.putIfVersion(nextWithOutbox, state.version)) {
+      if (await this.dependencies.repository.putIfVersion(nextWithOutbox, state.version, {
+        now,
+        command: {
+          idempotencyKey: request.idempotencyKey,
+          fingerprint,
+          expiresAt: new Date(Date.parse(now) + 24 * 60 * 60_000).toISOString(),
+        },
+      })) {
         await this.flushOutbox(tripId);
         return ApproveRegroupResponseV1Schema.parse({ schemaVersion: 1, recommendation: approved });
       }

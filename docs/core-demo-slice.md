@@ -47,7 +47,7 @@ AWS, mobile, web, and map providers are adapters around these pure functions. Th
 | `notifications.ts` | Recipient policy, bilingual templates, dedupe and expiry |
 | `regroup.ts` | Candidate exclusions, score breakdown and deterministic ties |
 | `summary.ts` | Measured post-trip facts and template narrative |
-| `services/application` | Authorized trip use-cases, optimistic repository port, maps boundary and derived-event publishers |
+| `services/application` | Authorized trip use-cases, conditional sequence/TTL-idempotency repository port, maps boundary and durable derived-event outbox |
 | `packages/demo-scenarios` | Shared workbook-backed golden frames and deterministic replay controller |
 | `apps/simulator` | CLI compatibility adapter and console/JSON output only |
 | `apps/web` | Browser session adapter and setup/live/regroup/summary presentation only |
