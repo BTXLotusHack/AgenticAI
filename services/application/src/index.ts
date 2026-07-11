@@ -67,7 +67,8 @@ export type TripState = {
   readonly situation?: Situation;
   readonly recommendations: readonly RegroupRecommendationV1[];
   readonly notifications: readonly NotificationRequest[];
-  readonly commandKeys: readonly string[];
+  readonly commandReceipts: readonly CommandReceipt[];
+  readonly outbox: readonly OutboxMessage[];
   readonly summary?: TripSummaryV1;
 };
 
@@ -92,7 +93,8 @@ export function createTripState(input: CreateTripStateInput): TripState {
     telemetryState: createTelemetryState(),
     recommendations: [],
     notifications: [],
-    commandKeys: [],
+    commandReceipts: [],
+    outbox: [],
     ...(input.summary ? { summary: structuredClone(input.summary) } : {}),
   };
 }
@@ -182,6 +184,17 @@ type ApplicationDependencies = {
   readonly realtime: Publisher<RealtimeEventV1>;
 };
 
+export type OutboxMessage =
+  | { readonly messageId: string; readonly publisher: "domain"; readonly channel: string; readonly payload: EventEnvelope }
+  | { readonly messageId: string; readonly publisher: "realtime"; readonly channel: string; readonly payload: RealtimeEventV1 };
+
+export type CommandReceipt = {
+  readonly idempotencyKey: string;
+  readonly fingerprint: string;
+  readonly recommendationId: string;
+  readonly expiresAt: string;
+};
+
 export type ProcessTelemetryResult = {
   readonly status: IngestionStatus;
   readonly snapshotRevision: number;
@@ -198,6 +211,33 @@ function memberForIdentity(state: TripState, identity: Identity): TripMemberV1 {
 
 function localeByMember(state: TripState): Record<string, "en" | "vi"> {
   return Object.fromEntries(state.members.map((member) => [member.memberId, "vi"]));
+}
+
+function graphForViewer(state: TripState, viewer: TripMemberV1): GraphEngineState["graph"] {
+  const graph = state.graphState!.graph;
+  if (viewer.role === "leader") return graph;
+  const hidden = new Set(
+    state.members
+      .filter((member) => member.memberId !== viewer.memberId && member.visibilityPolicy !== "group")
+      .map((member) => member.memberId),
+  );
+  return {
+    ...graph,
+    leaderMemberId: graph.leaderMemberId && hidden.has(graph.leaderMemberId) ? null : graph.leaderMemberId,
+    orderedMemberIds: graph.orderedMemberIds.filter((memberId) => !hidden.has(memberId)),
+    edges: graph.edges.filter((edge) => !hidden.has(edge.aheadMemberId) && !hidden.has(edge.behindMemberId)),
+    components: graph.components.flatMap((component) => {
+      const memberIds = component.memberIds.filter((memberId) => !hidden.has(memberId));
+      return memberIds.length === 0 ? [] : [{
+        ...component,
+        memberIds,
+        frontBoundaryMemberId: memberIds[0]!,
+        rearBoundaryMemberId: memberIds.at(-1)!,
+        containsLeader: graph.leaderMemberId !== null && memberIds.includes(graph.leaderMemberId),
+        averageSpeedKmh: memberIds.length === component.memberIds.length ? component.averageSpeedKmh : null,
+      }];
+    }),
+  };
 }
 
 function recommendationFor(state: TripState, situation: Situation, now: string): RegroupRecommendationV1 {
@@ -277,7 +317,7 @@ export class LoopinApplication {
       snapshotRevision: state.snapshotRevision,
       generatedAt: state.graphState.graph.calculatedAt,
       viewer: { memberId: viewer.memberId, role: viewer.role },
-      graph: state.graphState.graph,
+      graph: graphForViewer(state, viewer),
       situations: state.situation ? [state.situation] : [],
       recommendations: viewer.role === "leader" ? state.recommendations : [],
       notifications: state.notifications.filter((notification) => notification.recipientMemberId === viewer.memberId),
@@ -292,12 +332,16 @@ export class LoopinApplication {
       throw new ApplicationError("forbidden", "Telemetry identity does not match the active member.");
     }
     const projection = await this.dependencies.maps.project(telemetry);
+    if (projection.role !== initialMember.role) {
+      throw new ApplicationError("invalid-request", "Route projection role does not match authoritative membership.");
+    }
     for (let attempt = 0; attempt < 4; attempt += 1) {
       const state = await this.requireTrip(telemetry.tripId);
       const member = memberForIdentity(state, identity);
       if (member.memberId !== telemetry.memberId) throw new ApplicationError("forbidden", "Telemetry identity does not match the active member.");
       const ingestion = acceptProjectedLocation(state.telemetryState, { telemetry, projection }, receivedAt);
       if (["duplicate", "stale-sequence", "rejected"].includes(ingestion.status)) {
+        await this.flushOutbox(state.tripId);
         return { status: ingestion.status, snapshotRevision: state.snapshotRevision, notifications: [] };
       }
       if (ingestion.status === "history-only") {
@@ -328,7 +372,7 @@ export class LoopinApplication {
       }
 
       const changed = graphResult.changed || transition.transition !== "none" || notifications.length > 0;
-      const next: TripState = {
+      const nextBase: TripState = {
         ...state,
         version: state.version + 1,
         snapshotRevision: state.snapshotRevision + (changed ? 1 : 0),
@@ -338,9 +382,15 @@ export class LoopinApplication {
         recommendations,
         notifications: [...state.notifications, ...notifications],
       };
+      const next: TripState = {
+        ...nextBase,
+        outbox: changed
+          ? [...state.outbox, ...this.buildStateMessages(nextBase, telemetry.eventId, receivedAt, notifications, transition.transition)]
+          : state.outbox,
+      };
       if (!(await this.dependencies.repository.putIfVersion(next, state.version))) continue;
 
-      if (changed) await this.publishState(next, telemetry.eventId, receivedAt, notifications);
+      await this.flushOutbox(next.tripId);
       return {
         status: ingestion.status,
         snapshotRevision: next.snapshotRevision,
@@ -365,8 +415,17 @@ export class LoopinApplication {
       if (member.role !== "leader") throw new ApplicationError("forbidden", "Only the trip leader may approve regrouping.");
       const recommendation = state.recommendations.find((candidate) => candidate.recommendationId === recommendationId);
       if (!recommendation) throw new ApplicationError("not-found", "The regroup recommendation does not exist.");
-      if (state.commandKeys.includes(request.idempotencyKey)) {
-        return ApproveRegroupResponseV1Schema.parse({ schemaVersion: 1, recommendation });
+      const fingerprint = JSON.stringify({ command: "approve-regroup", tripId, recommendationId, userId: identity.userId });
+      const receipt = state.commandReceipts.find((candidate) => candidate.idempotencyKey === request.idempotencyKey);
+      if (receipt) {
+        if (receipt.fingerprint !== fingerprint) {
+          throw new ApplicationError("conflict", "The idempotency key was already used for a different command.");
+        }
+        await this.flushOutbox(tripId);
+        const refreshed = await this.requireTrip(tripId);
+        const previous = refreshed.recommendations.find((candidate) => candidate.recommendationId === receipt.recommendationId);
+        if (!previous) throw new ApplicationError("conflict", "The prior command result is unavailable.");
+        return ApproveRegroupResponseV1Schema.parse({ schemaVersion: 1, recommendation: previous });
       }
       if (recommendation.state !== "pending" || !recommendation.selectedCandidate) {
         throw new ApplicationError("conflict", "The regroup recommendation cannot be approved.");
@@ -387,22 +446,37 @@ export class LoopinApplication {
         version: state.version + 1,
         snapshotRevision: state.snapshotRevision + 1,
         recommendations: state.recommendations.map((candidate) => candidate.recommendationId === recommendationId ? approved : candidate),
-        commandKeys: [...state.commandKeys, request.idempotencyKey],
+        commandReceipts: [...state.commandReceipts.filter((candidate) => Date.parse(candidate.expiresAt) > Date.parse(now)), {
+          idempotencyKey: request.idempotencyKey,
+          fingerprint,
+          recommendationId,
+          expiresAt: new Date(Date.parse(now) + 24 * 60 * 60_000).toISOString(),
+        }],
+        outbox: [...state.outbox],
       };
-      if (await this.dependencies.repository.putIfVersion(next, state.version)) {
-        const event = RealtimeEventV1Schema.parse({
-          schemaVersion: 1,
-          eventId: `realtime:${request.commandId}`,
-          tripId,
-          snapshotRevision: next.snapshotRevision,
-          graphRevision: next.graphState?.graph.graphRevision ?? 0,
-          audience: { kind: "trip" },
-          eventType: "RegroupApproved",
-          occurredAt: now,
-          expiresAt: approved.expiresAt,
-          payload: { recommendationId, poiId: selectedCandidate.poiId },
-        });
-        await this.dependencies.realtime.publish(`/trip/${tripId}/state`, event);
+      const event = RealtimeEventV1Schema.parse({
+        schemaVersion: 1,
+        eventId: `realtime:${request.commandId}`,
+        tripId,
+        snapshotRevision: next.snapshotRevision,
+        graphRevision: next.graphState?.graph.graphRevision ?? 0,
+        audience: { kind: "trip" },
+        eventType: "RegroupApproved",
+        occurredAt: now,
+        expiresAt: approved.expiresAt,
+        payload: { recommendationId, poiId: selectedCandidate.poiId },
+      });
+      const nextWithOutbox: TripState = {
+        ...next,
+        outbox: [...next.outbox, {
+          messageId: event.eventId,
+          publisher: "realtime",
+          channel: `/trip/${tripId}/state`,
+          payload: event,
+        }],
+      };
+      if (await this.dependencies.repository.putIfVersion(nextWithOutbox, state.version)) {
+        await this.flushOutbox(tripId);
         return ApproveRegroupResponseV1Schema.parse({ schemaVersion: 1, recommendation: approved });
       }
     }
@@ -422,12 +496,13 @@ export class LoopinApplication {
     return state;
   }
 
-  private async publishState(
+  private buildStateMessages(
     state: TripState,
     causationId: string,
     occurredAt: string,
     notifications: readonly NotificationRequest[],
-  ): Promise<void> {
+    situationTransition: "none" | "confirmed" | "updated" | "notified" | "resolved",
+  ): OutboxMessage[] {
     const graph = state.graphState!.graph;
     const domainEvent: EventEnvelope = {
       schemaVersion: 1,
@@ -441,8 +516,6 @@ export class LoopinApplication {
       producer: "loopin-application",
       payload: { graphRevision: graph.graphRevision, snapshotRevision: state.snapshotRevision },
     };
-    await this.dependencies.domainEvents.publish(`trip.${state.tripId}.events`, domainEvent);
-
     const graphEvent = RealtimeEventV1Schema.parse({
       schemaVersion: 1,
       eventId: `realtime:${domainEvent.eventId}`,
@@ -455,7 +528,58 @@ export class LoopinApplication {
       expiresAt: new Date(Date.parse(occurredAt) + 5 * 60_000).toISOString(),
       payload: { overallState: graph.overallState },
     });
-    await this.dependencies.realtime.publish(`/trip/${state.tripId}/state`, graphEvent);
+    const messages: OutboxMessage[] = [
+      {
+        messageId: domainEvent.eventId,
+        publisher: "domain",
+        channel: `trip.${state.tripId}.events`,
+        payload: domainEvent,
+      },
+      {
+        messageId: graphEvent.eventId,
+        publisher: "realtime",
+        channel: `/trip/${state.tripId}/state`,
+        payload: graphEvent,
+      },
+    ];
+
+    if (situationTransition !== "none" && state.situation) {
+      const eventType = situationTransition === "confirmed"
+        ? "SituationConfirmed"
+        : situationTransition === "resolved"
+          ? "SituationResolved"
+          : situationTransition === "notified"
+            ? "SituationNotified"
+          : "SituationUpdated";
+      const situationEvent: EventEnvelope = {
+        schemaVersion: 1,
+        eventId: `situation:${state.situation.situationId}:${situationTransition}:${graph.graphRevision}`,
+        eventType,
+        occurredAt,
+        producedAt: occurredAt,
+        correlationId: causationId,
+        causationId,
+        tripId: state.tripId,
+        producer: "loopin-application",
+        payload: { situation: state.situation },
+      };
+      const situationRealtime = RealtimeEventV1Schema.parse({
+        schemaVersion: 1,
+        eventId: `realtime:${situationEvent.eventId}`,
+        tripId: state.tripId,
+        snapshotRevision: state.snapshotRevision,
+        graphRevision: graph.graphRevision,
+        audience: { kind: "leader" },
+        eventType,
+        occurredAt,
+        expiresAt: new Date(Date.parse(occurredAt) + 15 * 60_000).toISOString(),
+        payload: { situation: state.situation },
+      });
+      messages.push(
+        { messageId: situationEvent.eventId, publisher: "domain", channel: `trip.${state.tripId}.events`, payload: situationEvent },
+        { messageId: situationRealtime.eventId, publisher: "realtime", channel: `/trip/${state.tripId}/leader/actions`, payload: situationRealtime },
+      );
+    }
 
     for (const notification of notifications) {
       const event = RealtimeEventV1Schema.parse({
@@ -470,7 +594,33 @@ export class LoopinApplication {
         expiresAt: notification.expiresAt,
         payload: { notification },
       });
-      await this.dependencies.realtime.publish(`/trip/${state.tripId}/member/${notification.recipientMemberId}/alerts`, event);
+      messages.push({
+        messageId: event.eventId,
+        publisher: "realtime",
+        channel: `/trip/${state.tripId}/member/${notification.recipientMemberId}/alerts`,
+        payload: event,
+      });
     }
+    return messages;
+  }
+
+  private async flushOutbox(tripId: string): Promise<void> {
+    for (let attempt = 0; attempt < 100; attempt += 1) {
+      const state = await this.requireTrip(tripId);
+      const message = state.outbox[0];
+      if (!message) return;
+      if (message.publisher === "domain") {
+        await this.dependencies.domainEvents.publish(message.channel, message.payload);
+      } else {
+        await this.dependencies.realtime.publish(message.channel, message.payload);
+      }
+      const next: TripState = {
+        ...state,
+        version: state.version + 1,
+        outbox: state.outbox.filter((candidate) => candidate.messageId !== message.messageId),
+      };
+      await this.dependencies.repository.putIfVersion(next, state.version);
+    }
+    throw new ApplicationError("conflict", "The event outbox could not be drained.", true);
   }
 }

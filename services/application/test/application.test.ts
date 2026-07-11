@@ -86,10 +86,10 @@ function goldenState() {
 function setup(
   repository = new MemoryTripRepository([goldenState()]),
   clock = new FixedClock(at(36)),
+  realtime = new RecordingPublisher<RealtimeEventV1>(),
 ) {
   const maps = new FixtureMapsProvider();
   const domainEvents = new RecordingPublisher<EventEnvelope>();
-  const realtime = new RecordingPublisher<RealtimeEventV1>();
   const app = new LoopinApplication({ repository, maps, clock, domainEvents, realtime });
   return { app, repository, maps, domainEvents, realtime };
 }
@@ -133,6 +133,30 @@ describe("trip membership and authorization", () => {
 });
 
 describe("ordered telemetry application flow", () => {
+  it("replays a persisted outbox after realtime publication fails", async () => {
+    class FailOncePublisher extends RecordingPublisher<RealtimeEventV1> {
+      shouldFail = true;
+
+      override async publish(channel: string, payload: RealtimeEventV1) {
+        if (this.shouldFail) {
+          this.shouldFail = false;
+          throw new Error("realtime unavailable");
+        }
+        return super.publish(channel, payload);
+      }
+    }
+
+    const realtime = new FailOncePublisher();
+    const { app, maps } = setup(new MemoryTripRepository([goldenState()]), new FixedClock(at(36)), realtime);
+    const input = pair(0, 0);
+    maps.add(input.projection);
+    await expect(app.processTelemetry({ userId: "USER001" }, input.telemetry, at(1))).rejects.toThrow("realtime unavailable");
+
+    const retried = await app.processTelemetry({ userId: "USER001" }, input.telemetry, at(2));
+    expect(retried.status).toBe("duplicate");
+    expect(realtime.messages).toHaveLength(1);
+  });
+
   it("retries an optimistic conflict without duplicating revisions or events", async () => {
     class FailOnceRepository extends MemoryTripRepository {
       private shouldFail = true;
@@ -163,6 +187,15 @@ describe("ordered telemetry application flow", () => {
     });
   });
 
+  it("rejects a projection that changes the authorized member role", async () => {
+    const { app, maps } = setup();
+    const input = pair(1, 0);
+    maps.add({ ...input.projection, role: "leader" });
+    await expect(app.processTelemetry({ userId: "USER002" }, input.telemetry, at(1))).rejects.toMatchObject({
+      code: "invalid-request",
+    });
+  });
+
   it("persists duplicate, stale and offline replay semantics without extra revisions", async () => {
     const { app, maps } = setup();
     const input = pair(0, 0);
@@ -189,7 +222,7 @@ describe("ordered telemetry application flow", () => {
   });
 
   it("derives the exact split boundary and filters leader/member outputs", async () => {
-    const { app, maps, realtime } = setup();
+    const { app, maps, realtime, domainEvents } = setup();
     const splitResult = await driveToSplit(app, maps);
 
     expect(splitResult?.situation?.situationId).toBe("split:TRIP001:M003:M004");
@@ -202,8 +235,10 @@ describe("ordered telemetry application flow", () => {
     const rear = await app.getLiveSnapshot({ userId: "USER004" }, "TRIP001");
     expect(leader.recommendations[0]?.selectedCandidate?.poiId).toBe("POI001");
     expect(rear.recommendations).toEqual([]);
+    expect(rear.graph.orderedMemberIds).not.toContain("M003");
     expect(rear.notifications.every((notification) => notification.recipientMemberId === "M004")).toBe(true);
     expect(realtime.messages.every((message) => message.payload.schemaVersion === 1)).toBe(true);
+    expect(domainEvents.messages.some((message) => message.payload.eventType === "SituationConfirmed")).toBe(true);
 
     const recommendationId = leader.recommendations[0]!.recommendationId;
     await expect(
@@ -220,6 +255,12 @@ describe("ordered telemetry application flow", () => {
       idempotencyKey: "approve-leader",
     });
     expect(approved.recommendation.state).toBe("approved");
+    const duplicateApproval = await app.approveRegroup({ userId: "USER001" }, "TRIP001", recommendationId, {
+      schemaVersion: 1,
+      commandId: "approve-leader-retry",
+      idempotencyKey: "approve-leader",
+    });
+    expect(duplicateApproval).toEqual(approved);
   });
 
   it("rejects an expired regroup recommendation", async () => {

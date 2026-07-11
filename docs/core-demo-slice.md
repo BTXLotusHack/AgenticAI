@@ -40,7 +40,7 @@ AWS, mobile, web, and map providers are adapters around these pure functions. Th
 |---|---|
 | `packages/contracts` | Versioned Zod boundary schemas, service DTOs and language-neutral telemetry examples |
 | `packages/convoy-core/src/contracts.ts` | Compatibility re-export so domain consumers share the authoritative contract package |
-| `ingestion.ts` | Validation, idempotency, sequence, replay, confidence and connectivity |
+| `ingestion.ts` | Deterministic contract, idempotency, sequence, replay, confidence and connectivity rules |
 | `ordering.ts` | Stable route-progress order across GPS jitter and overtakes |
 | `graph.ts` | Uncertainty, edge state, graph revision and components |
 | `situations.ts` | Stable incident identity, evidence and lifecycle |
@@ -87,7 +87,7 @@ The workbook samples are spaced too widely and include a convenience `distance_f
 
 ## AWS integration seam
 
-The implemented application service validates telemetry, authorizes the member, calls a maps port, loads versioned trip state, invokes the reducers, conditionally stores the next revision and publishes derived graph/situation/notification events. The initial telemetry Lambda will adapt MQTT/Kinesis records and DynamoDB to these same ports. Raw GPS continues independently to Firehose/S3.
+The implemented application service validates the external DTO, authorizes the member, calls a maps port, loads versioned trip state and orchestrates the pure ingestion reducers. Core ingestion owns deterministic event-ID, member-sequence, replay, confidence and connectivity decisions. The service conditionally stores the next revision and queues derived graph/situation/notification events for at-least-once publication. The initial telemetry Lambda will adapt MQTT/Kinesis records and DynamoDB to these same ports. Raw GPS continues independently to Firehose/S3.
 
 AppSync receives rate-controlled graph and situation deltas, not every raw GPS point. The React web app and Flutter driver app fetch a snapshot before applying revisions. A revision gap triggers a new snapshot.
 
