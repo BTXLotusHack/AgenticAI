@@ -66,7 +66,10 @@ via `TF_VAR_*` in CI, not committed to tfvars.
 
 ## Not yet wired (needs external validation)
 
-- Tasco Maps auth/quotas and the exact `/trace_attributes` response shape.
+- Tasco Maps `/trace_attributes` is validated (Valhalla 3.7.0 at
+  `https://tasco-maps.dnpwater.vn/route/`, no auth; set as `maps_trace_url`).
+  Still open: production auth/quotas, and the `map_snap` 2000 m breakage limit
+  on sparse traces (see `backend/README.md`).
 - APNs/FCM credentials for `enable_push` (platform applications are `count = 0`
   until provided).
 - IoT device provisioning/certificates for real riders (the rule and stream are

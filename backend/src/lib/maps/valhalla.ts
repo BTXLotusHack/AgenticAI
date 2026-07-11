@@ -39,8 +39,13 @@ export class ValhallaMapsProvider implements MapsProvider {
       shape: request.points.map(([lat, lon]) => ({ lat, lon })),
       costing: "auto",
       shape_match: "map_snap",
-      // Only ask for the matched points; we do not need full edge attributes.
-      filters: { attributes: ["matched.point"], action: "include" },
+      // Snapped coordinate plus the two fields normalize() needs: `type` to
+      // reject unmatched points and `distance_from_trace_point` to derive
+      // confidence. Requesting only `matched.point` leaves both undefined.
+      filters: {
+        attributes: ["matched.point", "matched.type", "matched.distance_from_trace_point"],
+        action: "include",
+      },
     };
 
     const controller = new AbortController();

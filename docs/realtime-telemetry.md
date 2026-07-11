@@ -1,5 +1,7 @@
 # Real-time telemetry specification
 
+> **Deployment status (2026-07).** The deployed telemetry path is IoT Core → Kinesis → `telemetry-processor` Lambda → DynamoDB single-table → AppSync GraphQL subscriptions. The **raw-archive and downstream-fan-out stages named below — Firehose/S3 archival, SQS DLQ/AI queues, and PostgreSQL — are not yet provisioned**; treat them as planned. See `CLAUDE.md` and `README.md`.
+
 ## 1. Goals
 
 - Accept intermittent, duplicated and delayed mobile GPS without corrupting state.

@@ -34,8 +34,8 @@ For landing pages, websites, prototypes and visually led product work:
 - Flutter/Dart models consume generated versioned contract artifacts and shared golden fixtures; do not hand-copy or reinterpret safety contracts.
 - Pure packages own graph, geo, policy and regroup logic.
 - AWS handlers adapt external events to pure domain operations.
-- DynamoDB owns current live state; PostgreSQL owns relational/geospatial history; S3 owns raw telemetry.
-- AppSync and IoT own persistent real-time connections.
+- A DynamoDB single-table (PK/SK, TTL) is the only datastore the deployed `infra/` provisions; it owns both current live state (rider positions) and team/membership/invite records. There is no PostgreSQL, S3 telemetry lake or SQS in the deployed spec — do not introduce one without an ADR.
+- AppSync (GraphQL subscriptions) and IoT own persistent real-time connections.
 - AI interprets and explains; deterministic code detects and authorizes.
 
 ## Safety invariants

@@ -6,13 +6,13 @@ Build vertical slices that demonstrate complete behavior. Do not create a large 
 
 ## 2. Phase 0: foundation
 
-- Monorepo with pnpm and Turborepo
+- Monorepo with npm workspaces
 - Shared TypeScript, linting and test configuration
 - Versioned Zod contracts
-- AWS CDK environment/account structure
+- Terraform (`infra/`) environment/account structure
 - React/Vite shell and Flutter shell
 - Dataset import and simulator fixtures
-- CI with OIDC and CDK diff
+- CI with OIDC and `terraform plan`
 
 Exit: one synthetic location event travels through the local/domain pipeline and its contract is verified.
 

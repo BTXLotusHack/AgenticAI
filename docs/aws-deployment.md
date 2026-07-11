@@ -1,10 +1,12 @@
 # AWS deployment specification
 
+> **Deployment status (2026-07).** This document describes the *target* deployment. The repo actually deploys with **Terraform** (`infra/`), not AWS CDK, and provisions six modules — `{data, identity, realtime, telemetry, api, notifications}` — covering Cognito, API Gateway HTTP API + Lambda, IoT Core, Kinesis, a DynamoDB single-table, AppSync GraphQL subscriptions, and SNS push. The CDK stack layout in §3 and the services it lists that are **not** yet provisioned — PostgreSQL/Aurora/RDS Proxy, S3/Firehose/Glue/Athena, EventBridge, SQS, CloudFront/WAF/Route 53, Secrets Manager, Bedrock, Transcribe — are planned target state. References to "CDK synth/diff/deploy" below describe the intended pipeline, not the current one. See `CLAUDE.md` and `README.md`.
+
 ## 1. Deployment goals
 
 - Low fixed cost for hackathon and early production.
 - Isolated development, staging and production state.
-- Repeatable deployment through AWS CDK.
+- Repeatable deployment through infrastructure-as-code (Terraform today; the CDK-shaped stack layout in §3 is target state).
 - No long-lived AWS credentials in CI.
 - Independent scaling of telemetry, APIs, AI and client delivery.
 - Clear migration from Lambda without contract changes.
@@ -86,7 +88,7 @@ React + Vite builds to `apps/web/dist`.
 
 ```text
 GitHub Actions
-→ pnpm build
+→ npm run build
 → upload hashed assets to private S3
 → upload index.html with short cache
 → invalidate CloudFront HTML paths
