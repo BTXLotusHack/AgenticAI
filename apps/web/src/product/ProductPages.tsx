@@ -15,6 +15,7 @@ import { PageHeader } from '../shared/product/PageHeader';
 
 export { AuthPage, OnboardingPage } from './AuthPages';
 export { DashboardPage, TripsPage } from './TripLibraryPages';
+export { ItineraryPage, ShareTripPage, TripOverviewPage, TripPlannerPage } from './TripPages';
 
 function ProductShell({ children }: { readonly children: ReactNode }) {
   return <AppShell>{children}</AppShell>;
@@ -134,7 +135,7 @@ export function LegacyTripsPage() {
   );
 }
 
-export function TripPlannerPage() {
+export function LegacyTripPlannerPage() {
   const places = usePlaceSearch('rest stop');
   return (
     <ProductShell>
@@ -168,7 +169,7 @@ export function TripPlannerPage() {
   );
 }
 
-export function TripOverviewPage() {
+export function LegacyTripOverviewPage() {
   const { tripId = 'TRIP001' } = useParams();
   const trip = useTrip(tripId);
   const live = useLiveTrip(tripId);
@@ -214,7 +215,7 @@ export function TripOverviewPage() {
   );
 }
 
-export function ItineraryPage() {
+export function LegacyItineraryPage() {
   const { tripId = 'TRIP001' } = useParams();
   const trip = useTrip(tripId);
   const stops = trip.data?.route.stops ?? [];
@@ -244,7 +245,7 @@ export function ItineraryPage() {
   );
 }
 
-export function ShareTripPage() {
+export function LegacyShareTripPage() {
   const { tripId = 'TRIP001' } = useParams();
   return (
     <ProductShell>

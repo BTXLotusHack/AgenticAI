@@ -145,7 +145,7 @@ describe('Agent 1 product routes', () => {
     const tripRoute = renderRoute('/app/trips/TRIP002');
 
     expect(await screen.findByRole('heading', { name: /weekend food loop/i })).toBeVisible();
-    expect(screen.getByText(/stale route plan/i)).toBeVisible();
+    expect(screen.getByText(/route needs refresh/i)).toBeVisible();
 
     tripRoute.unmount();
     renderRoute('/app/trips/TRIP002/itinerary');
