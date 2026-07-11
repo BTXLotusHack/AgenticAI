@@ -14,6 +14,7 @@ This directory is the system-design source of truth for Loopin. Documents are or
 8. [Testing and Operations](testing-and-operations.md)
 9. [Roadmap](roadmap.md)
 10. [Frontend Experience Standards](frontend-standards.md)
+11. [Runnable Convoy Core Demo](core-demo-slice.md)
 
 Cross-cutting project practices are defined in [CONTRIBUTING.md](../CONTRIBUTING.md) and [AGENTS.md](../AGENTS.md). Consequential implementation decisions belong in [Architecture Decision Records](adr/README.md).
 
@@ -21,6 +22,7 @@ Design records:
 
 - [2026-07-11 Loopin Group Drive Platform Design](superpowers/specs/2026-07-11-loopin-group-drive-platform-design.md)
 - [2026-07-11 Loopin Landing Page Design](superpowers/specs/2026-07-11-loopin-landing-page-design.md)
+- [2026-07-11 Loopin Core Demo Slice Plan](superpowers/plans/2026-07-11-loopin-core-demo-slice.md)
 
 ## Ownership map
 

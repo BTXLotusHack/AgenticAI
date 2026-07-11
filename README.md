@@ -117,7 +117,7 @@ loopin/
 ├── apps/
 │   ├── web/                       # React + Vite
 │   ├── mobile/                    # Expo/React Native
-│   └── simulator/                 # Dataset-driven convoy simulation
+│   └── simulator/                 # Runnable dataset-driven convoy simulation
 ├── services/
 │   ├── api/                       # API Lambda handlers
 │   ├── telemetry/                 # Kinesis telemetry processor
@@ -128,8 +128,9 @@ loopin/
 │   └── summaries/                 # Post-trip processing
 ├── packages/
 │   ├── contracts/                 # Versioned Zod schemas
-│   ├── domain/                    # Pure trip and role logic
-│   ├── convoy-graph/              # Nodes, edges and components
+│   ├── convoy-core/               # Implemented contracts, graph, safety, regroup and summaries
+│   ├── domain/                    # Future broader trip and role logic
+│   ├── convoy-graph/              # Future split if scale/ownership requires it
 │   ├── geo/                       # Route progress and distance
 │   ├── safety-engine/             # Deterministic policies
 │   ├── regroup-engine/            # Candidate filtering and scoring
@@ -142,7 +143,17 @@ loopin/
 └── docs/
 ```
 
-The consumer landing page is implemented in `apps/web`. The mobile client, simulator, AWS services, shared domain packages, and CDK infrastructure remain designed but are not yet runnable; they will be delivered as tested vertical slices rather than empty scaffolds.
+The consumer landing page is implemented in `apps/web`. The deterministic convoy engine is implemented in `packages/convoy-core`, and the workbook-backed golden journey is runnable from `apps/simulator`. The mobile client, AWS services, maps adapter, broader product web shell, and CDK infrastructure remain approved designs that will be delivered as tested vertical slices rather than empty scaffolds.
+
+## Run the convoy demo
+
+```powershell
+npm.cmd install
+npm.cmd run test:core
+npm.cmd run simulate
+```
+
+Use `npm.cmd run simulate -- --json` for the complete graph, incident, notification, regroup, ingestion, and summary output. See [Runnable Convoy Core Demo](docs/core-demo-slice.md) for behavior, workbook provenance, limitations, and AWS integration seams.
 
 ## Run the landing page
 
@@ -197,6 +208,7 @@ Start with the [documentation index](docs/README.md).
 | [Data and API Contracts](docs/data-and-api-contracts.md) | Entities, DynamoDB keys, events and endpoints |
 | [Safety, Security and Privacy](docs/safety-security-privacy.md) | Guardrails, authorization, retention and threat controls |
 | [Testing and Operations](docs/testing-and-operations.md) | Simulator, verification, SLOs, alarms and runbooks |
+| [Runnable Convoy Core Demo](docs/core-demo-slice.md) | Implemented contracts, graph logic, golden replay and integration seams |
 | [Roadmap](docs/roadmap.md) | Hackathon slice, production hardening and scale milestones |
 | [Frontend Experience Standards](docs/frontend-standards.md) | Public-page art direction, motion, accessibility and visual QA |
 

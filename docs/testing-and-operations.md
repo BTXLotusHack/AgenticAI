@@ -69,7 +69,19 @@ The supplied workbook contains:
 - Mock API examples
 - Public evaluation scenarios
 
-The simulator converts workbook rows into versioned telemetry and command events. It supports wall-clock, accelerated and step modes.
+The planned simulator converts workbook rows into versioned telemetry and command events. Its target adapters are wall-clock, accelerated and step modes.
+
+### Implemented golden replay
+
+`apps/simulator` now provides the accelerated deterministic TRIP001 replay. It normalizes workbook identities, route, members, event intent and regroup POIs, then supplies 5-second fixture route projections to the pure convoy engine. Run:
+
+```powershell
+npm.cmd run test:core
+npm.cmd run simulate
+npm.cmd run simulate -- --json
+```
+
+The replay verifies duplicate and stale-sequence handling, offline history-only replay, low-confidence degradation, persistent stretch/split transitions, exact M003–M004 component boundaries, recipient-specific alerts, unsafe POI exclusion, POI001 selection, reconnect hysteresis and one measured summary. Wall-clock and interactive step controls remain future simulator adapters; they must reuse the same scenario runner and reducers.
 
 Required scenarios:
 
