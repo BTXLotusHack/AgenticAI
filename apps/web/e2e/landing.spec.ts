@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
-const requiredWidths = [360, 390, 768, 1024, 1280, 1440] as const;
+const requiredWidths = [320, 360, 390, 768, 1024, 1280, 1440] as const;
 
 test('landing journey is navigable, accessible, and free of console errors', async ({
   page,
@@ -16,7 +16,7 @@ test('landing journey is navigable, accessible, and free of console errors', asy
     page.getByRole('heading', { name: /every car\. one journey\./i }),
   ).toBeVisible();
 
-  await page.getByRole('link', { name: /see how it works/i }).click();
+  await page.locator('footer').getByRole('link', { name: /how it works/i }).click();
   await expect(page.locator('#how-it-works')).toBeInViewport();
 
   const results = await new AxeBuilder({ page })
