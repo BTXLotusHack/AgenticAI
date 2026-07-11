@@ -85,3 +85,23 @@ export type PlaceSearchResult = {
   readonly query: string;
   readonly results: readonly TascoPlaceRef[];
 };
+
+export type TeamRole = 'LEADER' | 'MEMBER';
+
+export type TeamSummary = {
+  readonly id: string;
+  readonly name: string;
+  readonly myRole: TeamRole;
+  readonly memberCount: number;
+  readonly activeTripId?: string;
+  readonly inviteState: 'ready' | 'pending' | 'expired';
+};
+
+export type TeamMember = {
+  readonly userId: string;
+  readonly displayName: string;
+  readonly email: string;
+  readonly role: TeamRole;
+  readonly joinedAt: string;
+  readonly readiness: 'ready' | 'needs-check' | 'invited';
+};

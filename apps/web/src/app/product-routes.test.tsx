@@ -23,6 +23,8 @@ describe('Agent 1 product routes', () => {
     ['/reset-password', /set a new password/i],
     ['/onboarding', /shape your travel profile/i],
     ['/app', /today's trips/i],
+    ['/app/groups', /manage the people before the drive/i],
+    ['/app/groups/TEAM001', /ha long family convoy/i],
     ['/app/trips', /trip library/i],
     ['/app/trips/new', /build a tasco-backed trip/i],
     ['/app/trips/TRIP001', /hà nội to hạ long/i],
@@ -67,7 +69,7 @@ describe('Agent 1 product routes', () => {
 
     expect(await screen.findByRole('banner', { name: /loopin product/i })).toBeVisible();
     const nav = screen.getByRole('navigation', { name: /app sections/i });
-    for (const label of ['Dashboard', 'Trips', 'Explore', 'Now', 'Settings']) {
+    for (const label of ['Dashboard', 'Trips', 'Groups', 'Explore', 'Now', 'Settings']) {
       expect(within(nav).getByRole('link', { name: label })).toBeVisible();
     }
     expect(screen.getByRole('link', { name: /open live trip/i })).toHaveAttribute(
@@ -76,6 +78,26 @@ describe('Agent 1 product routes', () => {
     );
     expect(screen.getByText(/freshness 18 s/i)).toBeVisible();
     expect(screen.getByText(/confidence high/i)).toBeVisible();
+  });
+
+  it('renders the grouping API surface and role-aware roster', async () => {
+    const route = renderRoute('/app/groups');
+
+    expect(await screen.findByRole('heading', { name: /my groups/i })).toBeVisible();
+    expect(screen.getByText('POST /teams')).toBeVisible();
+    expect(screen.getByText('GET /teams/{teamId}/members')).toBeVisible();
+    expect(screen.getByRole('link', { name: /ha long family convoy/i })).toHaveAttribute(
+      'href',
+      '/app/groups/TEAM001',
+    );
+
+    route.unmount();
+    renderRoute('/app/groups/TEAM001');
+
+    expect(await screen.findByRole('heading', { name: /roster/i })).toBeVisible();
+    expect(screen.getByText('LEADER')).toBeVisible();
+    expect(screen.getByRole('button', { name: /send invite/i })).toBeVisible();
+    expect(screen.getByRole('button', { name: /transfer leader/i })).toBeVisible();
   });
 
   it('keeps auth forms fixture-backed and validates required fields locally', async () => {

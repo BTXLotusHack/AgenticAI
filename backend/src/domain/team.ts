@@ -1,6 +1,16 @@
 import type { CallerIdentity } from "../contracts/common.js";
-import type { CreateTeamRequest, Team, TeamMembership } from "../contracts/team.js";
+import type { CreateTeamRequest, Team, TeamMembership, TeamRole } from "../contracts/team.js";
 import { newTeamId } from "../lib/ids.js";
+
+/** Build one membership item for a user joining or being (re)assigned a role. */
+export function buildMembership(
+  teamId: string,
+  userId: string,
+  role: TeamRole,
+  now: Date = new Date(),
+): TeamMembership {
+  return { teamId, userId, role, joinedAt: now.toISOString() };
+}
 
 /** Build the team aggregate and its leader membership from a validated request. */
 export function buildTeam(

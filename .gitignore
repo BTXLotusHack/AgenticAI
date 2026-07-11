@@ -18,5 +18,6 @@ reference-materials/**/tmp/
 *.tfstate.*
 *.tfplan
 infra/.build/
-
+.agents/
+skills-lock.json
 CLAUDE.md

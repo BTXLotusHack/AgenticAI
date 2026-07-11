@@ -4,6 +4,8 @@ import type {
   PlaceCommunitySummary,
   PlaceSearchResult,
   TascoPlaceRef,
+  TeamMember,
+  TeamSummary,
   TripPlanSummary,
 } from './types';
 
@@ -179,6 +181,80 @@ export const locationVisibilityPolicy: LocationVisibilityPolicy = {
   updatedAt: '2026-07-20T00:00:00.000Z',
 };
 
+export const teams: readonly TeamSummary[] = [
+  {
+    id: 'TEAM001',
+    name: 'Ha Long family convoy',
+    myRole: 'LEADER',
+    memberCount: 4,
+    activeTripId: 'TRIP001',
+    inviteState: 'ready',
+  },
+  {
+    id: 'TEAM002',
+    name: 'Weekend food loop',
+    myRole: 'MEMBER',
+    memberCount: 2,
+    activeTripId: 'TRIP002',
+    inviteState: 'pending',
+  },
+];
+
+export const teamMembers: Record<string, readonly TeamMember[]> = {
+  TEAM001: [
+    {
+      userId: 'u1',
+      displayName: 'Chi Linh',
+      email: 'linh@example.com',
+      role: 'LEADER',
+      joinedAt: '2026-07-18T03:00:00.000Z',
+      readiness: 'ready',
+    },
+    {
+      userId: 'u2',
+      displayName: 'Anh Minh',
+      email: 'minh@example.com',
+      role: 'MEMBER',
+      joinedAt: '2026-07-18T03:05:00.000Z',
+      readiness: 'ready',
+    },
+    {
+      userId: 'u3',
+      displayName: 'Chu Son',
+      email: 'son@example.com',
+      role: 'MEMBER',
+      joinedAt: '2026-07-18T03:08:00.000Z',
+      readiness: 'needs-check',
+    },
+    {
+      userId: 'u4',
+      displayName: 'Co Mai',
+      email: 'mai@example.com',
+      role: 'MEMBER',
+      joinedAt: '2026-07-18T03:10:00.000Z',
+      readiness: 'ready',
+    },
+  ],
+  TEAM002: [
+    {
+      userId: 'u1',
+      displayName: 'Chi Linh',
+      email: 'linh@example.com',
+      role: 'MEMBER',
+      joinedAt: '2026-07-22T02:00:00.000Z',
+      readiness: 'invited',
+    },
+    {
+      userId: 'u5',
+      displayName: 'Tuan',
+      email: 'tuan@example.com',
+      role: 'LEADER',
+      joinedAt: '2026-07-22T01:55:00.000Z',
+      readiness: 'ready',
+    },
+  ],
+};
+
 export async function listTrips() {
   return trips;
 }
@@ -220,4 +296,12 @@ export async function getPlaceCommunitySummary(placeId: string) {
 
 export async function getLocationVisibilityPolicy() {
   return locationVisibilityPolicy;
+}
+
+export async function listTeams() {
+  return teams;
+}
+
+export async function listTeamMembers(teamId: string) {
+  return teamMembers[teamId] ?? null;
 }

@@ -7,6 +7,8 @@ import {
   usePlace,
   usePlaceCommunitySummary,
   usePlaceSearch,
+  useTeamMembers,
+  useTeams,
   useTrip,
   useTrips,
 } from '../api/hooks';
@@ -16,6 +18,7 @@ import { ProductBrand } from '../shared/ProductBrand';
 const navItems = [
   { label: 'Dashboard', to: '/app' },
   { label: 'Trips', to: '/app/trips' },
+  { label: 'Groups', to: '/app/groups' },
   { label: 'Explore', to: '/app/explore' },
   { label: 'Now', to: '/app/now' },
   { label: 'Settings', to: '/app/settings' },
@@ -252,6 +255,112 @@ export function TripsPage() {
         </ul>
         {trips.data?.length === 0 ? <EmptyState label="No trips are available in fixture mode." /> : null}
       </section>
+    </ProductShell>
+  );
+}
+
+const groupApiRows = [
+  ['POST /teams', 'Create group and make caller LEADER'],
+  ['POST /teams/{teamId}/invites', 'Invite a member by email'],
+  ['POST /teams/{teamId}/invites/{inviteId}/accept', 'Accept an invite token'],
+  ['PUT /teams/{teamId}/leader', 'Transfer leadership safely'],
+  ['GET /me/teams', 'List my groups and roles'],
+  ['GET /teams/{teamId}/members', 'Load the group roster'],
+  ['DELETE /teams/{teamId}/members/{userId}', 'Leave or remove a member'],
+] as const;
+
+export function GroupsPage() {
+  const teams = useTeams();
+  return (
+    <ProductShell>
+      <PageIntro eyebrow="Groups" title="Manage the people before the drive.">
+        Groups hold roles, invites, roster visibility and leader transfer before any trip publishes live location.
+      </PageIntro>
+      <section className="platform-grid">
+        <article className="platform-panel platform-panel--wide">
+          <h2>My groups</h2>
+          {teams.isLoading ? <LoadingState label="Loading groups." /> : null}
+          <ul className="platform-list">
+            {(teams.data ?? []).map((team) => (
+              <li key={team.id}>
+                <Link to={`/app/groups/${team.id}`}>{team.name}</Link>
+                <span>{team.myRole}</span>
+                <span>{team.memberCount} members</span>
+                <span>{team.inviteState} invites</span>
+              </li>
+            ))}
+          </ul>
+        </article>
+        <article className="platform-panel">
+          <h2>Create group</h2>
+          <p>POST /teams creates the group and records the caller as LEADER.</p>
+          <label>
+            Group name
+            <input defaultValue="Ha Long family convoy" />
+          </label>
+          <button className="button button--primary" type="button">Create group</button>
+        </article>
+        <article className="platform-panel platform-panel--wide">
+          <h2>API grouping surface</h2>
+          <ul className="platform-list platform-list--api">
+            {groupApiRows.map(([route, behavior]) => (
+              <li key={route}>
+                <strong>{route}</strong>
+                <span>{behavior}</span>
+              </li>
+            ))}
+          </ul>
+        </article>
+      </section>
+    </ProductShell>
+  );
+}
+
+export function GroupDetailPage() {
+  const { teamId = 'TEAM001' } = useParams();
+  const teams = useTeams();
+  const members = useTeamMembers(teamId);
+  const team = teams.data?.find((item) => item.id === teamId);
+  const roster = members.data ?? [];
+  return (
+    <ProductShell>
+      <PageIntro eyebrow={teamId} title={team?.name ?? 'Group roster'}>
+        Invite, accept, transfer leadership and remove-member actions stay role-gated by Cognito and team membership.
+      </PageIntro>
+      {!teams.isLoading && !team ? <ErrorState label="Group not found." /> : null}
+      {team ? (
+        <section className="platform-grid">
+          <article className="platform-panel platform-panel--wide">
+            <h2>Roster</h2>
+            {members.isLoading ? <LoadingState label="Loading members." /> : null}
+            <ul className="platform-list">
+              {roster.map((member) => (
+                <li key={member.userId}>
+                  <strong>{member.displayName}</strong>
+                  <span>{member.role}</span>
+                  <span>{member.readiness}</span>
+                  <span>{member.email}</span>
+                </li>
+              ))}
+            </ul>
+          </article>
+          <article className="platform-panel">
+            <h2>Invite member</h2>
+            <p>POST /teams/{teamId}/invites issues an expiring token and optional push.</p>
+            <label>
+              Email
+              <input defaultValue="driver@example.com" type="email" />
+            </label>
+            <button className="button button--primary" type="button">Send invite</button>
+          </article>
+          <article className="platform-panel">
+            <h2>Leadership</h2>
+            <p>Only the current LEADER can promote a member and demote themself.</p>
+            <button type="button">Transfer leader</button>
+            <button type="button">Leave group</button>
+          </article>
+        </section>
+      ) : null}
     </ProductShell>
   );
 }

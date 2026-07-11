@@ -48,6 +48,7 @@ describe('Loopin landing page', () => {
       screen.getAllByRole('link', { name: /for organizations/i }).length,
     ).toBeGreaterThan(0);
     expect(screen.getByRole('link', { name: /log in/i })).toBeVisible();
+    expect(screen.getByRole('link', { name: /log in/i })).toHaveAttribute('href', '/login');
 
     const menuButton = screen.getByRole('button', { name: /open menu/i });
     expect(menuButton).toHaveAttribute('aria-expanded', 'false');

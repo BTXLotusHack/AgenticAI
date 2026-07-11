@@ -12,6 +12,8 @@ import {
   DynamicLiveTripPage,
   DynamicSummaryPage,
   ExplorePage,
+  GroupDetailPage,
+  GroupsPage,
   ItineraryPage,
   NowPage,
   OnboardingPage,
@@ -57,6 +59,8 @@ export function App() {
         <Route element={<AuthPage mode="reset" />} path="/reset-password" />
         <Route element={<OnboardingPage />} path="/onboarding" />
         <Route element={<DashboardPage />} path="/app" />
+        <Route element={<GroupsPage />} path="/app/groups" />
+        <Route element={<GroupDetailPage />} path="/app/groups/:teamId" />
         <Route element={<TripsPage />} path="/app/trips" />
         <Route element={<TripPlannerPage />} path="/app/trips/new" />
         <Route element={<TripOverviewPage />} path="/app/trips/:tripId" />

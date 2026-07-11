@@ -79,3 +79,10 @@ variable "web_acl_arn" {
   type        = string
   default     = null
 }
+
+variable "fcm_credential" {
+  description = "FCM credential for the SNS GCM platform application. Supply via TF_VAR_fcm_credential; never commit it to tfvars."
+  type        = string
+  default     = ""
+  sensitive   = true
+}

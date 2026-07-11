@@ -127,6 +127,7 @@
 .platform-list li { display:grid; min-height:3.8rem; align-items:center; grid-template-columns:minmax(8rem,1.2fr) repeat(3,minmax(5rem,.8fr)); gap:.8rem; border-top:1px solid #c9d0cb; color:#51645a; font-size:.8rem; }
 .platform-list li:first-child { border-top:0; }
 .platform-list a,.platform-list strong { color:var(--road-ink); font-weight:780; }
+.platform-list--api li { grid-template-columns:minmax(12rem,.75fr) minmax(16rem,1.25fr); }
 .platform-filterbar { display:flex; margin-top:1.5rem; flex-wrap:wrap; gap:.45rem; }
 .platform-filterbar button,.platform-panel button:not(.button) { min-height:2.6rem; border:1px solid #b8c3bc; border-radius:999px; background:transparent; color:#2d4336; padding:0 .85rem; font:inherit; font-size:.76rem; font-weight:720; cursor:pointer; }
 .platform-state { color:#617168; font-size:.8rem; font-weight:700; }

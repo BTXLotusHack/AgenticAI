@@ -5,6 +5,8 @@ import {
   getPlace,
   getPlaceCommunitySummary,
   getTrip,
+  listTeamMembers,
+  listTeams,
   listTrips,
   searchPlaces,
 } from './fixtures';
@@ -38,4 +40,12 @@ export function usePlaceCommunitySummary(placeId: string) {
 
 export function useLocationVisibilityPolicy() {
   return useQuery({ queryKey: ['location-visibility-policy'], queryFn: getLocationVisibilityPolicy });
+}
+
+export function useTeams() {
+  return useQuery({ queryKey: ['teams'], queryFn: listTeams });
+}
+
+export function useTeamMembers(teamId: string) {
+  return useQuery({ queryKey: ['team-members', teamId], queryFn: () => listTeamMembers(teamId) });
 }

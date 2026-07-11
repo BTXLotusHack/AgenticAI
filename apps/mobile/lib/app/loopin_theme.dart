@@ -6,6 +6,9 @@ abstract final class LoopinTheme {
   static const warmBone = Color(0xFFF4F1E8);
   static const softSage = Color(0xFFDCE8DE);
   static const safetyAmber = Color(0xFFE5A83A);
+  static const clayLine = Color(0xFFC8CEC9);
+  static const mutedInk = Color(0xFF596960);
+  static const deepRoad = Color(0xFF12271C);
 
   static ThemeData get light {
     final colorScheme =
@@ -35,7 +38,29 @@ abstract final class LoopinTheme {
       elevatedButtonTheme: const ElevatedButtonThemeData(
         style: ButtonStyle(minimumSize: WidgetStatePropertyAll(Size(48, 48))),
       ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: roadInk,
+          minimumSize: const Size(48, 48),
+          side: const BorderSide(color: clayLine),
+        ),
+      ),
+      cardTheme: const CardThemeData(
+        color: Color(0xFFEEEAE0),
+        elevation: 0,
+        margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(8)),
+          side: BorderSide(color: clayLine),
+        ),
+      ),
       textTheme: const TextTheme(
+        headlineLarge: TextStyle(
+          color: roadInk,
+          fontSize: 44,
+          fontWeight: FontWeight.w700,
+          height: 0.98,
+        ),
         headlineMedium: TextStyle(
           color: roadInk,
           fontSize: 30,
@@ -43,6 +68,12 @@ abstract final class LoopinTheme {
           height: 1.15,
         ),
         bodyLarge: TextStyle(color: roadInk, fontSize: 17, height: 1.5),
+        labelSmall: TextStyle(
+          color: mutedInk,
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 1,
+        ),
       ),
     );
   }

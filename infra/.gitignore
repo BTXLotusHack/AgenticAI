@@ -6,3 +6,5 @@ crash.log
 *.tfvars.local
 override.tf
 override.tf.json
+
+loopin-6499a-firebase-adminsdk-fbsvc-3e549685fe.json

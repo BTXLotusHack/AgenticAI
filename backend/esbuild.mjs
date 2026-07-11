@@ -12,6 +12,13 @@ const HANDLERS = {
   "telemetry-processor": "src/handlers/telemetry-processor.ts",
   "create-team": "src/handlers/create-team.ts",
   "invite-user": "src/handlers/invite-user.ts",
+  "upsert-profile": "src/handlers/upsert-profile.ts",
+  "get-profile": "src/handlers/get-profile.ts",
+  "accept-invite": "src/handlers/accept-invite.ts",
+  "transfer-leader": "src/handlers/transfer-leader.ts",
+  "list-my-teams": "src/handlers/list-my-teams.ts",
+  "list-team-members": "src/handlers/list-team-members.ts",
+  "remove-member": "src/handlers/remove-member.ts",
 };
 
 await rm("dist", { recursive: true, force: true });
