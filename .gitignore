@@ -12,4 +12,6 @@ test-results/
 Thumbs.db
 .worktrees/
 
+.agents/
+skills-lock.json
 CLAUDE.md

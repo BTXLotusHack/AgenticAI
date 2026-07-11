@@ -1,0 +1,355 @@
+corridor:
+  id: can_tho_hue
+  name: "Cần Thơ → Huế"
+  country: "Việt Nam"
+
+actor:
+  id: "compass/crawler-google-places"
+  language: "vi"
+  skip_closed_places: true
+
+  # Cost guard for EACH Actor run. Override with --max-charge-usd.
+  # This does not cap the combined cost of all jobs.
+  max_total_charge_usd_per_run: 2.0
+
+  # Discovery stays cheap. Detail data is collected later by Place ID.
+  discovery_scrape_place_detail_page: false
+
+  # Prefer coordinate-bounded crawling over free-text geocoding. This avoids
+  # Nominatim/Google resolving small Vietnamese localities to the wrong polygon.
+  use_custom_geolocation_from_center: true
+
+  # Never collect reviewer identity/profile data.
+  scrape_reviews_personal_data: false
+  scrape_contacts: false
+  scrape_social_profiles: false
+  maximum_leads_enrichment_records: 0
+
+enrichment_defaults:
+  batch_size: 40
+  reviews_origin: "google"
+  reviews_sort: "newest"
+  reviews_start_date: "2 years"
+  max_reviews: 3
+  max_images: 1
+
+query_groups:
+  accommodation:
+    enabled: true
+    priority: 10
+    max_places_per_search: 20
+    minimum_clean_places: 8
+    search_terms:
+      - "khách sạn"
+      - "nhà nghỉ"
+      - "homestay"
+      - "hostel"
+    enrichment:
+      enabled: true
+      per_location_limit: 20
+      min_rating: 3.5
+      min_reviews_count: 5
+      max_reviews: 5
+      max_images: 3
+
+  food:
+    enabled: true
+    priority: 20
+    max_places_per_search: 20
+    minimum_clean_places: 10
+    search_terms:
+      - "quán ăn địa phương"
+      - "quán cơm"
+      - "quán ăn sáng"
+      - "quán cà phê"
+    enrichment:
+      enabled: true
+      per_location_limit: 20
+      min_rating: 3.5
+      min_reviews_count: 10
+      max_reviews: 5
+      max_images: 2
+
+  attraction:
+    enabled: true
+    priority: 30
+    max_places_per_search: 15
+    minimum_clean_places: 5
+    search_terms:
+      - "địa điểm du lịch"
+      - "điểm ngắm cảnh"
+      - "bãi biển"
+      - "khu cắm trại"
+    enrichment:
+      enabled: true
+      per_location_limit: 18
+      min_rating: 3.5
+      min_reviews_count: 5
+      max_reviews: 5
+      max_images: 3
+
+  fuel:
+    enabled: true
+    priority: 1
+    max_places_per_search: 10
+    minimum_clean_places: 3
+    search_terms:
+      - "trạm xăng"
+    enrichment:
+      enabled: true
+      per_location_limit: 10
+      min_rating: 0
+      min_reviews_count: 0
+      max_reviews: 2
+      max_images: 1
+
+  vehicle_repair:
+    enabled: true
+    priority: 2
+    max_places_per_search: 10
+    minimum_clean_places: 3
+    search_terms:
+      - "sửa xe máy"
+      - "vá lốp xe máy"
+      - "cứu hộ xe máy"
+    enrichment:
+      enabled: true
+      per_location_limit: 10
+      min_rating: 3.0
+      min_reviews_count: 2
+      max_reviews: 5
+      max_images: 1
+
+  rest_stop:
+    enabled: true
+    priority: 3
+    max_places_per_search: 10
+    minimum_clean_places: 3
+    search_terms:
+      - "trạm dừng chân"
+      - "cửa hàng tiện lợi 24 giờ"
+      - "nhà vệ sinh công cộng"
+    enrichment:
+      enabled: true
+      per_location_limit: 10
+      min_rating: 3.0
+      min_reviews_count: 2
+      max_reviews: 5
+      max_images: 2
+
+  healthcare:
+    enabled: true
+    priority: 4
+    max_places_per_search: 8
+    minimum_clean_places: 3
+    search_terms:
+      - "bệnh viện"
+      - "phòng khám"
+      - "nhà thuốc"
+    enrichment:
+      enabled: true
+      per_location_limit: 8
+      min_rating: 0
+      min_reviews_count: 0
+      max_reviews: 2
+      max_images: 1
+
+  parking:
+    enabled: true
+    priority: 5
+    max_places_per_search: 8
+    minimum_clean_places: 2
+    search_terms:
+      - "bãi đỗ xe"
+      - "bãi giữ xe máy"
+    enrichment:
+      enabled: true
+      per_location_limit: 8
+      min_rating: 0
+      min_reviews_count: 0
+      max_reviews: 2
+      max_images: 1
+
+segments:
+  - id: "01_can_tho_vinh_long"
+    order: 1
+    name: "Cần Thơ → Vĩnh Long"
+    locations:
+      - id: "can_tho"
+        query: "Cần Thơ, Việt Nam"
+        center: [10.0452, 105.7469]
+        validation_radius_km: 30
+        result_factor: 1.0
+      - id: "vinh_long"
+        query: "Vĩnh Long, Việt Nam"
+        center: [10.2537, 105.9722]
+        validation_radius_km: 22
+        result_factor: 0.75
+
+  - id: "02_vinh_long_ho_chi_minh"
+    order: 2
+    name: "Vĩnh Long → TP.HCM"
+    locations:
+      - id: "cai_be"
+        query: "Cai Be District, Tien Giang Province, Vietnam"
+        center: [10.3345, 106.0354]
+        validation_radius_km: 18
+        result_factor: 0.6
+      - id: "my_tho"
+        query: "My Tho City, Tien Giang Province, Vietnam"
+        center: [10.3600, 106.3600]
+        validation_radius_km: 22
+        result_factor: 0.75
+      - id: "tan_an"
+        query: "Tan An City, Long An Province, Vietnam"
+        center: [10.5359, 106.4137]
+        validation_radius_km: 20
+        result_factor: 0.65
+      - id: "ho_chi_minh_city"
+        query: "District 1, Ho Chi Minh City, Vietnam"
+        center: [10.7769, 106.7009]
+        validation_radius_km: 38
+        result_factor: 1.0
+
+  - id: "03_ho_chi_minh_phan_thiet"
+    order: 3
+    name: "TP.HCM → Phan Thiết"
+    locations:
+      - id: "vung_tau"
+        query: "Vũng Tàu, Việt Nam"
+        center: [10.4114, 107.1362]
+        validation_radius_km: 25
+        result_factor: 0.9
+      - id: "ho_tram"
+        query: "Hồ Tràm, Việt Nam"
+        center: [10.4690, 107.4230]
+        validation_radius_km: 18
+        result_factor: 0.6
+      - id: "la_gi"
+        query: "La Gi, Bình Thuận, Việt Nam"
+        center: [10.6590, 107.7720]
+        validation_radius_km: 22
+        result_factor: 0.7
+      - id: "phan_thiet"
+        query: "Phan Thiết, Việt Nam"
+        center: [10.9805, 108.2615]
+        validation_radius_km: 28
+        result_factor: 0.9
+      - id: "mui_ne"
+        query: "Mũi Né, Phan Thiết, Việt Nam"
+        center: [10.9330, 108.2870]
+        validation_radius_km: 20
+        result_factor: 0.8
+
+  - id: "04_phan_thiet_nha_trang"
+    order: 4
+    name: "Phan Thiết → Nha Trang"
+    locations:
+      - id: "bau_trang"
+        query: "Bàu Trắng, Bình Thuận, Việt Nam"
+        center: [11.0720, 108.4380]
+        validation_radius_km: 14
+        result_factor: 0.4
+        groups: [attraction, fuel, rest_stop, parking]
+      - id: "phan_rang"
+        query: "Phan Rang - Tháp Chàm, Việt Nam"
+        center: [11.5643, 108.9886]
+        validation_radius_km: 28
+        result_factor: 0.85
+      - id: "vinh_hy"
+        query: "Vĩnh Hy, Ninh Thuận, Việt Nam"
+        center: [11.7205, 109.1922]
+        validation_radius_km: 16
+        result_factor: 0.55
+        groups: [accommodation, food, attraction, fuel, vehicle_repair, rest_stop, parking]
+      - id: "cam_ranh"
+        query: "Cam Ranh, Khánh Hòa, Việt Nam"
+        center: [11.9214, 109.1591]
+        validation_radius_km: 26
+        result_factor: 0.75
+      - id: "nha_trang"
+        query: "Nha Trang, Việt Nam"
+        center: [12.2388, 109.1967]
+        validation_radius_km: 30
+        result_factor: 1.0
+
+  - id: "05_nha_trang_quy_nhon"
+    order: 5
+    name: "Nha Trang → Quy Nhơn"
+    locations:
+      - id: "ninh_hoa"
+        query: "Ninh Hòa, Khánh Hòa, Việt Nam"
+        center: [12.4912, 109.1250]
+        validation_radius_km: 24
+        result_factor: 0.7
+      - id: "dai_lanh"
+        query: "Đại Lãnh, Khánh Hòa, Việt Nam"
+        center: [12.8320, 109.3780]
+        validation_radius_km: 16
+        result_factor: 0.5
+        groups: [accommodation, food, attraction, fuel, vehicle_repair, rest_stop, parking]
+      - id: "tuy_hoa"
+        query: "Tuy Hòa, Phú Yên, Việt Nam"
+        center: [13.0955, 109.3209]
+        validation_radius_km: 28
+        result_factor: 0.9
+      - id: "song_cau"
+        query: "Sông Cầu, Phú Yên, Việt Nam"
+        center: [13.4556, 109.2235]
+        validation_radius_km: 24
+        result_factor: 0.7
+      - id: "quy_nhon"
+        query: "Quy Nhơn, Việt Nam"
+        center: [13.7820, 109.2190]
+        validation_radius_km: 30
+        result_factor: 1.0
+
+  - id: "06_quy_nhon_quang_ngai"
+    order: 6
+    name: "Quy Nhơn → Quảng Ngãi"
+    locations:
+      - id: "sa_huynh"
+        query: "Sa Huỳnh, Quảng Ngãi, Việt Nam"
+        center: [14.6820, 109.0570]
+        validation_radius_km: 20
+        result_factor: 0.6
+      - id: "quang_ngai"
+        query: "Quảng Ngãi, Việt Nam"
+        center: [15.1214, 108.8044]
+        validation_radius_km: 28
+        result_factor: 0.85
+
+  - id: "07_quang_ngai_da_nang"
+    order: 7
+    name: "Quảng Ngãi → Đà Nẵng"
+    locations:
+      - id: "tam_ky"
+        query: "Tam Kỳ, Việt Nam"
+        center: [15.5736, 108.4740]
+        validation_radius_km: 25
+        result_factor: 0.75
+      - id: "hoi_an"
+        query: "Hội An, Việt Nam"
+        center: [15.8801, 108.3380]
+        validation_radius_km: 22
+        result_factor: 0.9
+      - id: "da_nang"
+        query: "Đà Nẵng, Việt Nam"
+        center: [16.0544, 108.2022]
+        validation_radius_km: 32
+        result_factor: 1.0
+
+  - id: "08_da_nang_hue"
+    order: 8
+    name: "Đà Nẵng → Huế"
+    locations:
+      - id: "lang_co"
+        query: "Lăng Cô, Huế, Việt Nam"
+        center: [16.2480, 108.0750]
+        validation_radius_km: 18
+        result_factor: 0.65
+      - id: "hue"
+        query: "Huế, Việt Nam"
+        center: [16.4637, 107.5909]
+        validation_radius_km: 30
+        result_factor: 1.0

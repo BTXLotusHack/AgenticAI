@@ -48,6 +48,10 @@ Versioned distance bands, persistence windows, confidence requirements, notifica
 
 POI identity, route, coordinates, type, safety attributes, parking, restroom, fuel/charging, opening status and source confidence.
 
+### DestinationSuggestionDataset
+
+Structured POI dataset for AI-assisted destination recommendations and trip-planning features. Records include crawl provenance, corridor, segment, location, type, coordinates, rating, review counts, opening signals, source confidence, AI use cases and safety-boundary flags. The dataset excludes raw crawl payloads and reviewer identity/profile fields. It is not authoritative for safe regroup decisions, route detours, road direction, safe entry/exit, live ETA or convoy separation.
+
 ### Situation
 
 Stable incident identity, type, lifecycle, severity, affected members/components, evidence, policy version, confidence, action, timestamps and resolution.

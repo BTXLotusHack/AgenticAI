@@ -54,6 +54,8 @@ DRAFT → READY → ACTIVE → PAUSED → COMPLETED → ARCHIVED
 - Generate expiring join codes and QR links.
 - Support route refresh before departure.
 - Store an offline route summary on participating devices.
+- Support AI-assisted destination suggestions from a curated POI dataset.
+- Keep destination suggestions separate from safety-critical regroup approval.
 
 ### F-02 Membership and readiness
 
@@ -97,6 +99,7 @@ DRAFT → READY → ACTIVE → PAUSED → COMPLETED → ARCHIVED
 - Score safety, route compatibility, ETA fairness, parking, detour and relevant amenities.
 - Require leader approval for ordinary regrouping.
 - Provide deterministic fallback when AI is unavailable.
+- Treat POI crawl data as candidate seeds only; map, routing and policy validation remain mandatory before a regroup recommendation is shown.
 
 ### F-08 Voice interaction
 
