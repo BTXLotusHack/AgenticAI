@@ -1,0 +1,23 @@
+{
+  "name": "loopin",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "services/*",
+    "infrastructure/*"
+  ],
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "scripts": {
+    "dev": "npm run dev --workspace @loopin/web",
+    "build": "npm run build --workspace @loopin/web",
+    "preview": "npm run preview --workspace @loopin/web",
+    "lint": "npm run lint --workspace @loopin/web",
+    "typecheck": "npm run typecheck --workspace @loopin/web",
+    "test": "npm run test --workspace @loopin/web --",
+    "test:e2e": "npm run test:e2e --workspace @loopin/web"
+  }
+}
