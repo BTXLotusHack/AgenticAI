@@ -1,8 +1,12 @@
+<<<<<<< Updated upstream
 import type {
   APIGatewayProxyEventV2WithJWTAuthorizer,
   APIGatewayProxyResultV2,
   Handler,
 } from "aws-lambda";
+=======
+import type { APIGatewayProxyHandlerV2 } from "aws-lambda";
+>>>>>>> Stashed changes
 import { CreateTeamRequest } from "../contracts/team.js";
 import { buildTeam } from "../domain/team.js";
 import { createTeamWithLeader } from "../lib/dynamo/repository.js";
@@ -17,10 +21,14 @@ import { logger } from "../lib/logger.js";
  * caller; the caller becomes the team LEADER. Thin handler: authenticate,
  * validate, build the aggregate, persist atomically, map the result.
  */
+<<<<<<< Updated upstream
 export const handler: Handler<
   APIGatewayProxyEventV2WithJWTAuthorizer,
   APIGatewayProxyResultV2
 > = async (event) => {
+=======
+export const handler: APIGatewayProxyHandlerV2 = async (event) => {
+>>>>>>> Stashed changes
   try {
     const caller = getCaller(event);
     const request = parseBody(event, CreateTeamRequest);
