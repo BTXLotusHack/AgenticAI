@@ -21,3 +21,31 @@ test("IoT records carry broker-derived identity and Kinesis partial failures are
   assert.match(telemetry, /ReportBatchItemFailures/);
   assert.match(telemetry, /destination_config/);
 });
+
+test("shared Terraform state is encrypted, versioned and locked", async () => {
+  const backend = await read("backend.tf");
+  const bootstrap = await read("bootstrap/main.tf");
+  assert.match(backend, /backend "s3"/);
+  assert.match(backend, /use_lockfile\s*=\s*true/);
+  assert.match(bootstrap, /prevent_destroy\s*=\s*true/);
+  assert.match(bootstrap, /versioning_configuration\s*\{\s*status\s*=\s*"Enabled"/s);
+  assert.match(bootstrap, /DenyInsecureTransport/);
+});
+
+test("web hosting uses a private S3 origin and CloudFront OAC", async () => {
+  const web = await read("modules/web/main.tf");
+  assert.match(web, /aws_cloudfront_origin_access_control/);
+  assert.match(web, /block_public_policy\s*=\s*true/);
+  assert.match(web, /viewer_protocol_policy\s*=\s*"redirect-to-https"/);
+  assert.match(web, /response_headers_policy_id/);
+  assert.match(web, /response_page_path\s*=\s*"\/index.html"/);
+});
+
+test("development deployment is manual and uses GitHub OIDC", async () => {
+  const workflow = await read("../.github/workflows/deploy-development.yml");
+  assert.match(workflow, /workflow_dispatch:/);
+  assert.match(workflow, /id-token: write/);
+  assert.match(workflow, /configure-aws-credentials@v6\.1\.2/);
+  assert.match(workflow, /inputs\.confirmation == 'DEPLOY_DEV'/);
+  assert.doesNotMatch(workflow, /AWS_ACCESS_KEY_ID/);
+});

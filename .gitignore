@@ -13,5 +13,10 @@ Thumbs.db
 .worktrees/
 reference-materials/**/extracted/
 reference-materials/**/tmp/
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+infra/.build/
 
 CLAUDE.md

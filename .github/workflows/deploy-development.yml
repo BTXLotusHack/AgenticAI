@@ -1,0 +1,80 @@
+name: Deploy development
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: Type DEPLOY_DEV to run the development apply
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: deploy-development
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: inputs.confirmation == 'DEPLOY_DEV'
+    runs-on: ubuntu-latest
+    environment: development
+    env:
+      AWS_REGION: ap-southeast-1
+      TF_IN_AUTOMATION: "true"
+      TF_VAR_maps_api_key: ${{ secrets.TASCO_MAPS_API_KEY }}
+      TF_VAR_maps_trace_url: ${{ vars.TASCO_MAPS_TRACE_URL }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            backend/package-lock.json
+      - run: npm ci
+      - run: npm run lint && npm run typecheck && npm test -- --run && npm run build
+      - run: npm ci && npm run typecheck && npm test && npm run build && npm run smoke:bundles
+        working-directory: backend
+      - run: node --test infra/test/architecture.test.mjs
+      - uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: 1.14.6
+      - uses: aws-actions/configure-aws-credentials@v6.1.2
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: loopin-development-${{ github.run_id }}
+      - name: Verify AWS identity
+        run: aws sts get-caller-identity
+      - name: Initialize and validate Terraform
+        working-directory: infra
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ vars.TF_STATE_BUCKET }}" \
+            -backend-config="key=loopin/development/terraform.tfstate" \
+            -backend-config="region=${AWS_REGION}" \
+            -backend-config="use_lockfile=true"
+          terraform fmt -check -recursive
+          terraform validate
+      - name: Plan development
+        working-directory: infra
+        run: |
+          mkdir -p .build
+          terraform plan -var-file=environments/dev.tfvars -out=.build/development.tfplan
+      - name: Apply development
+        working-directory: infra
+        run: terraform apply -auto-approve .build/development.tfplan
+      - name: Publish immutable web assets
+        working-directory: infra
+        run: |
+          BUCKET="$(terraform output -raw web_bucket_name)"
+          DISTRIBUTION="$(terraform output -raw web_distribution_id)"
+          aws s3 sync ../apps/web/dist "s3://${BUCKET}" --delete --exclude index.html --cache-control "public,max-age=31536000,immutable"
+          aws s3 cp ../apps/web/dist/index.html "s3://${BUCKET}/index.html" --cache-control "no-cache" --content-type "text/html"
+          aws cloudfront create-invalidation --distribution-id "${DISTRIBUTION}" --paths "/index.html" "/*"
