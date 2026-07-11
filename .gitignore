@@ -11,5 +11,7 @@ test-results/
 .DS_Store
 Thumbs.db
 .worktrees/
+reference-materials/**/extracted/
+reference-materials/**/tmp/
 
 CLAUDE.md
