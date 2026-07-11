@@ -328,6 +328,21 @@ describe("ordered telemetry application flow", () => {
     expect(realtime.messages).toHaveLength(realtimeCount);
   });
 
+  it("excludes not-ready members from both graph calculation and situation evidence", async () => {
+    const state = goldenState();
+    const repository = new MemoryTripRepository([{
+      ...state,
+      members: state.members.map((member) => member.memberId === "M004"
+        ? { ...member, readinessState: "not-ready" as const }
+        : member),
+    }]);
+    const { app, maps } = setup(repository);
+    await driveToSplit(app, maps);
+    const snapshot = await app.getLiveSnapshot({ userId: "USER001" }, "TRIP001");
+    expect(snapshot.graph.orderedMemberIds).not.toContain("M004");
+    expect(snapshot.situations).toEqual([]);
+  });
+
   it("rejects an expired regroup recommendation", async () => {
     const clock = new FixedClock(at(1_000));
     const { app, maps } = setup(new MemoryTripRepository([goldenState()]), clock);

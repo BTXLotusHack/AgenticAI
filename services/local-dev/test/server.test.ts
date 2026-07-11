@@ -13,7 +13,7 @@ import type { EventEnvelope, LocationTelemetryV1, ProjectedLocationV1 } from "@l
 import { GOLDEN_R001, createGoldenR001TelemetryInputs } from "@loopin/demo-scenarios";
 
 import { LocalRealtimeHub, createLocalServer, type RunningLocalServer } from "../src/index";
-import { createDefaultLocalRuntime, createDefaultLocalServer } from "../src/default-runtime";
+import { createDefaultLocalRuntime } from "../src/default-runtime";
 
 const running: RunningLocalServer[] = [];
 
@@ -55,7 +55,6 @@ async function start() {
   const dependencies = setup();
   const server = await createLocalServer({
     ...dependencies,
-    environment: "test",
     allowedOrigins: ["http://127.0.0.1:4173"],
   }).listen(0, "127.0.0.1");
   running.push(server);
@@ -68,8 +67,10 @@ function auth(userId: string): Record<string, string> {
 
 async function rejectedUpgrade(url: string, protocol: string, origin = "http://127.0.0.1:4173"): Promise<number> {
   return new Promise<number>((resolve, reject) => {
+    let settled = false;
     const socket = new WebSocket(url, protocol, { origin });
     socket.once("unexpected-response", (_request, response) => {
+      settled = true;
       response.resume();
       resolve(response.statusCode ?? 0);
     });
@@ -77,8 +78,27 @@ async function rejectedUpgrade(url: string, protocol: string, origin = "http://1
       socket.close();
       reject(new Error("WebSocket upgrade unexpectedly succeeded."));
     });
-    socket.once("error", () => undefined);
+    socket.once("error", (error) => {
+      if (!settled) reject(error);
+    });
   });
+}
+
+async function openSocket(url: string, protocol: string): Promise<WebSocket> {
+  const socket = new WebSocket(url, protocol, { origin: "http://127.0.0.1:4173" });
+  await new Promise<void>((resolve, reject) => {
+    socket.once("open", resolve);
+    socket.once("error", reject);
+  });
+  return socket;
+}
+
+async function waitUntil(predicate: () => boolean, timeoutMs = 1_000): Promise<void> {
+  const expiresAt = Date.now() + timeoutMs;
+  while (!predicate()) {
+    if (Date.now() >= expiresAt) throw new Error("Timed out waiting for realtime evidence.");
+    await new Promise((resolve) => setTimeout(resolve, 5));
+  }
 }
 
 function firstObservation() {
@@ -116,8 +136,17 @@ function firstObservation() {
 }
 
 describe("local service runtime", () => {
-  it("fails closed when fixture identity is requested outside local/test", () => {
-    expect(() => createDefaultLocalServer([], "production")).toThrow("Fixture identity is disabled");
+  it("fails closed at the lower-level constructor outside local/test", async () => {
+    const dependencies = setup();
+    const previous = process.env.LOOPIN_ENV;
+    process.env.LOOPIN_ENV = "production";
+    try {
+      expect(() => createLocalServer({ ...dependencies, allowedOrigins: [] })).toThrow("restricted to local and test");
+    } finally {
+      if (previous === undefined) delete process.env.LOOPIN_ENV;
+      else process.env.LOOPIN_ENV = previous;
+      await dependencies.realtime.close();
+    }
   });
 
   it("serves health and rejects unauthenticated application routes", async () => {
@@ -239,6 +268,19 @@ describe("local service runtime", () => {
     expect(await closed).toBe(1008);
   });
 
+  it("bounds shutdown while an authenticated WebSocket is active", async () => {
+    const { server } = await start();
+    const channel = "/trip/TRIP001/state";
+    const socket = await openSocket(
+      `${server.wsUrl}/v1/realtime?tripId=TRIP001&channel=${encodeURIComponent(channel)}`,
+      "loopin.fixture.USER001",
+    );
+    const closed = new Promise<number>((resolve) => socket.once("close", (code) => resolve(code)));
+    running.splice(running.indexOf(server), 1);
+    await expect(server.close()).resolves.toBeUndefined();
+    expect(await closed).toBe(1001);
+  });
+
   it("returns a typed deadline and emits coordinate-free request logs", async () => {
     const dependencies = setup();
     const records: Array<Readonly<Record<string, unknown>>> = [];
@@ -252,7 +294,6 @@ describe("local service runtime", () => {
     const server = await createLocalServer({
       ...dependencies,
       app,
-      environment: "test",
       allowedOrigins: [],
       deadlineMs: 10,
       logger: { log: (record) => records.push(record) },
@@ -260,7 +301,7 @@ describe("local service runtime", () => {
     running.push(server);
     const response = await fetch(`${server.url}/v1/trips/TRIP001/summary`, { headers: auth("USER001") });
     expect(response.status).toBe(504);
-    expect(await response.json()).toMatchObject({ code: "deadline-exceeded", retryable: true });
+    expect(await response.json()).toMatchObject({ code: "operation-indeterminate", retryable: false });
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(records[0]).toMatchObject({ method: "GET", path: "/v1/trips/TRIP001/summary", statusCode: 504 });
     expect(JSON.stringify(records)).not.toContain("latitude");
@@ -271,11 +312,29 @@ describe("local service runtime", () => {
     const dependencies = createDefaultLocalRuntime();
     const server = await createLocalServer({
       ...dependencies,
-      environment: "test",
       allowedOrigins: ["http://127.0.0.1:4173"],
     }).listen(0, "127.0.0.1");
     running.push(server);
     const statuses = new Set<string>();
+    const stateMessages: Array<{ eventType: string; snapshotRevision: number; payload: Record<string, unknown> }> = [];
+    const rearMessages: Array<{ eventType: string; snapshotRevision: number; payload: Record<string, unknown> }> = [];
+    const stateChannel = "/trip/TRIP001/state";
+    const rearChannel = "/trip/TRIP001/member/M004/alerts";
+    const stateSocket = await openSocket(
+      `${server.wsUrl}/v1/realtime?tripId=TRIP001&channel=${encodeURIComponent(stateChannel)}`,
+      "loopin.fixture.USER001",
+    );
+    const rearSocket = await openSocket(
+      `${server.wsUrl}/v1/realtime?tripId=TRIP001&channel=${encodeURIComponent(rearChannel)}`,
+      "loopin.fixture.USER004",
+    );
+    stateSocket.on("message", (data) => stateMessages.push(JSON.parse(data.toString())));
+    rearSocket.on("message", (data) => rearMessages.push(JSON.parse(data.toString())));
+    let splitSnapshot: {
+      graph: { components: Array<{ memberIds: string[] }> };
+      situations: Array<{ situationId: string; evidence: { frontBoundaryMemberId?: string; rearBoundaryMemberId?: string } }>;
+      recommendations: Array<{ recommendationId: string; selectedCandidate: { poiId: string } | null; excludedCandidates: Array<{ poiId: string }> }>;
+    } | undefined;
 
     for (const input of createGoldenR001TelemetryInputs()) {
       const memberIndex = GOLDEN_R001.members.findIndex((member) => member.memberId === input.telemetry.memberId);
@@ -291,7 +350,8 @@ describe("local service runtime", () => {
       if (input.telemetry.eventId === "gps:35:M004") {
         const snapshot = await (await fetch(`${server.url}/v1/trips/TRIP001/live-snapshot`, {
           headers: auth("USER001"),
-        })).json() as { recommendations: Array<{ recommendationId: string }> };
+        })).json() as typeof splitSnapshot & { recommendations: Array<{ recommendationId: string }> };
+        splitSnapshot = snapshot;
         const recommendationId = snapshot.recommendations[0]?.recommendationId;
         expect(recommendationId).toBeTruthy();
         const approved = await fetch(`${server.url}/v1/trips/TRIP001/recommendations/${recommendationId}/approve`, {
@@ -303,6 +363,35 @@ describe("local service runtime", () => {
       }
     }
 
+    expect(splitSnapshot?.situations[0]).toMatchObject({
+      situationId: "split:TRIP001:M003:M004",
+      evidence: { frontBoundaryMemberId: "M003", rearBoundaryMemberId: "M004" },
+    });
+    expect(splitSnapshot?.graph.components.map((component) => component.memberIds)).toEqual([
+      ["M001", "M002", "M003"],
+      ["M004"],
+    ]);
+    expect(splitSnapshot?.recommendations[0]?.selectedCandidate?.poiId).toBe("POI001");
+    expect(splitSnapshot?.recommendations[0]?.excludedCandidates).toContainEqual(expect.objectContaining({ poiId: "POI002" }));
+
+    const prematureSummary = await fetch(`${server.url}/v1/trips/TRIP001/summary`, { headers: auth("USER001") });
+    expect(prematureSummary.status).toBe(503);
+
+    const completed = await fetch(`${server.url}/v1/trips/TRIP001/complete`, {
+      method: "POST",
+      headers: auth("USER001"),
+      body: JSON.stringify({
+        schemaVersion: 1,
+        commandId: "http-complete-1",
+        idempotencyKey: "http-complete-1",
+        completedAt: "2026-07-20T00:01:15.000Z",
+      }),
+    });
+    expect(completed.status).toBe(200);
+    expect(await completed.json()).toMatchObject({
+      summary: { completedAt: "2026-07-20T00:01:15.000Z", measuredFacts: { durationSeconds: 75 } },
+    });
+
     const summary = await fetch(`${server.url}/v1/trips/TRIP001/summary`, { headers: auth("USER001") });
     expect(summary.status).toBe(200);
     expect(await summary.json()).toMatchObject({
@@ -312,9 +401,27 @@ describe("local service runtime", () => {
         resolvedSplitCount: 1,
         regroupRecommendationCount: 1,
         notificationRequestCount: 8,
+        rejectedTelemetryCount: 2,
         maximumConfirmedRouteGapMeters: 900,
+        durationSeconds: 75,
       },
     });
+    const outsiderSummary = await fetch(`${server.url}/v1/trips/TRIP001/summary`, { headers: auth("OUTSIDER") });
+    expect(outsiderSummary.status).toBe(403);
     expect(statuses).toEqual(new Set(["accepted", "duplicate", "stale-sequence", "history-only"]));
+    await waitUntil(() => stateMessages.some((message) => message.eventType === "TripCompleted") && rearMessages.length >= 2);
+    const revisions = stateMessages.map((message) => message.snapshotRevision);
+    expect(revisions.every((revision, index) => index === 0 || revision > revisions[index - 1]!)).toBe(true);
+    expect(rearMessages.map((message) =>
+      (message.payload.notification as { audience: string }).audience)).toEqual(["rear-boundary", "resolution"]);
+    const finalSnapshot = await (await fetch(`${server.url}/v1/trips/TRIP001/live-snapshot`, {
+      headers: auth("USER001"),
+    })).json() as { graph: { overallState: string; components: Array<{ memberIds: string[] }> } };
+    expect(finalSnapshot.graph).toMatchObject({
+      overallState: "together",
+      components: [{ memberIds: ["M001", "M002", "M003", "M004"] }],
+    });
+    stateSocket.close();
+    rearSocket.close();
   });
 });

@@ -375,6 +375,26 @@ export const ApproveRegroupResponseV1Schema = z
 
 export type ApproveRegroupResponseV1 = z.infer<typeof ApproveRegroupResponseV1Schema>;
 
+export const CompleteTripRequestV1Schema = z
+  .object({
+    schemaVersion: z.literal(1),
+    commandId: IdentifierSchema,
+    idempotencyKey: IdentifierSchema,
+    completedAt: IsoDateTimeSchema,
+  })
+  .strict();
+
+export type CompleteTripRequestV1 = z.infer<typeof CompleteTripRequestV1Schema>;
+
+export const CompleteTripResponseV1Schema = z
+  .object({
+    schemaVersion: z.literal(1),
+    summary: TripSummaryV1Schema,
+  })
+  .strict();
+
+export type CompleteTripResponseV1 = z.infer<typeof CompleteTripResponseV1Schema>;
+
 export const LiveSnapshotV1Schema = z
   .object({
     schemaVersion: z.literal(1),

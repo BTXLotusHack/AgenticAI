@@ -1,6 +1,8 @@
 import {
   ApproveRegroupRequestV1Schema,
   ApproveRegroupResponseV1Schema,
+  CompleteTripRequestV1Schema,
+  CompleteTripResponseV1Schema,
   JoinTripRequestV1Schema,
   JoinTripResponseV1Schema,
   LiveSnapshotV1Schema,
@@ -10,6 +12,8 @@ import {
   SetReadinessResponseV1Schema,
   type ApproveRegroupRequestV1,
   type ApproveRegroupResponseV1,
+  type CompleteTripRequestV1,
+  type CompleteTripResponseV1,
   type EventEnvelope,
   type JoinTripRequestV1,
   type JoinTripResponseV1,
@@ -72,7 +76,7 @@ export type TripState = {
   readonly outbox: readonly OutboxMessage[];
   readonly summary?: TripSummaryV1;
   readonly startedAt?: string;
-  readonly rejectionKeys: readonly string[];
+  readonly rejectionReceipts: ReadonlyArray<{ readonly key: string; readonly expiresAt: string }>;
   readonly rejectedTelemetryCount: number;
   readonly notificationRequestCount: number;
   readonly regroupRecommendationCount: number;
@@ -102,7 +106,7 @@ export function createTripState(input: CreateTripStateInput): TripState {
     notifications: [],
     commandReceipts: [],
     outbox: [],
-    rejectionKeys: [],
+    rejectionReceipts: [],
     rejectedTelemetryCount: 0,
     notificationRequestCount: 0,
     regroupRecommendationCount: 0,
@@ -211,14 +215,38 @@ export class FixedClock implements Clock {
 
 export class FixtureMapsProvider implements MapsProvider {
   private readonly projections = new Map<string, ProjectedLocationV1>();
+  private readonly replayTimes = new Map<string, {
+    calculatedAt: string;
+    receivedAt: string;
+    expectedObservedAt?: string;
+    expectedSentAt?: string;
+  }>();
 
-  add(projection: ProjectedLocationV1): void {
+  add(projection: ProjectedLocationV1, trustedReplayTime?: {
+    readonly calculatedAt: string;
+    readonly receivedAt: string;
+    readonly expectedObservedAt?: string;
+    readonly expectedSentAt?: string;
+  }): void {
     this.projections.set(projection.sourceTelemetryEventId, structuredClone(projection));
+    if (trustedReplayTime) this.replayTimes.set(projection.sourceTelemetryEventId, { ...trustedReplayTime });
+  }
+
+  trustedReplayTime(eventId: string): { calculatedAt: string; receivedAt: string } | undefined {
+    const value = this.replayTimes.get(eventId);
+    return value ? { ...value } : undefined;
   }
 
   async project(telemetry: LocationTelemetryV1): Promise<ProjectedLocationV1> {
     const projection = this.projections.get(telemetry.eventId);
     if (!projection) throw new ApplicationError("unavailable", "No route projection is available for this observation.", true);
+    const replayTime = this.replayTimes.get(telemetry.eventId);
+    if (replayTime && (
+      (replayTime.expectedObservedAt !== undefined && telemetry.observedAt !== replayTime.expectedObservedAt)
+      || (replayTime.expectedSentAt !== undefined && telemetry.sentAt !== replayTime.expectedSentAt)
+    )) {
+      throw new ApplicationError("invalid-request", "Replay telemetry timestamps do not match the trusted fixture.");
+    }
     return structuredClone(projection);
   }
 }
@@ -316,19 +344,14 @@ function recommendationFor(state: TripState, situation: Situation, now: string):
 }
 
 function synchronizedSourceEventIds(
-  state: TripState,
-  telemetryState: TelemetryState,
+  graphNodes: readonly TelemetryState["currentNodes"][string][],
   latestEventIdByMember: Readonly<Record<string, string>>,
   maximumSkewMs = 2_000,
 ): string[] | undefined {
-  const expectedMemberIds = state.members
-    .filter((member) => member.readinessState === "ready" && member.visibilityPolicy !== "paused")
-    .map((member) => member.memberId);
-  const nodes = expectedMemberIds.map((memberId) => telemetryState.currentNodes[memberId]);
-  if (nodes.some((node) => !node) || expectedMemberIds.some((memberId) => !latestEventIdByMember[memberId])) return undefined;
-  const observedTimes = nodes.map((node) => Date.parse(node!.observedAt));
+  if (graphNodes.length === 0 || graphNodes.some((node) => !latestEventIdByMember[node.memberId])) return undefined;
+  const observedTimes = graphNodes.map((node) => Date.parse(node.observedAt));
   return Math.max(...observedTimes) - Math.min(...observedTimes) <= maximumSkewMs
-    ? expectedMemberIds.map((memberId) => latestEventIdByMember[memberId]!)
+    ? graphNodes.map((node) => latestEventIdByMember[node.memberId]!)
     : undefined;
 }
 
@@ -400,7 +423,12 @@ export class LoopinApplication {
     });
   }
 
-  async processTelemetry(identity: Identity, rawTelemetry: LocationTelemetryV1, receivedAt: string): Promise<ProcessTelemetryResult> {
+  async processTelemetry(
+    identity: Identity,
+    rawTelemetry: LocationTelemetryV1,
+    receivedAt: string,
+    trustedReplayTime?: { readonly calculatedAt: string; readonly receivedAt: string },
+  ): Promise<ProcessTelemetryResult> {
     const telemetry = LocationTelemetryV1Schema.parse(rawTelemetry);
     const initialState = await this.requireTrip(telemetry.tripId);
     const initialMember = memberForIdentity(initialState, identity);
@@ -411,8 +439,8 @@ export class LoopinApplication {
     if (projection.role !== initialMember.role) {
       throw new ApplicationError("invalid-request", "Route projection role does not match authoritative membership.");
     }
-    const calculatedAt = telemetry.source === "simulator" ? telemetry.observedAt : receivedAt;
-    const ingestionReceivedAt = telemetry.source === "simulator" ? telemetry.sentAt : receivedAt;
+    const calculatedAt = trustedReplayTime?.calculatedAt ?? receivedAt;
+    const ingestionReceivedAt = trustedReplayTime?.receivedAt ?? receivedAt;
     for (let attempt = 0; attempt < 4; attempt += 1) {
       const state = await this.requireTrip(telemetry.tripId);
       const member = memberForIdentity(state, identity);
@@ -420,11 +448,15 @@ export class LoopinApplication {
       const ingestion = acceptProjectedLocation(state.telemetryState, { telemetry, projection }, ingestionReceivedAt);
       if (["duplicate", "stale-sequence", "rejected"].includes(ingestion.status)) {
         const rejectionKey = `${ingestion.status}:${telemetry.eventId}`;
-        if (!state.rejectionKeys.includes(rejectionKey)) {
+        const activeRejectionReceipts = state.rejectionReceipts.filter((receipt) => Date.parse(receipt.expiresAt) > Date.parse(receivedAt));
+        if (!activeRejectionReceipts.some((receipt) => receipt.key === rejectionKey)) {
           const next: TripState = {
             ...state,
             version: state.version + 1,
-            rejectionKeys: [...state.rejectionKeys, rejectionKey],
+            rejectionReceipts: [...activeRejectionReceipts, {
+              key: rejectionKey,
+              expiresAt: new Date(Date.parse(receivedAt) + 24 * 60 * 60_000).toISOString(),
+            }],
             rejectedTelemetryCount: state.rejectedTelemetryCount + 1,
           };
           if (!(await this.dependencies.repository.putIfVersion(next, state.version))) continue;
@@ -449,9 +481,13 @@ export class LoopinApplication {
         continue;
       }
 
+      const activeMemberIds = new Set(state.members
+        .filter((member) => member.readinessState === "ready" && member.visibilityPolicy !== "paused")
+        .map((member) => member.memberId));
+      const graphNodes = Object.values(ingestion.state.currentNodes).filter((node) => activeMemberIds.has(node.memberId));
       const graphResult = calculateGraph(
         state.graphState,
-        Object.values(ingestion.state.currentNodes),
+        graphNodes,
         calculatedAt,
         CONVOY_POLICY_V1,
       );
@@ -459,7 +495,7 @@ export class LoopinApplication {
         ...state.latestTelemetryEventIdByMember,
         [telemetry.memberId]: telemetry.eventId,
       };
-      const sourceEventIds = synchronizedSourceEventIds(state, ingestion.state, latestTelemetryEventIdByMember);
+      const sourceEventIds = synchronizedSourceEventIds(graphNodes, latestTelemetryEventIdByMember);
       const transition = sourceEventIds
         ? reduceSplitSituation(state.situation, graphResult.graph, sourceEventIds)
         : { transition: "none" as const };
@@ -480,17 +516,6 @@ export class LoopinApplication {
       const regroupRecommendationCount = state.regroupRecommendationCount
         + (transition.transition === "confirmed" && recommendations.length > 0 ? 1 : 0);
       const startedAt = state.startedAt ?? telemetry.observedAt;
-      const summary = transition.transition === "resolved" && situation
-        ? summarizeTrip({
-            tripId: state.tripId,
-            startedAt,
-            completedAt: calculatedAt,
-            situations: [situation],
-            regroupRecommendationCount,
-            notificationRequestCount,
-            rejectedTelemetryCount: state.rejectedTelemetryCount,
-          })
-        : state.summary;
       const nextBase: TripState = {
         ...state,
         version: state.version + 1,
@@ -505,7 +530,6 @@ export class LoopinApplication {
         notificationRequestCount,
         regroupRecommendationCount,
         latestTelemetryEventIdByMember,
-        ...(summary ? { summary } : {}),
       };
       const next: TripState = {
         ...nextBase,
@@ -637,6 +661,89 @@ export class LoopinApplication {
     memberForIdentity(state, identity);
     if (!state.summary) throw new ApplicationError("unavailable", "The trip summary is not ready yet.", true);
     return structuredClone(state.summary);
+  }
+
+  async completeTrip(
+    identity: Identity,
+    tripId: string,
+    rawRequest: CompleteTripRequestV1,
+  ): Promise<CompleteTripResponseV1> {
+    const request = CompleteTripRequestV1Schema.parse(rawRequest);
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      const state = await this.requireTrip(tripId);
+      const member = memberForIdentity(state, identity);
+      if (member.role !== "leader") throw new ApplicationError("forbidden", "Only the trip leader may complete the trip.");
+      const fingerprint = JSON.stringify({ command: "complete-trip", tripId, completedAt: request.completedAt, userId: identity.userId });
+      const receipt = state.commandReceipts.find((candidate) =>
+        candidate.idempotencyKey === request.idempotencyKey && Date.parse(candidate.expiresAt) > Date.parse(request.completedAt));
+      if (receipt && receipt.fingerprint !== fingerprint) {
+        throw new ApplicationError("conflict", "The idempotency key was already used for a different command.");
+      }
+      if (state.summary) return CompleteTripResponseV1Schema.parse({ schemaVersion: 1, summary: state.summary });
+      if (!state.startedAt || state.situation?.lifecycle !== "resolved" || !state.graphState) {
+        throw new ApplicationError("conflict", "The trip cannot be completed before the convoy is reconnected.");
+      }
+      if (Date.parse(request.completedAt) < Date.parse(state.startedAt)) {
+        throw new ApplicationError("invalid-request", "Trip completion cannot precede trip start.");
+      }
+      const summary = summarizeTrip({
+        tripId,
+        startedAt: state.startedAt,
+        completedAt: request.completedAt,
+        situations: [state.situation],
+        regroupRecommendationCount: state.regroupRecommendationCount,
+        notificationRequestCount: state.notificationRequestCount,
+        rejectedTelemetryCount: state.rejectedTelemetryCount,
+      });
+      const domainEvent: EventEnvelope = {
+        schemaVersion: 1,
+        eventId: `trip-completed:${tripId}:${request.commandId}`,
+        eventType: "TripCompleted",
+        occurredAt: request.completedAt,
+        producedAt: request.completedAt,
+        correlationId: request.commandId,
+        tripId,
+        producer: "loopin-application",
+        payload: { summary },
+      };
+      const realtimeEvent = RealtimeEventV1Schema.parse({
+        schemaVersion: 1,
+        eventId: `realtime:${domainEvent.eventId}`,
+        tripId,
+        snapshotRevision: state.snapshotRevision + 1,
+        graphRevision: state.graphState.graph.graphRevision,
+        audience: { kind: "trip" },
+        eventType: "TripCompleted",
+        occurredAt: request.completedAt,
+        expiresAt: new Date(Date.parse(request.completedAt) + 15 * 60_000).toISOString(),
+        payload: { summary },
+      });
+      const expiresAt = new Date(Date.parse(request.completedAt) + 24 * 60 * 60_000).toISOString();
+      const next: TripState = {
+        ...state,
+        version: state.version + 1,
+        snapshotRevision: state.snapshotRevision + 1,
+        summary,
+        commandReceipts: [...state.commandReceipts.filter((candidate) => Date.parse(candidate.expiresAt) > Date.parse(request.completedAt)), {
+          idempotencyKey: request.idempotencyKey,
+          fingerprint,
+          recommendationId: `summary:${tripId}`,
+          expiresAt,
+        }],
+        outbox: [...state.outbox,
+          { messageId: domainEvent.eventId, publisher: "domain", channel: `trip.${tripId}.events`, payload: domainEvent },
+          { messageId: realtimeEvent.eventId, publisher: "realtime", channel: `/trip/${tripId}/state`, payload: realtimeEvent },
+        ],
+      };
+      if (await this.dependencies.repository.putIfVersion(next, state.version, {
+        now: request.completedAt,
+        command: { idempotencyKey: request.idempotencyKey, fingerprint, expiresAt },
+      })) {
+        await this.flushOutbox(tripId);
+        return CompleteTripResponseV1Schema.parse({ schemaVersion: 1, summary });
+      }
+    }
+    throw new ApplicationError("conflict", "Trip state changed while completing the trip.", true);
   }
 
   private async requireTrip(tripId: string): Promise<TripState> {

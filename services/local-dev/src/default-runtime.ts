@@ -30,7 +30,14 @@ export function createDefaultLocalRuntime() {
     }),
   ]);
   const maps = new FixtureMapsProvider();
-  for (const input of createGoldenR001TelemetryInputs()) maps.add(input.projection);
+  for (const input of createGoldenR001TelemetryInputs()) {
+    maps.add(input.projection, {
+      calculatedAt: input.telemetry.observedAt,
+      receivedAt: input.receivedAt,
+      expectedObservedAt: input.telemetry.observedAt,
+      expectedSentAt: input.telemetry.sentAt,
+    });
+  }
   const realtime = new LocalRealtimeHub(repository);
   const app = new LoopinApplication({
     repository,
@@ -44,14 +51,9 @@ export function createDefaultLocalRuntime() {
 
 export function createDefaultLocalServer(
   allowedOrigins: readonly string[] = ["http://127.0.0.1:4173", "http://localhost:5173"],
-  configuredEnvironment = process.env.LOOPIN_ENV ?? "local",
 ) {
-  if (configuredEnvironment !== "local" && configuredEnvironment !== "test") {
-    throw new Error("Fixture identity is disabled unless LOOPIN_ENV is local or test.");
-  }
   return createLocalServer({
     ...createDefaultLocalRuntime(),
-    environment: configuredEnvironment,
     allowedOrigins,
     logger: { log: (record) => process.stdout.write(`${JSON.stringify(record)}\n`) },
   });

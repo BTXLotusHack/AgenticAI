@@ -13,14 +13,13 @@ import {
   type Publisher,
   type TripRepository,
 } from "@loopin/application";
-import type { ApiError, RealtimeEventV1 } from "@loopin/contracts";
+import { LocationTelemetryV1Schema, type ApiError, type RealtimeEventV1 } from "@loopin/contracts";
 
 type LocalServerDependencies = {
-  readonly app: Pick<LoopinApplication, "joinTrip" | "setReadiness" | "getLiveSnapshot" | "processTelemetry" | "approveRegroup" | "getSummary">;
+  readonly app: Pick<LoopinApplication, "joinTrip" | "setReadiness" | "getLiveSnapshot" | "processTelemetry" | "approveRegroup" | "completeTrip" | "getSummary">;
   readonly repository: TripRepository;
   readonly maps: FixtureMapsProvider;
   readonly realtime: LocalRealtimeHub;
-  readonly environment: "local" | "test";
   readonly allowedOrigins: readonly string[];
   readonly deadlineMs?: number;
   readonly logger?: { log(record: Readonly<Record<string, unknown>>): void };
@@ -157,7 +156,8 @@ function sendJson(response: ServerResponse, status: number, body: unknown, origi
 }
 
 async function readJson(request: IncomingMessage): Promise<unknown> {
-  if (!(request.headers["content-type"] ?? "").toLowerCase().startsWith("application/json")) {
+  const mediaType = (request.headers["content-type"] ?? "").split(";", 1)[0]!.trim().toLowerCase();
+  if (mediaType !== "application/json" && !/^application\/[a-z0-9.+-]+\+json$/.test(mediaType)) {
     throw new LocalUnsupportedMediaTypeError("POST requests require application/json.");
   }
   const chunks: Buffer[] = [];
@@ -184,7 +184,15 @@ function errorResponse(error: unknown, correlationId: string): { status: number;
     };
   }
   if (error instanceof LocalDeadlineError) {
-    return { status: 504, body: { code: "deadline-exceeded", message: "The operation timed out.", correlationId, retryable: true } };
+    return {
+      status: 504,
+      body: {
+        code: "operation-indeterminate",
+        message: "The operation may still complete; query current state before retrying.",
+        correlationId,
+        retryable: false,
+      },
+    };
   }
   if (error instanceof LocalPayloadTooLargeError) {
     return { status: 413, body: { code: "payload-too-large", message: error.message, correlationId, retryable: false } };
@@ -233,7 +241,8 @@ function requireIdentity(request: IncomingMessage): Identity {
 }
 
 export function createLocalServer(dependencies: LocalServerDependencies) {
-  if (!["local", "test"].includes(dependencies.environment)) {
+  const configuredEnvironment = process.env.LOOPIN_ENV ?? "local";
+  if (configuredEnvironment !== "local" && configuredEnvironment !== "test") {
     throw new Error("The fixture identity runtime is restricted to local and test environments.");
   }
 
@@ -255,6 +264,7 @@ export function createLocalServer(dependencies: LocalServerDependencies) {
     if (request.method === "OPTIONS") {
       response.statusCode = 204;
       if (origin) response.setHeader("access-control-allow-origin", origin);
+      if (origin) response.setHeader("vary", "Origin");
       response.setHeader("access-control-allow-headers", "authorization, content-type, idempotency-key");
       response.setHeader("access-control-allow-methods", "GET, POST, OPTIONS");
       return response.end();
@@ -278,12 +288,24 @@ export function createLocalServer(dependencies: LocalServerDependencies) {
         return sendJson(response, 200, await withDeadline(dependencies.app.getLiveSnapshot(identity, snapshot[1]!), dependencies.deadlineMs ?? 9_000), origin);
       }
       if (request.method === "POST" && url.pathname === "/v1/telemetry") {
-        const result = await withDeadline(dependencies.app.processTelemetry(identity, await readJson(request) as never, new Date().toISOString()), dependencies.deadlineMs ?? 9_000);
+        const telemetry = LocationTelemetryV1Schema.parse(await readJson(request));
+        const trustedReplayTime = dependencies.maps.trustedReplayTime(telemetry.eventId);
+        const result = await withDeadline(
+          dependencies.app.processTelemetry(identity, telemetry, new Date().toISOString(), trustedReplayTime),
+          dependencies.deadlineMs ?? 9_000,
+        );
         return sendJson(response, 202, { status: result.status, snapshotRevision: result.snapshotRevision }, origin);
       }
       const approval = /^\/v1\/trips\/([^/]+)\/recommendations\/([^/]+)\/approve$/.exec(url.pathname);
       if (request.method === "POST" && approval) {
         return sendJson(response, 200, await withDeadline(dependencies.app.approveRegroup(identity, approval[1]!, approval[2]!, await readJson(request) as never), dependencies.deadlineMs ?? 9_000), origin);
+      }
+      const completion = /^\/v1\/trips\/([^/]+)\/complete$/.exec(url.pathname);
+      if (request.method === "POST" && completion) {
+        return sendJson(response, 200, await withDeadline(
+          dependencies.app.completeTrip(identity, completion[1]!, await readJson(request) as never),
+          dependencies.deadlineMs ?? 9_000,
+        ), origin);
       }
       const summary = /^\/v1\/trips\/([^/]+)\/summary$/.exec(url.pathname);
       if (request.method === "GET" && summary) {

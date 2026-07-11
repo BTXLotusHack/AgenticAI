@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import {
   ApiErrorSchema,
   CommandEnvelopeV1Schema,
+  CompleteTripRequestV1Schema,
   EventEnvelopeSchema,
   JoinTripRequestV1Schema,
   LiveSnapshotV1Schema,
@@ -133,6 +134,12 @@ describe("service boundary contracts", () => {
         payload: { recommendationId: "recommendation-1" },
       }),
     ).toMatchObject({ idempotencyKey: "approve:recommendation-1" });
+    expect(CompleteTripRequestV1Schema.parse({
+      schemaVersion: 1,
+      commandId: "complete-1",
+      idempotencyKey: "complete:TRIP001",
+      completedAt: "2026-07-20T00:01:15.000Z",
+    })).toMatchObject({ completedAt: "2026-07-20T00:01:15.000Z" });
   });
 
   it("validates authoritative situations and member notifications", () => {

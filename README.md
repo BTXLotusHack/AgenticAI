@@ -175,7 +175,7 @@ Invoke-RestMethod http://127.0.0.1:8787/healthz
 npm.cmd test --workspace @loopin/local-dev -- --run
 ```
 
-The local runtime validates the same contracts and invokes the same application service intended for API Gateway, Kinesis, DynamoDB, and AppSync adapters. Browser WebSockets authenticate through a local-only fixture subprotocol and enforce the HTTP origin allowlist. It is not production authentication or persistence.
+The local runtime validates the same contracts and invokes the same application service intended for API Gateway, Kinesis, DynamoDB, and AppSync adapters. Browser WebSockets authenticate through a local-only fixture subprotocol and enforce the HTTP origin allowlist. Replay time comes from the server-owned golden adapter rather than the client payload. A leader explicitly completes the trip after reconnection before `/summary` becomes available. This runtime is not production authentication or persistence.
 
 ## Run the web experience
 
