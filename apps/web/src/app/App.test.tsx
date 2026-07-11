@@ -47,4 +47,29 @@ describe('Loopin landing page', () => {
     expect(menuButton).toHaveAttribute('aria-expanded', 'true');
     expect(screen.getByRole('dialog', { name: /mobile navigation/i })).toBeVisible();
   });
+
+  it('explains a route-aware convoy split with safe role-specific messages', async () => {
+    const user = userEvent.setup();
+    render(<App />, { wrapper: MemoryRouter });
+
+    expect(
+      screen.getByRole('heading', {
+        name: /loopin understands the whole group—not just your dot on a map/i,
+      }),
+    ).toBeVisible();
+    expect(screen.getByRole('button', { name: /together/i })).toBeVisible();
+    expect(screen.getByRole('button', { name: /gap detected/i })).toBeVisible();
+    expect(screen.getByRole('button', { name: /regrouped/i })).toBeVisible();
+    expect(screen.getByLabelText(/car 3 vehicle node/i)).toBeVisible();
+    expect(screen.getByText(/car 3.*car 4 boundary/i)).toBeVisible();
+
+    await user.click(screen.getByRole('button', { name: /gap detected/i }));
+
+    expect(
+      await screen.findByText(/cars 4 and 5 are behind.*maintain a safe pace/i),
+    ).toBeVisible();
+    expect(
+      await screen.findByText(/continue safely to the shared regroup point/i),
+    ).toBeVisible();
+  });
 });

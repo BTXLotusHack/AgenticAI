@@ -1,3 +1,4 @@
+import { ConvoyStory } from '../components/ConvoyStory';
 import { HeroRoute } from '../components/HeroRoute';
 import { LandingNav } from '../components/LandingNav';
 
@@ -10,6 +11,7 @@ export function App() {
       <LandingNav />
       <main id="main-content">
         <HeroRoute />
+        <ConvoyStory />
       </main>
     </>
   );
