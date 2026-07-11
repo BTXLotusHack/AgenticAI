@@ -23,6 +23,30 @@
         "networkQuality": "good",
         "source": "simulator"
       },
+      "memberTelemetryInput": {
+        "schemaVersion": 1,
+        "telemetry": {
+          "schemaVersion": 1,
+          "eventId": "gps:30:M003",
+          "tripId": "TRIP001",
+          "memberId": "M003",
+          "deviceId": "device:M003",
+          "sequence": 303,
+          "observedAt": "2026-07-20T00:00:30.000Z",
+          "sentAt": "2026-07-20T00:00:31.000Z",
+          "latitude": 21.0285,
+          "longitude": 105.8572,
+          "accuracyMeters": 5,
+          "speedKmh": 70,
+          "headingDegrees": 90,
+          "batteryPercent": 80,
+          "networkQuality": "good",
+          "source": "simulator"
+        },
+        "transport": "simulator",
+        "publishedAt": "2026-07-20T00:00:31.000Z",
+        "offlineQueueDepth": 0
+      },
       "projectedLocation": {
         "schemaVersion": 1,
         "eventId": "projection:gps:30:M003",
@@ -171,6 +195,348 @@
           "haptic",
           "push"
         ]
+      },
+      "liveSnapshot": {
+        "schemaVersion": 1,
+        "tripId": "TRIP001",
+        "snapshotRevision": 5,
+        "generatedAt": "2026-07-20T00:00:35.000Z",
+        "viewer": {
+          "memberId": "M004",
+          "role": "member"
+        },
+        "members": [
+          {
+            "memberId": "M001",
+            "tripId": "TRIP001",
+            "role": "leader",
+            "latitude": 21.0285,
+            "longitude": 105.8572,
+            "snappedLatitude": 21.0285,
+            "snappedLongitude": 105.8572,
+            "routeProgressMeters": 10700,
+            "routeDeviationMeters": 0,
+            "speedKmh": 70,
+            "headingDegrees": 90,
+            "accuracyMeters": 5,
+            "observedAt": "2026-07-20T00:00:35.000Z",
+            "receivedAt": "2026-07-20T00:00:35.000Z",
+            "sequence": 351,
+            "sourceTelemetryEventId": "gps:35:M001",
+            "confidence": "high",
+            "connectivity": "healthy",
+            "policyVersion": "convoy-v1"
+          },
+          {
+            "memberId": "M002",
+            "tripId": "TRIP001",
+            "role": "member",
+            "latitude": 21.0285,
+            "longitude": 105.85730000000001,
+            "snappedLatitude": 21.0285,
+            "snappedLongitude": 105.85730000000001,
+            "routeProgressMeters": 10600,
+            "routeDeviationMeters": 0,
+            "speedKmh": 70,
+            "headingDegrees": 90,
+            "accuracyMeters": 5,
+            "observedAt": "2026-07-20T00:00:35.000Z",
+            "receivedAt": "2026-07-20T00:00:35.000Z",
+            "sequence": 352,
+            "sourceTelemetryEventId": "gps:35:M002",
+            "confidence": "high",
+            "connectivity": "healthy",
+            "policyVersion": "convoy-v1"
+          },
+          {
+            "memberId": "M003",
+            "tripId": "TRIP001",
+            "role": "member",
+            "latitude": 21.0285,
+            "longitude": 105.85740000000001,
+            "snappedLatitude": 21.0285,
+            "snappedLongitude": 105.85740000000001,
+            "routeProgressMeters": 10500,
+            "routeDeviationMeters": 0,
+            "speedKmh": 70,
+            "headingDegrees": 90,
+            "accuracyMeters": 5,
+            "observedAt": "2026-07-20T00:00:35.000Z",
+            "receivedAt": "2026-07-20T00:00:35.000Z",
+            "sequence": 353,
+            "sourceTelemetryEventId": "gps:35:M003",
+            "confidence": "high",
+            "connectivity": "healthy",
+            "policyVersion": "convoy-v1"
+          },
+          {
+            "memberId": "M004",
+            "tripId": "TRIP001",
+            "role": "member",
+            "latitude": 21.0285,
+            "longitude": 105.8575,
+            "snappedLatitude": 21.0285,
+            "snappedLongitude": 105.8575,
+            "routeProgressMeters": 9600,
+            "routeDeviationMeters": 0,
+            "speedKmh": 70,
+            "headingDegrees": 90,
+            "accuracyMeters": 5,
+            "observedAt": "2026-07-20T00:00:35.000Z",
+            "receivedAt": "2026-07-20T00:00:35.000Z",
+            "sequence": 354,
+            "sourceTelemetryEventId": "gps:35:M004",
+            "confidence": "high",
+            "connectivity": "healthy",
+            "policyVersion": "convoy-v1"
+          }
+        ],
+        "graph": {
+          "tripId": "TRIP001",
+          "leaderMemberId": "M001",
+          "graphRevision": 5,
+          "calculatedAt": "2026-07-20T00:00:35.000Z",
+          "overallState": "split",
+          "orderedMemberIds": [
+            "M001",
+            "M002",
+            "M003",
+            "M004"
+          ],
+          "edges": [
+            {
+              "aheadMemberId": "M001",
+              "behindMemberId": "M002",
+              "routeGapMeters": 100,
+              "etaGapSeconds": 5,
+              "combinedUncertaintyMeters": 7.0710678118654755,
+              "confidentLowerGapMeters": 92.92893218813452,
+              "state": "healthy",
+              "stateSince": "2026-07-20T00:00:00.000Z",
+              "policyVersion": "convoy-v1"
+            },
+            {
+              "aheadMemberId": "M002",
+              "behindMemberId": "M003",
+              "routeGapMeters": 100,
+              "etaGapSeconds": 5,
+              "combinedUncertaintyMeters": 7.0710678118654755,
+              "confidentLowerGapMeters": 92.92893218813452,
+              "state": "healthy",
+              "stateSince": "2026-07-20T00:00:00.000Z",
+              "policyVersion": "convoy-v1"
+            },
+            {
+              "aheadMemberId": "M003",
+              "behindMemberId": "M004",
+              "routeGapMeters": 900,
+              "etaGapSeconds": 46,
+              "combinedUncertaintyMeters": 7.0710678118654755,
+              "confidentLowerGapMeters": 892.9289321881345,
+              "state": "broken",
+              "stateSince": "2026-07-20T00:00:35.000Z",
+              "policyVersion": "convoy-v1"
+            }
+          ],
+          "components": [
+            {
+              "componentId": "component:M001+M002+M003",
+              "memberIds": [
+                "M001",
+                "M002",
+                "M003"
+              ],
+              "frontBoundaryMemberId": "M001",
+              "rearBoundaryMemberId": "M003",
+              "containsLeader": true,
+              "averageSpeedKmh": 70
+            },
+            {
+              "componentId": "component:M004",
+              "memberIds": [
+                "M004"
+              ],
+              "frontBoundaryMemberId": "M004",
+              "rearBoundaryMemberId": "M004",
+              "containsLeader": false,
+              "averageSpeedKmh": 70
+            }
+          ],
+          "policyVersion": "convoy-v1"
+        },
+        "situations": [
+          {
+            "situationId": "split:TRIP001:M003:M004",
+            "tripId": "TRIP001",
+            "type": "convoy-split",
+            "lifecycle": "confirmed",
+            "severity": "medium",
+            "affectedComponentIds": [
+              "component:M001+M002+M003",
+              "component:M004"
+            ],
+            "evidence": {
+              "frontBoundaryMemberId": "M003",
+              "rearBoundaryMemberId": "M004",
+              "routeGapMeters": 900,
+              "maximumRouteGapMeters": 900,
+              "etaGapSeconds": 46,
+              "durationSeconds": 0,
+              "locationConfidence": "high",
+              "graphRevision": 5,
+              "sourceEventIds": [
+                "gps:35:M001",
+                "gps:35:M002",
+                "gps:35:M003",
+                "gps:35:M004"
+              ]
+            },
+            "policyVersion": "convoy-v1",
+            "confirmedAt": "2026-07-20T00:00:35.000Z",
+            "updatedAt": "2026-07-20T00:00:35.000Z"
+          }
+        ],
+        "recommendations": [],
+        "notifications": [
+          {
+            "notificationId": "notification:split:TRIP001:M003:M004:confirmed:M004:vi",
+            "dedupeKey": "split:TRIP001:M003:M004:confirmed:M004:vi",
+            "situationId": "split:TRIP001:M003:M004",
+            "recipientMemberId": "M004",
+            "locale": "vi",
+            "audience": "rear-boundary",
+            "severity": "medium",
+            "message": "Bạn đang ở ranh giới sau; đoạn phía trước cách khoảng 900 m. Giữ tốc độ an toàn và không vội đuổi theo.",
+            "graphRevision": 5,
+            "createdAt": "2026-07-20T00:00:35.000Z",
+            "expiresAt": "2026-07-20T00:05:35.000Z",
+            "channels": [
+              "visual",
+              "voice",
+              "haptic",
+              "push"
+            ]
+          }
+        ]
+      },
+      "convoySituationEvent": {
+        "schemaVersion": 1,
+        "eventId": "situation:split:TRIP001:M003:M004:5",
+        "tripId": "TRIP001",
+        "snapshotRevision": 5,
+        "graphRevision": 5,
+        "eventType": "convoySituationCreated",
+        "occurredAt": "2026-07-20T00:00:35.000Z",
+        "situation": {
+          "situationId": "split:TRIP001:M003:M004",
+          "tripId": "TRIP001",
+          "type": "convoy-split",
+          "lifecycle": "confirmed",
+          "severity": "medium",
+          "affectedComponentIds": [
+            "component:M001+M002+M003",
+            "component:M004"
+          ],
+          "evidence": {
+            "frontBoundaryMemberId": "M003",
+            "rearBoundaryMemberId": "M004",
+            "routeGapMeters": 900,
+            "maximumRouteGapMeters": 900,
+            "etaGapSeconds": 46,
+            "durationSeconds": 0,
+            "locationConfidence": "high",
+            "graphRevision": 5,
+            "sourceEventIds": [
+              "gps:35:M001",
+              "gps:35:M002",
+              "gps:35:M003",
+              "gps:35:M004"
+            ]
+          },
+          "policyVersion": "convoy-v1",
+          "confirmedAt": "2026-07-20T00:00:35.000Z",
+          "updatedAt": "2026-07-20T00:00:35.000Z"
+        }
+      },
+      "driverAlert": {
+        "schemaVersion": 1,
+        "alertId": "alert:notification:split:TRIP001:M003:M004:confirmed:M004:vi",
+        "tripId": "TRIP001",
+        "recipientMemberId": "M004",
+        "issuedAt": "2026-07-20T00:00:35.000Z",
+        "expiresAt": "2026-07-20T00:05:35.000Z",
+        "notification": {
+          "notificationId": "notification:split:TRIP001:M003:M004:confirmed:M004:vi",
+          "dedupeKey": "split:TRIP001:M003:M004:confirmed:M004:vi",
+          "situationId": "split:TRIP001:M003:M004",
+          "recipientMemberId": "M004",
+          "locale": "vi",
+          "audience": "rear-boundary",
+          "severity": "medium",
+          "message": "Bạn đang ở ranh giới sau; đoạn phía trước cách khoảng 900 m. Giữ tốc độ an toàn và không vội đuổi theo.",
+          "graphRevision": 5,
+          "createdAt": "2026-07-20T00:00:35.000Z",
+          "expiresAt": "2026-07-20T00:05:35.000Z",
+          "channels": [
+            "visual",
+            "voice",
+            "haptic",
+            "push"
+          ]
+        },
+        "requiresAcknowledgement": true
+      },
+      "driverAlertAcknowledgement": {
+        "schemaVersion": 1,
+        "acknowledgementId": "ack:notification:split:TRIP001:M003:M004:confirmed:M004:vi",
+        "alertId": "alert:notification:split:TRIP001:M003:M004:confirmed:M004:vi",
+        "notificationId": "notification:split:TRIP001:M003:M004:confirmed:M004:vi",
+        "tripId": "TRIP001",
+        "memberId": "M004",
+        "acknowledgedAt": "2026-07-20T00:00:35.000Z",
+        "idempotencyKey": "ack:notification:split:TRIP001:M003:M004:confirmed:M004:vi"
+      },
+      "realtimeEvent": {
+        "schemaVersion": 1,
+        "eventId": "realtime:5:M004",
+        "tripId": "TRIP001",
+        "snapshotRevision": 5,
+        "graphRevision": 5,
+        "audience": {
+          "kind": "member",
+          "memberId": "M004"
+        },
+        "eventType": "driverAlertIssued",
+        "occurredAt": "2026-07-20T00:00:35.000Z",
+        "expiresAt": "2026-07-20T00:05:35.000Z",
+        "payload": {
+          "schemaVersion": 1,
+          "alertId": "alert:notification:split:TRIP001:M003:M004:confirmed:M004:vi",
+          "tripId": "TRIP001",
+          "recipientMemberId": "M004",
+          "issuedAt": "2026-07-20T00:00:35.000Z",
+          "expiresAt": "2026-07-20T00:05:35.000Z",
+          "notification": {
+            "notificationId": "notification:split:TRIP001:M003:M004:confirmed:M004:vi",
+            "dedupeKey": "split:TRIP001:M003:M004:confirmed:M004:vi",
+            "situationId": "split:TRIP001:M003:M004",
+            "recipientMemberId": "M004",
+            "locale": "vi",
+            "audience": "rear-boundary",
+            "severity": "medium",
+            "message": "Bạn đang ở ranh giới sau; đoạn phía trước cách khoảng 900 m. Giữ tốc độ an toàn và không vội đuổi theo.",
+            "graphRevision": 5,
+            "createdAt": "2026-07-20T00:00:35.000Z",
+            "expiresAt": "2026-07-20T00:05:35.000Z",
+            "channels": [
+              "visual",
+              "voice",
+              "haptic",
+              "push"
+            ]
+          },
+          "requiresAcknowledgement": true
+        }
       }
     },
     {

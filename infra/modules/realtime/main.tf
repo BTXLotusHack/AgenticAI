@@ -45,7 +45,7 @@ resource "aws_appsync_graphql_api" "main" {
 }
 
 # Local (NONE) data source: the publish mutation is a pass-through whose only
-# job is to trigger the onRiderPosition subscription.
+# job is to trigger the onRealtimeEvent subscription.
 resource "aws_appsync_datasource" "none" {
   api_id = aws_appsync_graphql_api.main.id
   name   = "local_passthrough"
@@ -92,11 +92,11 @@ resource "aws_appsync_datasource" "membership" {
 }
 
 # Pass-through resolver: echo the input as the mutation result so subscribers
-# receive the full RiderPosition payload.
-resource "aws_appsync_resolver" "publish_rider_position" {
+# receive the full RealtimeEvent payload.
+resource "aws_appsync_resolver" "publish_realtime_event" {
   api_id      = aws_appsync_graphql_api.main.id
   type        = "Mutation"
-  field       = "publishRiderPosition"
+  field       = "publishRealtimeEvent"
   data_source = aws_appsync_datasource.none.name
 
   request_template = <<-VTL
@@ -109,12 +109,12 @@ resource "aws_appsync_resolver" "publish_rider_position" {
   response_template = "$util.toJson($context.result)"
 }
 
-# A teamId argument is only a filter, not authorization. Resolve every
+# A tripId argument is only a filter, not authorization. Resolve every
 # subscription registration against the caller's current membership item.
-resource "aws_appsync_resolver" "authorize_rider_position_subscription" {
+resource "aws_appsync_resolver" "authorize_realtime_event_subscription" {
   api_id      = aws_appsync_graphql_api.main.id
   type        = "Subscription"
-  field       = "onRiderPosition"
+  field       = "onRealtimeEvent"
   data_source = aws_appsync_datasource.membership.name
 
   request_template = <<-VTL
@@ -126,7 +126,7 @@ resource "aws_appsync_resolver" "authorize_rider_position_subscription" {
       "operation": "GetItem",
       "key": {
         "PK": $util.dynamodb.toDynamoDBJson("USER#$ctx.identity.sub"),
-        "SK": $util.dynamodb.toDynamoDBJson("TEAM#$ctx.arguments.teamId")
+        "SK": $util.dynamodb.toDynamoDBJson("TEAM#$ctx.arguments.tripId")
       },
       "consistentRead": true
     }

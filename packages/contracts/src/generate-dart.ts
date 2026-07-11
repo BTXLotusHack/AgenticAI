@@ -24,6 +24,8 @@ function createExamples(): unknown {
   const frames = createGoldenR001Replay();
   const split = frames.find((frame) => frame.situationTransition === "confirmed");
   if (!split?.situation || !split.notifications[0]) throw new Error("Golden split fixture is incomplete.");
+  const driverNotification = split.notifications.find((notification) => notification.recipientMemberId === "M004");
+  if (!driverNotification) throw new Error("Golden split fixture is missing a driver notification for M004.");
 
   const eventEnvelope = {
     schemaVersion: 1,
@@ -36,6 +38,87 @@ function createExamples(): unknown {
     tripId: validInput.telemetry.tripId,
     producer: "golden-scenario",
     payload: { memberId: validInput.telemetry.memberId, sequence: validInput.telemetry.sequence },
+  };
+  const memberTelemetryInput = {
+    schemaVersion: 1,
+    telemetry: validInput.telemetry,
+    transport: "simulator",
+    publishedAt: validInput.telemetry.sentAt,
+    offlineQueueDepth: 0,
+  };
+  const liveSnapshot = {
+    schemaVersion: 1,
+    tripId: validInput.telemetry.tripId,
+    snapshotRevision: split.graph.graphRevision,
+    generatedAt: split.occurredAt,
+    viewer: { memberId: "M004", role: "member" },
+    members: split.nodes.map((node, index) => ({
+      memberId: node.memberId,
+      tripId: node.tripId,
+      role: node.role,
+      latitude: validInput.telemetry.latitude,
+      longitude: validInput.telemetry.longitude + index * 0.0001,
+      snappedLatitude: validInput.telemetry.latitude,
+      snappedLongitude: validInput.telemetry.longitude + index * 0.0001,
+      routeProgressMeters: node.routeProgressMeters,
+      routeDeviationMeters: node.routeDeviationMeters,
+      speedKmh: node.speedKmh,
+      headingDegrees: node.headingDegrees,
+      accuracyMeters: node.accuracyMeters,
+      observedAt: node.observedAt,
+      receivedAt: split.occurredAt,
+      sequence: split.elapsedSeconds * 10 + index + 1,
+      sourceTelemetryEventId: `gps:${split.elapsedSeconds}:${node.memberId}`,
+      confidence: node.confidence,
+      connectivity: node.connectivity,
+      policyVersion: split.graph.policyVersion,
+    })),
+    graph: split.graph,
+    situations: [split.situation],
+    recommendations: [],
+    notifications: split.notifications.filter((notification) => notification.recipientMemberId === "M004"),
+  };
+  const convoySituationEvent = {
+    schemaVersion: 1,
+    eventId: `situation:${split.situation.situationId}:${split.graph.graphRevision}`,
+    tripId: validInput.telemetry.tripId,
+    snapshotRevision: liveSnapshot.snapshotRevision,
+    graphRevision: split.graph.graphRevision,
+    eventType: "convoySituationCreated",
+    occurredAt: split.occurredAt,
+    situation: split.situation,
+  };
+  const driverAlert = {
+    schemaVersion: 1,
+    alertId: `alert:${driverNotification.notificationId}`,
+    tripId: validInput.telemetry.tripId,
+    recipientMemberId: driverNotification.recipientMemberId,
+    issuedAt: driverNotification.createdAt,
+    expiresAt: driverNotification.expiresAt,
+    notification: driverNotification,
+    requiresAcknowledgement: driverNotification.severity !== "info",
+  };
+  const driverAlertAcknowledgement = {
+    schemaVersion: 1,
+    acknowledgementId: `ack:${driverNotification.notificationId}`,
+    alertId: driverAlert.alertId,
+    notificationId: driverNotification.notificationId,
+    tripId: validInput.telemetry.tripId,
+    memberId: driverNotification.recipientMemberId,
+    acknowledgedAt: driverNotification.createdAt,
+    idempotencyKey: `ack:${driverNotification.notificationId}`,
+  };
+  const realtimeEvent = {
+    schemaVersion: 1,
+    eventId: `realtime:${split.graph.graphRevision}:M004`,
+    tripId: validInput.telemetry.tripId,
+    snapshotRevision: liveSnapshot.snapshotRevision,
+    graphRevision: split.graph.graphRevision,
+    audience: { kind: "member", memberId: "M004" },
+    eventType: "driverAlertIssued",
+    occurredAt: split.occurredAt,
+    expiresAt: driverNotification.expiresAt,
+    payload: driverAlert,
   };
   const duplicate = createGoldenR001Input(0, 0).telemetry;
   const stale = createGoldenR001Input(1, 0, { eventId: "gps:stale:M002", sequence: 2 }).telemetry;
@@ -53,11 +136,17 @@ function createExamples(): unknown {
         expectedContract: "valid",
         expectedIngestionStatus: "accepted",
         telemetry: validInput.telemetry,
+        memberTelemetryInput,
         projectedLocation: validInput.projection,
         eventEnvelope,
         convoyGraph: split.graph,
         situation: split.situation,
         notificationRequest: split.notifications[0],
+        liveSnapshot,
+        convoySituationEvent,
+        driverAlert,
+        driverAlertAcknowledgement,
+        realtimeEvent,
       },
       { caseId: "duplicate", expectedContract: "valid", expectedIngestionStatus: "duplicate", telemetry: duplicate },
       { caseId: "stale", expectedContract: "valid", expectedIngestionStatus: "stale-sequence", telemetry: stale },
@@ -91,7 +180,17 @@ async function createDart(schemas: ReturnType<typeof exportContractSchemas>): Pr
     .join("\n")
     .replace(/^\/\/ To parse this JSON data[^\n]*\n(?:\/\/[^\n]*\n)*/m, "")
     .replace("import 'package:meta/meta.dart';\n", "");
-  for (const contractName of ["LocationTelemetryV1", "EventEnvelopeV1", "ProjectedLocationV1"]) {
+  for (const contractName of [
+    "LocationTelemetryV1",
+    "MemberTelemetryInputV1",
+    "EventEnvelopeV1",
+    "ProjectedLocationV1",
+    "LiveSnapshotV1",
+    "ConvoySituationEventV1",
+    "DriverAlertV1",
+    "DriverAlertAcknowledgementV1",
+    "RealtimeEventV1",
+  ]) {
     const factory = new RegExp(
       `factory ${contractName}\\.fromJson\\(Map<String, dynamic> json\\) => ${contractName}\\(([\\s\\S]*?)\\n    \\);`,
     );

@@ -6,10 +6,14 @@ import {
   ApiErrorSchema,
   CommandEnvelopeV1Schema,
   CompleteTripRequestV1Schema,
+  ConvoySituationEventV1Schema,
+  DriverAlertAcknowledgementV1Schema,
+  DriverAlertV1Schema,
   EventEnvelopeSchema,
   JoinTripRequestV1Schema,
   LiveSnapshotV1Schema,
   LocationTelemetryV1Schema,
+  MemberTelemetryInputV1Schema,
   NotificationRequestSchema,
   ProjectedLocationV1Schema,
   RealtimeEventV1Schema,
@@ -75,6 +79,15 @@ describe("telemetry and event contracts", () => {
 
   it("accepts the published telemetry shape and rejects incompatible versions", () => {
     expect(LocationTelemetryV1Schema.parse(telemetry)).toEqual(telemetry);
+    expect(
+      MemberTelemetryInputV1Schema.parse({
+        schemaVersion: 1,
+        telemetry,
+        transport: "mqtt",
+        publishedAt: telemetry.sentAt,
+        offlineQueueDepth: 0,
+      }),
+    ).toMatchObject({ transport: "mqtt", telemetry });
     expect(LocationTelemetryV1Schema.safeParse({ ...telemetry, schemaVersion: 2 }).success).toBe(false);
     expect(LocationTelemetryV1Schema.safeParse({ ...telemetry, latitude: 91 }).success).toBe(false);
   });
@@ -162,6 +175,20 @@ describe("service boundary contracts", () => {
   });
 
   it("validates snapshots, realtime revisions and measured summaries", () => {
+    const notification = {
+      notificationId: "notification-1",
+      dedupeKey: "split:rear:M004:9",
+      situationId: situation.situationId,
+      recipientMemberId: "M004",
+      locale: "vi",
+      audience: "rear-section",
+      severity: "high",
+      message: "Duy tri toc do an toan va tiep tuc tren lo trinh.",
+      graphRevision: 9,
+      createdAt: telemetry.observedAt,
+      expiresAt: "2026-07-11T03:05:00.000Z",
+      channels: ["visual", "voice", "haptic"],
+    };
     const graph = {
       tripId: "TRIP001",
       leaderMemberId: "M001",
@@ -179,13 +206,72 @@ describe("service boundary contracts", () => {
       snapshotRevision: 9,
       generatedAt: telemetry.observedAt,
       viewer: { memberId: "M001", role: "leader" },
+      members: [
+        {
+          memberId: "M001",
+          tripId: "TRIP001",
+          role: "leader",
+          latitude: telemetry.latitude,
+          longitude: telemetry.longitude,
+          snappedLatitude: telemetry.latitude,
+          snappedLongitude: telemetry.longitude,
+          routeProgressMeters: 12_000,
+          routeDeviationMeters: 4,
+          speedKmh: telemetry.speedKmh,
+          headingDegrees: telemetry.headingDegrees,
+          accuracyMeters: telemetry.accuracyMeters,
+          observedAt: telemetry.observedAt,
+          receivedAt: telemetry.sentAt,
+          sequence: telemetry.sequence,
+          sourceTelemetryEventId: telemetry.eventId,
+          confidence: "high",
+          connectivity: "healthy",
+          policyVersion: "convoy-v1",
+        },
+      ],
       graph,
       situations: [situation],
       recommendations: [],
-      notifications: [],
+      notifications: [notification],
     };
 
     expect(LiveSnapshotV1Schema.parse(snapshot)).toEqual(snapshot);
+    expect(
+      ConvoySituationEventV1Schema.parse({
+        schemaVersion: 1,
+        eventId: "situation-event-9",
+        tripId: "TRIP001",
+        snapshotRevision: 9,
+        graphRevision: 9,
+        eventType: "convoySituationCreated",
+        occurredAt: telemetry.observedAt,
+        situation,
+      }),
+    ).toMatchObject({ graphRevision: 9 });
+    expect(
+      DriverAlertV1Schema.parse({
+        schemaVersion: 1,
+        alertId: "alert-notification-1",
+        tripId: "TRIP001",
+        recipientMemberId: "M004",
+        issuedAt: telemetry.observedAt,
+        expiresAt: "2026-07-11T03:05:00.000Z",
+        notification,
+        requiresAcknowledgement: true,
+      }),
+    ).toMatchObject({ recipientMemberId: "M004" });
+    expect(
+      DriverAlertAcknowledgementV1Schema.parse({
+        schemaVersion: 1,
+        acknowledgementId: "ack-notification-1",
+        alertId: "alert-notification-1",
+        notificationId: "notification-1",
+        tripId: "TRIP001",
+        memberId: "M004",
+        acknowledgedAt: telemetry.observedAt,
+        idempotencyKey: "ack:notification-1",
+      }),
+    ).toMatchObject({ notificationId: "notification-1" });
     expect(
       RealtimeEventV1Schema.parse({
         schemaVersion: 1,
@@ -194,12 +280,26 @@ describe("service boundary contracts", () => {
         snapshotRevision: 9,
         graphRevision: 9,
         audience: { kind: "trip" },
-        eventType: "ConvoyGraphChanged",
+        eventType: "liveSnapshotUpdated",
         occurredAt: telemetry.observedAt,
         expiresAt: "2026-07-11T03:05:00.000Z",
         payload: { overallState: "split" },
       }),
     ).toMatchObject({ snapshotRevision: 9 });
+    expect(
+      RealtimeEventV1Schema.safeParse({
+        schemaVersion: 1,
+        eventId: "realtime-unknown",
+        tripId: "TRIP001",
+        snapshotRevision: 10,
+        graphRevision: 10,
+        audience: { kind: "trip" },
+        eventType: "ConvoyGraphChanged",
+        occurredAt: telemetry.observedAt,
+        expiresAt: "2026-07-11T03:05:00.000Z",
+        payload: {},
+      }).success,
+    ).toBe(false);
     expect(
       TripSummaryV1Schema.parse({
         schemaVersion: 1,

@@ -1,0 +1,150 @@
+{
+  "$id": "https://schemas.loopin.vn/contracts/driver-alert-v1.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "properties": {
+    "alertId": {
+      "maxLength": 160,
+      "minLength": 1,
+      "type": "string"
+    },
+    "expiresAt": {
+      "format": "date-time",
+      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+      "type": "string"
+    },
+    "issuedAt": {
+      "format": "date-time",
+      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+      "type": "string"
+    },
+    "notification": {
+      "additionalProperties": false,
+      "properties": {
+        "audience": {
+          "enum": [
+            "leader",
+            "front-section",
+            "rear-section",
+            "front-boundary",
+            "rear-boundary",
+            "resolution"
+          ],
+          "type": "string"
+        },
+        "channels": {
+          "items": {
+            "enum": [
+              "visual",
+              "voice",
+              "haptic",
+              "push"
+            ],
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "createdAt": {
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+          "type": "string"
+        },
+        "dedupeKey": {
+          "maxLength": 160,
+          "minLength": 1,
+          "type": "string"
+        },
+        "expiresAt": {
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+          "type": "string"
+        },
+        "graphRevision": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "locale": {
+          "enum": [
+            "en",
+            "vi"
+          ],
+          "type": "string"
+        },
+        "message": {
+          "maxLength": 500,
+          "minLength": 1,
+          "type": "string"
+        },
+        "notificationId": {
+          "maxLength": 160,
+          "minLength": 1,
+          "type": "string"
+        },
+        "recipientMemberId": {
+          "maxLength": 160,
+          "minLength": 1,
+          "type": "string"
+        },
+        "severity": {
+          "enum": [
+            "info",
+            "medium",
+            "high"
+          ],
+          "type": "string"
+        },
+        "situationId": {
+          "maxLength": 160,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "notificationId",
+        "dedupeKey",
+        "situationId",
+        "recipientMemberId",
+        "locale",
+        "audience",
+        "severity",
+        "message",
+        "graphRevision",
+        "createdAt",
+        "expiresAt",
+        "channels"
+      ],
+      "type": "object"
+    },
+    "recipientMemberId": {
+      "maxLength": 160,
+      "minLength": 1,
+      "type": "string"
+    },
+    "requiresAcknowledgement": {
+      "type": "boolean"
+    },
+    "schemaVersion": {
+      "const": 1,
+      "type": "number"
+    },
+    "tripId": {
+      "maxLength": 160,
+      "minLength": 1,
+      "type": "string"
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "alertId",
+    "tripId",
+    "recipientMemberId",
+    "issuedAt",
+    "expiresAt",
+    "notification",
+    "requiresAcknowledgement"
+  ],
+  "title": "DriverAlertV1",
+  "type": "object",
+  "x-schema-version": 1
+}

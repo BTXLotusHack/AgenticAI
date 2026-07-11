@@ -7,10 +7,19 @@ const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 test("realtime subscriptions require current caller membership", async () => {
   const realtime = await read("modules/realtime/main.tf");
   assert.match(realtime, /type\s*=\s*"Subscription"/);
-  assert.match(realtime, /field\s*=\s*"onRiderPosition"/);
+  assert.match(realtime, /field\s*=\s*"onRealtimeEvent"/);
   assert.match(realtime, /USER#\$ctx\.identity\.sub/);
-  assert.match(realtime, /TEAM#\$ctx\.arguments\.teamId/);
+  assert.match(realtime, /TEAM#\$ctx\.arguments\.tripId/);
   assert.match(realtime, /\$util\.unauthorized\(\)/);
+});
+
+test("AppSync realtime schema publishes derived live events", async () => {
+  const schema = await read("modules/realtime/schema.graphql");
+  assert.match(schema, /type\s+RealtimeEvent/);
+  assert.match(schema, /eventType:\s*String!/);
+  assert.match(schema, /payload:\s*AWSJSON!/);
+  assert.match(schema, /publishRealtimeEvent\(input:\s*RealtimeEventInput!\)/);
+  assert.match(schema, /onRealtimeEvent\(tripId:\s*ID!\):\s*RealtimeEvent/);
 });
 
 test("IoT records carry broker-derived identity and Kinesis partial failures are enabled", async () => {
