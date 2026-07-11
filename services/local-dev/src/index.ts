@@ -16,12 +16,14 @@ import {
 import type { ApiError, RealtimeEventV1 } from "@loopin/contracts";
 
 type LocalServerDependencies = {
-  readonly app: LoopinApplication;
+  readonly app: Pick<LoopinApplication, "joinTrip" | "setReadiness" | "getLiveSnapshot" | "processTelemetry" | "approveRegroup" | "getSummary">;
   readonly repository: TripRepository;
   readonly maps: FixtureMapsProvider;
   readonly realtime: LocalRealtimeHub;
   readonly environment: "local" | "test";
   readonly allowedOrigins: readonly string[];
+  readonly deadlineMs?: number;
+  readonly logger?: { log(record: Readonly<Record<string, unknown>>): void };
 };
 
 export type RunningLocalServer = {
@@ -31,16 +33,29 @@ export type RunningLocalServer = {
 };
 
 type Subscription = {
+  readonly tripId: string;
+  readonly userId: string;
   readonly channel: string;
   readonly memberId: string;
   readonly role: "leader" | "member";
 };
 
 class LocalUnauthorizedError extends Error {}
+class LocalDeadlineError extends Error {}
+class LocalPayloadTooLargeError extends Error {}
+class LocalUnsupportedMediaTypeError extends Error {}
 
 function identityFromAuthorization(value: string | undefined): Identity | undefined {
   const match = /^Bearer fixture:([A-Za-z0-9_-]+)$/.exec(value ?? "");
   return match?.[1] ? { userId: match[1] } : undefined;
+}
+
+function identityFromUpgrade(request: IncomingMessage): Identity | undefined {
+  const headerIdentity = identityFromAuthorization(request.headers.authorization);
+  if (headerIdentity) return headerIdentity;
+  const protocols = (request.headers["sec-websocket-protocol"] ?? "").split(",").map((value) => value.trim());
+  const fixtureProtocol = protocols.find((value) => /^loopin\.fixture\.[A-Za-z0-9_-]+$/.test(value));
+  return fixtureProtocol ? { userId: fixtureProtocol.slice("loopin.fixture.".length) } : undefined;
 }
 
 function channelAllowed(channel: string, tripId: string, memberId: string, role: "leader" | "member"): boolean {
@@ -64,17 +79,26 @@ export class LocalRealtimeHub implements Publisher<RealtimeEventV1> {
     const encoded = JSON.stringify(payload);
     for (const [socket, subscription] of this.subscriptions) {
       if (socket.readyState !== WebSocket.OPEN || subscription.channel !== channel) continue;
+      if (subscription.tripId !== payload.tripId) continue;
+      const state = await this.repository.get(subscription.tripId);
+      const currentMember = state?.members.find((member) => member.userId === subscription.userId);
+      if (!currentMember || currentMember.memberId !== subscription.memberId || currentMember.role !== subscription.role) {
+        socket.close(1008, "Membership changed");
+        continue;
+      }
       if (payload.audience.kind === "leader" && subscription.role !== "leader") continue;
       if (payload.audience.kind === "member" && subscription.memberId !== payload.audience.memberId) continue;
       socket.send(encoded);
     }
   }
 
-  async handleUpgrade(request: IncomingMessage, socket: Duplex, head: Buffer): Promise<void> {
+  async handleUpgrade(request: IncomingMessage, socket: Duplex, head: Buffer, allowedOrigins: readonly string[]): Promise<void> {
     try {
       const url = new URL(request.url ?? "/", "http://local.loopin");
       if (url.pathname !== "/v1/realtime") return this.reject(socket, 404, "Not Found");
-      const identity = identityFromAuthorization(request.headers.authorization);
+      const origin = request.headers.origin;
+      if (origin && !allowedOrigins.includes(origin)) return this.reject(socket, 403, "Forbidden");
+      const identity = identityFromUpgrade(request);
       if (!identity) return this.reject(socket, 401, "Unauthorized");
       const tripId = url.searchParams.get("tripId") ?? "";
       const channel = url.searchParams.get("channel") ?? "";
@@ -83,7 +107,13 @@ export class LocalRealtimeHub implements Publisher<RealtimeEventV1> {
       if (!state || !member || !channelAllowed(channel, tripId, member.memberId, member.role)) {
         return this.reject(socket, 403, "Forbidden");
       }
-      const subscription: Subscription = { channel, memberId: member.memberId, role: member.role };
+      const subscription: Subscription = {
+        tripId,
+        userId: identity.userId,
+        channel,
+        memberId: member.memberId,
+        role: member.role,
+      };
       this.server.handleUpgrade(request, socket, head, (webSocket) => {
         this.server.emit("connection", webSocket, request, subscription);
       });
@@ -92,9 +122,20 @@ export class LocalRealtimeHub implements Publisher<RealtimeEventV1> {
     }
   }
 
-  close(): void {
-    for (const socket of this.subscriptions.keys()) socket.close(1001, "Server shutdown");
-    this.server.close();
+  async close(): Promise<void> {
+    const sockets = [...this.subscriptions.keys()];
+    for (const socket of sockets) socket.close(1001, "Server shutdown");
+    await Promise.race([
+      Promise.all(sockets.map((socket) => new Promise<void>((resolve) => {
+        if (socket.readyState === WebSocket.CLOSED) return resolve();
+        socket.once("close", () => resolve());
+      }))),
+      new Promise<void>((resolve) => setTimeout(resolve, 250)),
+    ]);
+    for (const socket of sockets) {
+      if (socket.readyState !== WebSocket.CLOSED) socket.terminate();
+    }
+    await new Promise<void>((resolve) => this.server.close(() => resolve()));
   }
 
   private reject(socket: Duplex, status: number, label: string): void {
@@ -108,17 +149,23 @@ function sendJson(response: ServerResponse, status: number, body: unknown, origi
   response.setHeader("content-type", "application/json; charset=utf-8");
   response.setHeader("cache-control", "no-store");
   response.setHeader("x-content-type-options", "nosniff");
-  if (origin) response.setHeader("access-control-allow-origin", origin);
+  if (origin) {
+    response.setHeader("access-control-allow-origin", origin);
+    response.setHeader("vary", "Origin");
+  }
   response.end(JSON.stringify(body));
 }
 
 async function readJson(request: IncomingMessage): Promise<unknown> {
+  if (!(request.headers["content-type"] ?? "").toLowerCase().startsWith("application/json")) {
+    throw new LocalUnsupportedMediaTypeError("POST requests require application/json.");
+  }
   const chunks: Buffer[] = [];
   let size = 0;
   for await (const chunk of request) {
     const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
     size += buffer.length;
-    if (size > 32 * 1024) throw new ApplicationError("invalid-request", "Request body exceeds 32 KiB.");
+    if (size > 32 * 1024) throw new LocalPayloadTooLargeError("Request body exceeds 32 KiB.");
     chunks.push(buffer);
   }
   if (chunks.length === 0) return {};
@@ -135,6 +182,15 @@ function errorResponse(error: unknown, correlationId: string): { status: number;
       status: 401,
       body: { code: "unauthorized", message: "Authentication is required.", correlationId, retryable: false },
     };
+  }
+  if (error instanceof LocalDeadlineError) {
+    return { status: 504, body: { code: "deadline-exceeded", message: "The operation timed out.", correlationId, retryable: true } };
+  }
+  if (error instanceof LocalPayloadTooLargeError) {
+    return { status: 413, body: { code: "payload-too-large", message: error.message, correlationId, retryable: false } };
+  }
+  if (error instanceof LocalUnsupportedMediaTypeError) {
+    return { status: 415, body: { code: "unsupported-media-type", message: error.message, correlationId, retryable: false } };
   }
   if (error instanceof ZodError) {
     return {
@@ -156,6 +212,20 @@ function errorResponse(error: unknown, correlationId: string): { status: number;
   };
 }
 
+async function withDeadline<T>(operation: Promise<T>, deadlineMs: number): Promise<T> {
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      operation,
+      new Promise<never>((_resolve, reject) => {
+        timeout = setTimeout(() => reject(new LocalDeadlineError("Operation timed out.")), deadlineMs);
+      }),
+    ]);
+  } finally {
+    if (timeout) clearTimeout(timeout);
+  }
+}
+
 function requireIdentity(request: IncomingMessage): Identity {
   const identity = identityFromAuthorization(request.headers.authorization);
   if (!identity) throw new LocalUnauthorizedError("Authentication is required.");
@@ -169,6 +239,14 @@ export function createLocalServer(dependencies: LocalServerDependencies) {
 
   const handler = async (request: IncomingMessage, response: ServerResponse) => {
     const correlationId = randomUUID();
+    const startedAt = Date.now();
+    response.once("finish", () => dependencies.logger?.log({
+      correlationId,
+      method: request.method,
+      path: new URL(request.url ?? "/", "http://local.loopin").pathname,
+      statusCode: response.statusCode,
+      durationMs: Date.now() - startedAt,
+    }));
     response.setHeader("x-correlation-id", correlationId);
     const origin = request.headers.origin;
     if (origin && !dependencies.allowedOrigins.includes(origin)) {
@@ -189,27 +267,27 @@ export function createLocalServer(dependencies: LocalServerDependencies) {
       const identity = requireIdentity(request);
 
       if (request.method === "POST" && url.pathname === "/v1/trips/join") {
-        return sendJson(response, 200, await dependencies.app.joinTrip(identity, await readJson(request) as never), origin);
+        return sendJson(response, 200, await withDeadline(dependencies.app.joinTrip(identity, await readJson(request) as never), dependencies.deadlineMs ?? 9_000), origin);
       }
       const readiness = /^\/v1\/trips\/([^/]+)\/members\/([^/]+)\/readiness$/.exec(url.pathname);
       if (request.method === "POST" && readiness) {
-        return sendJson(response, 200, await dependencies.app.setReadiness(identity, readiness[1]!, readiness[2]!, await readJson(request) as never), origin);
+        return sendJson(response, 200, await withDeadline(dependencies.app.setReadiness(identity, readiness[1]!, readiness[2]!, await readJson(request) as never), dependencies.deadlineMs ?? 9_000), origin);
       }
       const snapshot = /^\/v1\/trips\/([^/]+)\/live-snapshot$/.exec(url.pathname);
       if (request.method === "GET" && snapshot) {
-        return sendJson(response, 200, await dependencies.app.getLiveSnapshot(identity, snapshot[1]!), origin);
+        return sendJson(response, 200, await withDeadline(dependencies.app.getLiveSnapshot(identity, snapshot[1]!), dependencies.deadlineMs ?? 9_000), origin);
       }
       if (request.method === "POST" && url.pathname === "/v1/telemetry") {
-        const result = await dependencies.app.processTelemetry(identity, await readJson(request) as never, new Date().toISOString());
-        return sendJson(response, 202, result, origin);
+        const result = await withDeadline(dependencies.app.processTelemetry(identity, await readJson(request) as never, new Date().toISOString()), dependencies.deadlineMs ?? 9_000);
+        return sendJson(response, 202, { status: result.status, snapshotRevision: result.snapshotRevision }, origin);
       }
       const approval = /^\/v1\/trips\/([^/]+)\/recommendations\/([^/]+)\/approve$/.exec(url.pathname);
       if (request.method === "POST" && approval) {
-        return sendJson(response, 200, await dependencies.app.approveRegroup(identity, approval[1]!, approval[2]!, await readJson(request) as never), origin);
+        return sendJson(response, 200, await withDeadline(dependencies.app.approveRegroup(identity, approval[1]!, approval[2]!, await readJson(request) as never), dependencies.deadlineMs ?? 9_000), origin);
       }
       const summary = /^\/v1\/trips\/([^/]+)\/summary$/.exec(url.pathname);
       if (request.method === "GET" && summary) {
-        return sendJson(response, 200, await dependencies.app.getSummary(identity, summary[1]!), origin);
+        return sendJson(response, 200, await withDeadline(dependencies.app.getSummary(identity, summary[1]!), dependencies.deadlineMs ?? 9_000), origin);
       }
       return sendJson(response, 404, { code: "not-found", message: "Route not found.", correlationId, retryable: false }, origin);
     } catch (error) {
@@ -219,7 +297,9 @@ export function createLocalServer(dependencies: LocalServerDependencies) {
   };
 
   const server: Server = createServer({ requestTimeout: 10_000, headersTimeout: 8_000 }, handler);
-  server.on("upgrade", (request, socket, head) => void dependencies.realtime.handleUpgrade(request, socket, head));
+  server.on("upgrade", (request, socket, head) => {
+    void dependencies.realtime.handleUpgrade(request, socket, head, dependencies.allowedOrigins);
+  });
 
   return {
     async listen(port: number, host: string): Promise<RunningLocalServer> {
@@ -236,7 +316,7 @@ export function createLocalServer(dependencies: LocalServerDependencies) {
         url: `http://${host}:${address.port}`,
         wsUrl: `ws://${host}:${address.port}`,
         async close() {
-          dependencies.realtime.close();
+          await dependencies.realtime.close();
           await new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
         },
       };

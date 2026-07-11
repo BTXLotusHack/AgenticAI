@@ -166,17 +166,16 @@ Start the production-shaped in-memory HTTP and WebSocket adapters:
 npm.cmd run dev:services
 ```
 
-The default endpoints are `http://127.0.0.1:8787` and `ws://127.0.0.1:8787/v1/realtime`. The runtime is seeded with TRIP001 and the shared golden summary. Local requests use explicit fixture bearer tokens such as `Bearer fixture:USER001`; the server refuses to start this identity adapter outside `local` or `test` mode.
+The default endpoints are `http://127.0.0.1:8787` and `ws://127.0.0.1:8787/v1/realtime`. The runtime is seeded with TRIP001, canonical telemetry projections and regroup candidates; the summary is generated only after the replay reconnects the convoy. Local requests use explicit fixture bearer tokens such as `Bearer fixture:USER001`; the server fails closed when `LOOPIN_ENV` is anything other than `local` or `test`.
 
 Useful probes:
 
 ```powershell
 Invoke-RestMethod http://127.0.0.1:8787/healthz
-Invoke-RestMethod http://127.0.0.1:8787/v1/trips/TRIP001/summary `
-  -Headers @{ Authorization = 'Bearer fixture:USER001' }
+npm.cmd test --workspace @loopin/local-dev -- --run
 ```
 
-The local runtime validates the same contracts and invokes the same application service intended for API Gateway, Kinesis, DynamoDB, and AppSync adapters. It is not production authentication or persistence.
+The local runtime validates the same contracts and invokes the same application service intended for API Gateway, Kinesis, DynamoDB, and AppSync adapters. Browser WebSockets authenticate through a local-only fixture subprotocol and enforce the HTTP origin allowlist. It is not production authentication or persistence.
 
 ## Run the web experience
 

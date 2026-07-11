@@ -60,7 +60,7 @@ function position(memberId: string, tick: number): number {
   return leader - 500;
 }
 
-function pair(memberIndex: number, tick: number, overrides: Partial<LocationTelemetryV1> = {}) {
+export function createGoldenR001Input(memberIndex: number, tick: number, overrides: Partial<LocationTelemetryV1> = {}) {
   const member = GOLDEN_R001.members[memberIndex]!;
   const telemetry: LocationTelemetryV1 = {
     schemaVersion: 1,
@@ -96,6 +96,28 @@ function pair(memberIndex: number, tick: number, overrides: Partial<LocationTele
   return { telemetry, projection };
 }
 
+export function createGoldenR001TelemetryInputs() {
+  const inputs: Array<ReturnType<typeof createGoldenR001Input> & { receivedAt: string }> = [];
+  for (const tick of GOLDEN_R001.ticks) {
+    GOLDEN_R001.members.forEach((_member, memberIndex) => {
+      inputs.push({ ...createGoldenR001Input(memberIndex, tick), receivedAt: at(tick + 1) });
+    });
+    if (tick === 0) {
+      inputs.push({ ...createGoldenR001Input(0, 0), receivedAt: at(1) });
+      inputs.push({ ...createGoldenR001Input(1, 0, { eventId: "gps:stale:M002", sequence: 2 }), receivedAt: at(1) });
+      inputs.push({
+        ...createGoldenR001Input(2, 0, { eventId: "gps:replay:M003", sequence: 999, networkQuality: "offline-replay" }),
+        receivedAt: at(2),
+      });
+      inputs.push({
+        ...createGoldenR001Input(3, 1, { eventId: "gps:weak:M004", sequence: 20, observedAt: at(1), accuracyMeters: 100 }),
+        receivedAt: at(2),
+      });
+    }
+  }
+  return inputs;
+}
+
 function phaseFor(graph: ConvoyGraph, transition: SituationTransition["transition"], seconds: number): GoldenReplayPhase {
   if (transition === "resolved") return "completed";
   if (graph.overallState === "split") return "split";
@@ -121,7 +143,7 @@ export function createGoldenR001Replay(): GoldenReplayFrameV1[] {
   const frames: GoldenReplayFrameV1[] = [];
   const localeByMember = Object.fromEntries(GOLDEN_R001.members.map((member) => [member.memberId, member.locale]));
 
-  const ingest = (input: ReturnType<typeof pair>, receivedAt: string) => {
+  const ingest = (input: ReturnType<typeof createGoldenR001Input>, receivedAt: string) => {
     const result = acceptProjectedLocation(telemetryState, input, receivedAt);
     totals[result.status] += 1;
     delta[result.status] = (delta[result.status] ?? 0) + 1;
@@ -187,23 +209,23 @@ export function createGoldenR001Replay(): GoldenReplayFrameV1[] {
   for (const tick of GOLDEN_R001.ticks) {
     const eventIds: string[] = [];
     GOLDEN_R001.members.forEach((_member, index) => {
-      const input = pair(index, tick);
+      const input = createGoldenR001Input(index, tick);
       eventIds.push(input.telemetry.eventId);
       ingest(input, at(tick + 1));
     });
     calculate(tick, eventIds);
 
     if (tick === 0) {
-      ingest(pair(0, 0), at(1));
-      const stale = pair(1, 0, { eventId: "gps:stale:M002", sequence: 2 });
+      ingest(createGoldenR001Input(0, 0), at(1));
+      const stale = createGoldenR001Input(1, 0, { eventId: "gps:stale:M002", sequence: 2 });
       stale.projection.eventId = "projection:gps:stale:M002";
       stale.projection.sourceTelemetryEventId = stale.telemetry.eventId;
       ingest(stale, at(1));
-      const replay = pair(2, 0, { eventId: "gps:replay:M003", sequence: 999, networkQuality: "offline-replay" });
+      const replay = createGoldenR001Input(2, 0, { eventId: "gps:replay:M003", sequence: 999, networkQuality: "offline-replay" });
       replay.projection.eventId = "projection:gps:replay:M003";
       replay.projection.sourceTelemetryEventId = replay.telemetry.eventId;
       ingest(replay, at(2));
-      const weak = pair(3, 1, { eventId: "gps:weak:M004", sequence: 20, observedAt: at(1), accuracyMeters: 100 });
+      const weak = createGoldenR001Input(3, 1, { eventId: "gps:weak:M004", sequence: 20, observedAt: at(1), accuracyMeters: 100 });
       weak.projection.eventId = "projection:gps:weak:M004";
       weak.projection.sourceTelemetryEventId = weak.telemetry.eventId;
       ingest(weak, at(2));

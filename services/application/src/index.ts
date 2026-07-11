@@ -36,6 +36,7 @@ import {
   markSituationNotified,
   rankRegroupCandidates,
   reduceSplitSituation,
+  summarizeTrip,
   type GraphEngineState,
   type IngestionStatus,
   type TelemetryState,
@@ -70,6 +71,12 @@ export type TripState = {
   readonly commandReceipts: readonly CommandReceipt[];
   readonly outbox: readonly OutboxMessage[];
   readonly summary?: TripSummaryV1;
+  readonly startedAt?: string;
+  readonly rejectionKeys: readonly string[];
+  readonly rejectedTelemetryCount: number;
+  readonly notificationRequestCount: number;
+  readonly regroupRecommendationCount: number;
+  readonly latestTelemetryEventIdByMember: Readonly<Record<string, string>>;
 };
 
 export type CreateTripStateInput = {
@@ -95,6 +102,11 @@ export function createTripState(input: CreateTripStateInput): TripState {
     notifications: [],
     commandReceipts: [],
     outbox: [],
+    rejectionKeys: [],
+    rejectedTelemetryCount: 0,
+    notificationRequestCount: 0,
+    regroupRecommendationCount: 0,
+    latestTelemetryEventIdByMember: {},
     ...(input.summary ? { summary: structuredClone(input.summary) } : {}),
   };
 }
@@ -303,6 +315,23 @@ function recommendationFor(state: TripState, situation: Situation, now: string):
   };
 }
 
+function synchronizedSourceEventIds(
+  state: TripState,
+  telemetryState: TelemetryState,
+  latestEventIdByMember: Readonly<Record<string, string>>,
+  maximumSkewMs = 2_000,
+): string[] | undefined {
+  const expectedMemberIds = state.members
+    .filter((member) => member.readinessState === "ready" && member.visibilityPolicy !== "paused")
+    .map((member) => member.memberId);
+  const nodes = expectedMemberIds.map((memberId) => telemetryState.currentNodes[memberId]);
+  if (nodes.some((node) => !node) || expectedMemberIds.some((memberId) => !latestEventIdByMember[memberId])) return undefined;
+  const observedTimes = nodes.map((node) => Date.parse(node!.observedAt));
+  return Math.max(...observedTimes) - Math.min(...observedTimes) <= maximumSkewMs
+    ? expectedMemberIds.map((memberId) => latestEventIdByMember[memberId]!)
+    : undefined;
+}
+
 export class LoopinApplication {
   constructor(private readonly dependencies: ApplicationDependencies) {}
 
@@ -382,12 +411,24 @@ export class LoopinApplication {
     if (projection.role !== initialMember.role) {
       throw new ApplicationError("invalid-request", "Route projection role does not match authoritative membership.");
     }
+    const calculatedAt = telemetry.source === "simulator" ? telemetry.observedAt : receivedAt;
+    const ingestionReceivedAt = telemetry.source === "simulator" ? telemetry.sentAt : receivedAt;
     for (let attempt = 0; attempt < 4; attempt += 1) {
       const state = await this.requireTrip(telemetry.tripId);
       const member = memberForIdentity(state, identity);
       if (member.memberId !== telemetry.memberId) throw new ApplicationError("forbidden", "Telemetry identity does not match the active member.");
-      const ingestion = acceptProjectedLocation(state.telemetryState, { telemetry, projection }, receivedAt);
+      const ingestion = acceptProjectedLocation(state.telemetryState, { telemetry, projection }, ingestionReceivedAt);
       if (["duplicate", "stale-sequence", "rejected"].includes(ingestion.status)) {
+        const rejectionKey = `${ingestion.status}:${telemetry.eventId}`;
+        if (!state.rejectionKeys.includes(rejectionKey)) {
+          const next: TripState = {
+            ...state,
+            version: state.version + 1,
+            rejectionKeys: [...state.rejectionKeys, rejectionKey],
+            rejectedTelemetryCount: state.rejectedTelemetryCount + 1,
+          };
+          if (!(await this.dependencies.repository.putIfVersion(next, state.version))) continue;
+        }
         await this.flushOutbox(state.tripId);
         return { status: ingestion.status, snapshotRevision: state.snapshotRevision, notifications: [] };
       }
@@ -411,23 +452,45 @@ export class LoopinApplication {
       const graphResult = calculateGraph(
         state.graphState,
         Object.values(ingestion.state.currentNodes),
-        receivedAt,
+        calculatedAt,
         CONVOY_POLICY_V1,
       );
-      const transition = reduceSplitSituation(state.situation, graphResult.graph, [telemetry.eventId]);
+      const latestTelemetryEventIdByMember = {
+        ...state.latestTelemetryEventIdByMember,
+        [telemetry.memberId]: telemetry.eventId,
+      };
+      const sourceEventIds = synchronizedSourceEventIds(state, ingestion.state, latestTelemetryEventIdByMember);
+      const transition = sourceEventIds
+        ? reduceSplitSituation(state.situation, graphResult.graph, sourceEventIds)
+        : { transition: "none" as const };
       let situation = transition.situation ?? state.situation;
       let notifications: NotificationRequest[] = [];
       let recommendations = [...state.recommendations];
 
       if (transition.transition === "confirmed" && transition.situation) {
         notifications = createSplitNotifications(transition.situation, graphResult.graph, localeByMember(state));
-        recommendations = [recommendationFor(state, transition.situation, receivedAt)];
-        situation = markSituationNotified(transition.situation, receivedAt).situation;
+        recommendations = [recommendationFor(state, transition.situation, calculatedAt)];
+        situation = markSituationNotified(transition.situation, calculatedAt).situation;
       } else if (transition.transition === "resolved" && transition.situation) {
         notifications = createResolutionNotifications(transition.situation, graphResult.graph, localeByMember(state));
       }
 
       const changed = graphResult.changed || transition.transition !== "none" || notifications.length > 0;
+      const notificationRequestCount = state.notificationRequestCount + notifications.length;
+      const regroupRecommendationCount = state.regroupRecommendationCount
+        + (transition.transition === "confirmed" && recommendations.length > 0 ? 1 : 0);
+      const startedAt = state.startedAt ?? telemetry.observedAt;
+      const summary = transition.transition === "resolved" && situation
+        ? summarizeTrip({
+            tripId: state.tripId,
+            startedAt,
+            completedAt: calculatedAt,
+            situations: [situation],
+            regroupRecommendationCount,
+            notificationRequestCount,
+            rejectedTelemetryCount: state.rejectedTelemetryCount,
+          })
+        : state.summary;
       const nextBase: TripState = {
         ...state,
         version: state.version + 1,
@@ -437,6 +500,12 @@ export class LoopinApplication {
         ...(situation ? { situation } : {}),
         recommendations,
         notifications: [...state.notifications, ...notifications],
+        startedAt,
+        rejectedTelemetryCount: state.rejectedTelemetryCount,
+        notificationRequestCount,
+        regroupRecommendationCount,
+        latestTelemetryEventIdByMember,
+        ...(summary ? { summary } : {}),
       };
       const next: TripState = {
         ...nextBase,
@@ -444,7 +513,7 @@ export class LoopinApplication {
           ? [...state.outbox, ...this.buildStateMessages(
               nextBase,
               telemetry.eventId,
-              receivedAt,
+              calculatedAt,
               notifications,
               transition.transition,
               transition.situation,

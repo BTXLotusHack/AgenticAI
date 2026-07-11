@@ -19,5 +19,12 @@ async function shutdown() {
   process.exitCode = 0;
 }
 
-process.once("SIGINT", () => void shutdown());
-process.once("SIGTERM", () => void shutdown());
+function requestShutdown() {
+  void shutdown().catch(() => {
+    process.stderr.write("Loopin local service shutdown failed.\n");
+    process.exitCode = 1;
+  });
+}
+
+process.once("SIGINT", requestShutdown);
+process.once("SIGTERM", requestShutdown);
