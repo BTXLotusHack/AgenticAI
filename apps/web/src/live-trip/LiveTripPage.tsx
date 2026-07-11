@@ -3,17 +3,18 @@ import { readDemoSession } from '../demo-session/storage';
 import { ConvoyRail } from './ConvoyRail';
 import { RouteWorkspace } from './RouteWorkspace';
 import { TripTopBar } from './TripTopBar';
+import { SituationInspector } from './SituationInspector';
 import { useReplayController } from './useReplayController';
 
 function ActiveTrip({ session }: { readonly session: NonNullable<ReturnType<typeof readDemoSession>> }) {
-  const { controller, snapshot } = useReplayController(session);
+  const { approveRegroup, controller, snapshot } = useReplayController(session);
   return (
     <div className="product-shell live-trip-page" data-phase={snapshot.phase}>
       <TripTopBar controller={controller} snapshot={snapshot} />
       <main className="live-workspace">
         <ConvoyRail frame={snapshot.frame} />
         <RouteWorkspace frame={snapshot.frame} />
-        <aside className="trip-inspector"><p className="product-kicker">Trip context</p><h2>Convoy on R001</h2><p>Step through the replay to inspect confidence, separation, and regroup decisions.</p></aside>
+        <SituationInspector onApprove={approveRegroup} snapshot={snapshot} />
       </main>
     </div>
   );
