@@ -5,8 +5,8 @@ import { rm } from "node:fs/promises";
  * Bundles each Lambda handler into dist/<name>/index.js (CommonJS, node22).
  * Terraform's archive_file zips these directories for deployment — Terraform
  * does not compile TypeScript itself, so this build step must run before
- * `terraform apply`. AWS SDK v3 is provided by the Lambda runtime and is
- * marked external to keep bundles small.
+ * `terraform apply`. Runtime dependencies are bundled for reproducible cold
+ * starts instead of relying on the SDK version installed by Lambda.
  */
 const HANDLERS = {
   "telemetry-processor": "src/handlers/telemetry-processor.ts",
@@ -27,7 +27,6 @@ await Promise.all(
       format: "cjs",
       minify: true,
       sourcemap: false,
-      external: ["@aws-sdk/*", "@smithy/*", "@aws-crypto/*"],
     }),
   ),
 );
