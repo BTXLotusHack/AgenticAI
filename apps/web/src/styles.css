@@ -771,9 +771,20 @@ a {
   transform: translateX(-50%);
 }
 
+.route-stage__boundary > span:last-child {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: max-content;
+  transform: translateX(-50%);
+}
+
 .route-stage__boundary-line {
+  position: absolute;
+  top: 1.75rem;
+  bottom: 0;
   width: 1px;
-  height: calc(100% - 1.8rem);
+  height: auto;
   background: repeating-linear-gradient(
     180deg,
     #6c8075 0,
@@ -910,6 +921,16 @@ a {
   .route-stage__boundary {
     top: 0;
     font-size: 0.58rem;
+  }
+
+  .route-stage__boundary > span:last-child {
+    width: 9rem;
+    line-height: 1.25;
+    text-align: center;
+  }
+
+  .route-stage__boundary-line {
+    top: 2rem;
   }
 
   .story-status {
@@ -1441,7 +1462,7 @@ a {
 }
 
 .landing-footer__topline p {
-  color: #66776e;
+  color: #4d5f56;
 }
 
 .landing-footer__bottomline {
@@ -1450,7 +1471,7 @@ a {
   justify-content: space-between;
   border-top: 1px solid #bdc8c1;
   gap: 2rem;
-  color: #697970;
+  color: #4f6258;
   font-size: 0.74rem;
 }
 

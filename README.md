@@ -142,7 +142,46 @@ loopin/
 └── docs/
 ```
 
-This repository currently establishes the product and system specifications. Implementation commands will be documented after the scaffold exists; the documentation does not claim that undeveloped services are already runnable.
+The consumer landing page is implemented in `apps/web`. The mobile client, simulator, AWS services, shared domain packages, and CDK infrastructure remain designed but are not yet runnable; they will be delivered as tested vertical slices rather than empty scaffolds.
+
+## Run the landing page
+
+Requirements:
+
+- Node.js 20.19 or newer
+- npm 11 or newer
+
+From the repository root:
+
+```powershell
+npm.cmd install
+npm.cmd run dev
+```
+
+Vite prints the local address, normally <http://localhost:5173>. To bind an explicit host and port:
+
+```powershell
+npm.cmd run dev -- --host 127.0.0.1 --port 4173
+```
+
+Run the complete web verification pipeline:
+
+```powershell
+npm.cmd run lint
+npm.cmd run typecheck
+npm.cmd test -- --run
+npm.cmd run build
+npx.cmd playwright install chromium
+npm.cmd run test:e2e
+```
+
+Preview the production build:
+
+```powershell
+npm.cmd run preview -- --host 127.0.0.1 --port 4173
+```
+
+The web output is written to `apps/web/dist` and is compatible with the documented S3 and CloudFront deployment model.
 
 ## Documentation
 
