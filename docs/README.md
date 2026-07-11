@@ -13,10 +13,14 @@ This directory is the system-design source of truth for Loopin. Documents are or
 7. [Safety, Security and Privacy](safety-security-privacy.md)
 8. [Testing and Operations](testing-and-operations.md)
 9. [Roadmap](roadmap.md)
+10. [Frontend Experience Standards](frontend-standards.md)
 
 Cross-cutting project practices are defined in [CONTRIBUTING.md](../CONTRIBUTING.md) and [AGENTS.md](../AGENTS.md). Consequential implementation decisions belong in [Architecture Decision Records](adr/README.md).
 
-The umbrella design record is [2026-07-11 Loopin Group Drive Platform Design](superpowers/specs/2026-07-11-loopin-group-drive-platform-design.md).
+Design records:
+
+- [2026-07-11 Loopin Group Drive Platform Design](superpowers/specs/2026-07-11-loopin-group-drive-platform-design.md)
+- [2026-07-11 Loopin Landing Page Design](superpowers/specs/2026-07-11-loopin-landing-page-design.md)
 
 ## Ownership map
 
@@ -31,6 +35,7 @@ The umbrella design record is [2026-07-11 Loopin Group Drive Platform Design](su
 | Driver guardrails, authorization and retention | `safety-security-privacy.md` |
 | Verification, SLOs, alarms and incident response | `testing-and-operations.md` |
 | Delivery phases and migration triggers | `roadmap.md` |
+| Public-page art direction, motion, accessibility and visual QA | `frontend-standards.md` |
 
 ## Documentation rules
 

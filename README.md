@@ -159,6 +159,7 @@ Start with the [documentation index](docs/README.md).
 | [Safety, Security and Privacy](docs/safety-security-privacy.md) | Guardrails, authorization, retention and threat controls |
 | [Testing and Operations](docs/testing-and-operations.md) | Simulator, verification, SLOs, alarms and runbooks |
 | [Roadmap](docs/roadmap.md) | Hackathon slice, production hardening and scale milestones |
+| [Frontend Experience Standards](docs/frontend-standards.md) | Public-page art direction, motion, accessibility and visual QA |
 
 Contributors should also read [CONTRIBUTING.md](CONTRIBUTING.md). Automated contributors must follow [AGENTS.md](AGENTS.md).
 

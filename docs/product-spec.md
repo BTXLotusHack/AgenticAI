@@ -111,6 +111,14 @@ DRAFT → READY → ACTIVE → PAUSED → COMPLETED → ARCHIVED
 - Separate measured facts from AI narrative.
 - Allow authorized export and deletion.
 
+### F-10 Public landing experience
+
+- Explain the consumer group-drive value before technical architecture.
+- Demonstrate route-aware component separation and regrouping without requiring a live backend.
+- Provide primary user, secondary explanation and organization pathways.
+- Present only validated proof and avoid fabricated statistics, testimonials, partnerships or pricing.
+- Meet the responsive, accessibility, motion and performance requirements in `docs/frontend-standards.md`.
+
 ## 6. Notification examples
 
 ### Rear section
