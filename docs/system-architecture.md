@@ -1,5 +1,7 @@
 # System architecture
 
+> **Deployment status (2026-07).** This document describes the *target* architecture. What `infra/` (Terraform) + `backend/` actually deploy today is a subset: Cognito, API Gateway HTTP API + Lambda, IoT Core, Kinesis, a **DynamoDB single-table** (the only datastore), AppSync **GraphQL subscriptions**, and SNS push. Not yet provisioned: **PostgreSQL/PostGIS/Aurora, S3/Firehose/Athena raw archive, EventBridge, and SQS**. Where the flows below name those services (§3.2, §3.3, §8), treat them as planned, not current. See `CLAUDE.md` and `README.md` for the deployed-vs-planned split.
+
 ## 1. Architectural style
 
 Loopin uses a serverless-first, event-driven architecture with pure domain packages and versioned contracts. The initial implementation favors managed AWS services and Lambda. Continuous processors are introduced only when sustained load or event-time complexity demonstrates the need.
@@ -65,7 +67,7 @@ SQS isolates downstream failures and gives each consumer independent retry, conc
 ```text
 Client opens trip
 → fetch authorized snapshot
-→ connect to AppSync Events
+→ connect to AppSync (GraphQL subscriptions)
 → subscribe to trip channel
 → apply versioned deltas
 → refetch snapshot after reconnect or version gap
@@ -144,7 +146,7 @@ Move only the telemetry/graph processor to Managed Apache Flink or ECS when cons
 - Lambda is used initially because traffic is bursty and batchable.
 - DynamoDB is the authoritative hot-state store; PostgreSQL is not exposed to every GPS point.
 - PostgreSQL/PostGIS owns routes, POIs and relational history.
-- AppSync Events owns WebSocket scale; application Lambdas do not host persistent connections.
+- AppSync (GraphQL subscriptions) owns WebSocket scale; application Lambdas do not host persistent connections.
 - The legal/safety following minimum is distinct from the product's maximum convoy-cohesion threshold.
 
 The mobile selection, cross-language contract boundary and device-verification requirements are recorded in [ADR 0001](adr/0001-use-flutter-for-driver-client.md).

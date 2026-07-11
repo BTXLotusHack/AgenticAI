@@ -1,5 +1,7 @@
 # Testing and operations
 
+> **Deployment status (2026-07).** Checks, alarms and runbook steps below that reference services not yet provisioned — **EventBridge/SQS routing, RDS Proxy/PostgreSQL, Bedrock and Transcribe** — cover planned target state, not the current deployment. The deployed surface is Cognito, API Gateway + Lambda, IoT Core, Kinesis, DynamoDB single-table, AppSync GraphQL subscriptions and SNS. Deployment/`CDK diff` gates should read as Terraform (`infra/`). See `CLAUDE.md` and `README.md`.
+
 ## 1. Verification strategy
 
 Testing follows the risk hierarchy: pure graph and policy logic receives exhaustive deterministic tests; AWS integrations receive contract and environment tests; complete trips are replayed end to end.
