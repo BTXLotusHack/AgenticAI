@@ -4,6 +4,7 @@ import {
   CommunityError,
   FixedClock,
   LoopinCommunityApplication,
+  MemoryIdempotencyRepository,
   createMemoryCommunityRepositories,
 } from "../src/index";
 
@@ -107,7 +108,7 @@ describe("place reviews", () => {
       { schemaVersion: 1, tascoPlaceId: placeId, rating: 3, comment: null, idempotencyKey: "3" },
     );
     await app.setReviewModeration(
-      { userId: "MOD001", isModerator: true },
+      { userId: "MOD001", authSource: "trusted-auth-context", roles: ["community-moderator"] },
       { schemaVersion: 1, reviewId: `review:${placeId}:USER002`, moderationState: "approved" },
     );
 
@@ -236,6 +237,40 @@ describe("blocking and reporting", () => {
     expect(reviews.items.map((item) => item.userId)).toEqual(["USER002"]);
   });
 
+  it("hides authors who blocked the viewer from review and presence listings", async () => {
+    const { app } = setup();
+    await app.upsertPlaceReview(
+      { userId: "USER001" },
+      { schemaVersion: 1, tascoPlaceId: placeId, rating: 5, comment: null, idempotencyKey: "rb1" },
+    );
+    await app.upsertTravelPresence(
+      { userId: "USER001" },
+      {
+        schemaVersion: 1,
+        city: "Ha Long",
+        approximateStartDate: "2026-08-01",
+        approximateEndDate: "2026-08-07",
+        interests: ["seafood"],
+        sharedPlaces: [],
+        visibility: "public",
+        retentionDays: 30,
+        idempotencyKey: "rb-presence",
+      },
+    );
+    await app.blockUser({ userId: "USER001" }, "USER003");
+
+    const reviews = await app.listPlaceReviews(
+      { userId: "USER003" },
+      { schemaVersion: 1, tascoPlaceId: placeId, limit: 20, cursor: null },
+    );
+    const presence = await app.listPublicTravelPresence(
+      { userId: "USER003" },
+      { schemaVersion: 1, city: "Ha Long", limit: 20, cursor: null },
+    );
+    expect(reviews.items).toHaveLength(0);
+    expect(presence.items).toHaveLength(0);
+  });
+
   it("queues reported reviews for moderation", async () => {
     const { app } = setup();
     const created = await app.upsertPlaceReview(
@@ -256,6 +291,41 @@ describe("blocking and reporting", () => {
     expect(report.report.status).toBe("open");
     const ownerView = await app.getMyPlaceReview({ userId: "USER001" }, placeId);
     expect(ownerView?.moderationState).toBe("pending");
+  });
+
+  it("returns the exact report for repeated idempotent report requests after moderation state changes", async () => {
+    const { app, repositories } = setup();
+    const created = await app.upsertPlaceReview(
+      { userId: "USER001" },
+      { schemaVersion: 1, tascoPlaceId: placeId, rating: 2, comment: null, idempotencyKey: "report-idem-review" },
+    );
+    const payload = {
+      schemaVersion: 1 as const,
+      targetType: "place-review" as const,
+      targetId: created.review.reviewId,
+      reasonCode: "misleading" as const,
+      details: "Not accurate.",
+      idempotencyKey: "report-repeat",
+    };
+
+    const first = await app.reportContent({ userId: "USER002" }, payload);
+    await repositories.reports.save({ ...first.report, status: "resolved" });
+
+    const second = await app.reportContent({ userId: "USER002" }, payload);
+    expect(second.report).toEqual({ ...first.report, status: "resolved" });
+  });
+});
+
+describe("idempotency storage", () => {
+  it("keeps scope and idempotency key boundaries distinct when values contain separators", async () => {
+    const repository = new MemoryIdempotencyRepository();
+    await repository.save("review:USER001", "place:key", {
+      fingerprint: "first",
+      resultRef: "review-1",
+      expiresAt: "2026-07-21T08:00:00.000Z",
+    });
+
+    await expect(repository.get("review:USER001:place", "key", now)).resolves.toBeNull();
   });
 });
 

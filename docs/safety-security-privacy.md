@@ -60,7 +60,16 @@ Before tracking, the member sees:
 
 Visibility options can include group-visible, leader-only and paused. A paused member is shown as paused with last-update age; the old marker is not presented as current.
 
-## 6. Retention defaults
+## 6. Community presence and reviews
+
+- Place ratings and comments are user-generated community data and must remain visually and contractually separate from Tasco place facts.
+- Place presence is approximate, opt-in and revocable; it may show city, broad date window, interests and shared Tasco place references.
+- Community presence must not include exact accommodation, coordinates, street address, check-in time, full itinerary details or active trip membership.
+- Block lists apply in both directions: people a viewer blocked and people who blocked the viewer are hidden from each other on community surfaces.
+- Trusted moderation roles come from authenticated server context. User-submitted profile or request body flags do not grant moderation authority.
+- Partner-facing analytics use aggregated or anonymized patterns by default and never expose raw live trip traces.
+
+## 7. Retention defaults
 
 | Data | Proposed retention |
 |---|---:|
@@ -74,7 +83,7 @@ Visibility options can include group-visible, leader-only and paused. A paused m
 
 Final periods require legal and customer review. S3 lifecycle policies and DynamoDB TTL implement the approved values.
 
-## 7. Data protection
+## 8. Data protection
 
 - TLS for HTTP, MQTT/WSS and database connections.
 - KMS encryption for S3, DynamoDB, Kinesis, queues, logs and databases where supported.
@@ -84,7 +93,7 @@ Final periods require legal and customer review. S3 lifecycle policies and Dynam
 - Data exports are short-lived, encrypted and authorization checked.
 - Backups inherit retention and deletion requirements.
 
-## 8. Threat controls
+## 9. Threat controls
 
 ### Spoofed telemetry
 
@@ -97,6 +106,7 @@ Use event IDs, member sequences, observation time, conditional writes and TTL-ba
 ### Unauthorized observation
 
 Enforce channel and API authorization server-side. Never depend on hidden client UI for access control.
+Public community links must not reveal active trip membership, live route progress or precise coordinates.
 
 ### Join-code abuse
 
@@ -110,14 +120,14 @@ Only the notification service may publish authoritative alert envelopes. Clients
 
 Apply API throttles, IoT quotas, Lambda reserved concurrency, queue limits, payload limits, WAF rules and cost anomaly alarms.
 
-## 9. Emergency behavior
+## 10. Emergency behavior
 
 - A user-reported emergency is immediately high priority.
 - An unexpected stop first triggers a safety check unless stronger evidence exists.
 - Failure to respond can escalate according to policy but is not described as a confirmed accident.
 - Emergency contact or external-service integration requires separate consent, legal review and operational ownership.
 
-## 10. Required reviews before production
+## 11. Required reviews before production
 
 - Vietnamese road-safety review of wording and distance policy
 - Privacy and retention review

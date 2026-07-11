@@ -7,15 +7,18 @@ import {
   CommandEnvelopeV1Schema,
   CompleteTripRequestV1Schema,
   ConvoySituationEventV1Schema,
+  ContentReportV1Schema,
   DriverAlertAcknowledgementV1Schema,
   DriverAlertV1Schema,
   EventEnvelopeSchema,
   JoinTripRequestV1Schema,
   JoinTripResultV1Schema,
+  LocationVisibilityPolicyV1Schema,
   LiveSnapshotV1Schema,
   LocationTelemetryV1Schema,
   MemberTelemetryInputV1Schema,
   NotificationRequestSchema,
+  PlaceCommunitySummaryV1Schema,
   ProjectedLocationV1Schema,
   RealtimeEventV1Schema,
   SetReadinessRequestV1Schema,
@@ -25,6 +28,7 @@ import {
   TripSummaryV1Schema,
   TripPlanSummaryV1Schema,
   TripStopV1Schema,
+  UserTravelProfileV1Schema,
 } from "../src/index";
 
 const telemetry = {
@@ -418,5 +422,61 @@ describe("service boundary contracts", () => {
         stack: "secret",
       }).success,
     ).toBe(false);
+  });
+
+  it("validates community, profile and privacy contracts without Tasco fact leakage", () => {
+    expect(
+      PlaceCommunitySummaryV1Schema.parse({
+        schemaVersion: 1,
+        tascoPlaceId: "tasco:poi:POI001",
+        averageRating: 4.5,
+        reviewCount: 12,
+        commentCount: 7,
+        viewerCanReview: true,
+        viewerHasReviewed: false,
+        source: "user-generated",
+      }),
+    ).toMatchObject({ source: "user-generated" });
+    expect(
+      LocationVisibilityPolicyV1Schema.parse({
+        schemaVersion: 1,
+        userId: "USER001",
+        tripVisibility: "leader-only",
+        placePresenceVisibility: "private",
+        retentionPreference: "minimal",
+        blockedUserIds: ["USER002"],
+        updatedAt: telemetry.observedAt,
+      }),
+    ).toMatchObject({ tripVisibility: "leader-only" });
+    expect(
+      UserTravelProfileV1Schema.parse({
+        schemaVersion: 1,
+        userId: "USER001",
+        displayName: "Mai",
+        homeCity: "Ha Noi",
+        travelStyles: ["family trips"],
+        interests: ["seafood"],
+        preferredLanguages: ["vi", "en"],
+        dietaryPreferences: [],
+        accessibilityPreferences: [],
+        updatedAt: telemetry.observedAt,
+      }),
+    ).toMatchObject({ displayName: "Mai" });
+    expect(
+      ContentReportV1Schema.parse({
+        schemaVersion: 1,
+        reportId: "report-1",
+        reporterUserId: "USER001",
+        targetType: "place-review",
+        targetId: "review-1",
+        reasonCode: "privacy-violation",
+        details: null,
+        createdAt: telemetry.observedAt,
+        status: "open",
+        resolvedAt: null,
+        resolvedByUserId: null,
+        resolution: null,
+      }),
+    ).toMatchObject({ status: "open" });
   });
 });

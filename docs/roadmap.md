@@ -49,6 +49,8 @@ Exit: the golden Hà Nội–Hạ Long scenario works live or as a repeatable re
 
 - Native background GPS and offline buffer verified on representative Android/iOS devices
 - Full permission and privacy UX
+- Profile, privacy, block-list and community notification settings
+- Place review reporting and trusted moderation workflows
 - All dataset scenarios
 - Unexpected stop, connectivity, rest and EV detectors
 - RDS Proxy and Aurora production configuration
@@ -66,6 +68,8 @@ Exit: controlled pilot with explicit support ownership and measurable reliabilit
 - Tasco live route/map-match/traffic integrations
 - Multilingual notification templates
 - Observer and coordinator roles
+- Opt-in place presence and community ratings attached to Tasco-backed places
+- Partner pilot surfaces for tourism, event transport and fleet operations
 - Downsampled trip analytics
 - Feature flags and staged rollout
 - Cost per active vehicle-hour dashboard
@@ -107,10 +111,13 @@ Exit: the platform scales while preserving the same event contracts, policies an
 - Unexpected stop and EV context
 - Observer/coordinator experience
 - Post-trip summary and timeline
+- Profile, privacy and moderation settings
+- Opt-in place reviews and approximate place presence
 
 ### Later
 
 - Advanced fleet analytics
+- Partner dashboards based on aggregated or anonymized patterns
 - Predictive incident models
 - Large public events
 - Multi-region active-active

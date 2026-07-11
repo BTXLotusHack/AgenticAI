@@ -6,6 +6,7 @@ import {
   assertTravelPresenceInputSafe,
   toPublicPresence,
   toPublicReview,
+  usersBlocked,
 } from "../src/privacy";
 
 const review: PlaceReviewV1 = {
@@ -94,5 +95,33 @@ describe("privacy sanitization", () => {
       city: "Ha Long",
       latitude: 20.95,
     })).toThrow();
+  });
+
+  it("does not reject harmless public text that mentions a forbidden key word", () => {
+    expect(() => assertPublicPayloadHasNoPrivateFields({
+      schemaVersion: 1,
+      comment: "latitude",
+    })).not.toThrow();
+  });
+
+  it("treats either blocking direction as private between viewer and author", () => {
+    expect(usersBlocked(
+      "VIEWER001",
+      "AUTHOR001",
+      new Set(["AUTHOR001"]),
+      new Set(),
+    )).toBe(true);
+    expect(usersBlocked(
+      "VIEWER001",
+      "AUTHOR001",
+      new Set(),
+      new Set(["AUTHOR001"]),
+    )).toBe(true);
+    expect(usersBlocked(
+      "VIEWER001",
+      "VIEWER001",
+      new Set(["VIEWER001"]),
+      new Set(["VIEWER001"]),
+    )).toBe(false);
   });
 });
