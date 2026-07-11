@@ -87,6 +87,8 @@ describe('Agent 1 product routes', () => {
 
     expect(screen.getByText(/email is required/i)).toBeVisible();
     expect(screen.getByText(/password is required/i)).toBeVisible();
+    expect(screen.getByRole('link', { name: /forgot password/i })).toHaveAttribute('href', '/forgot-password');
+    expect(screen.getByRole('link', { name: /create an account/i })).toHaveAttribute('href', '/signup');
     expect(screen.queryByText(/token|secret|credential/i)).not.toBeInTheDocument();
   });
 

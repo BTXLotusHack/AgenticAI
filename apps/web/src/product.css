@@ -107,6 +107,10 @@
 .platform-panel textarea { min-height:7rem; resize:vertical; }
 .auth-errors { color:#8a4a00; font-size:.86rem; }
 .auth-errors p { margin:.25rem 0; }
+.auth-links { display:grid; margin-top:1.25rem; gap:.85rem; }
+.auth-links p { margin:0; color:#586960; line-height:1.5; }
+.auth-links a:not(.text-link) { color:var(--road-ink); font-weight:680; text-decoration:underline; text-underline-offset:.18em; }
+.auth-links__action.text-link { margin-top:0; }
 
 .platform-shell { background:#eeeae0; }
 .platform-topbar { position:sticky; top:0; z-index:25; display:grid; min-height:4.8rem; padding-inline:max(1rem,calc((100vw - 88rem) / 2)); align-items:center; grid-template-columns:auto 1fr auto; gap:1.5rem; border-bottom:1px solid #c8cec9; background:rgb(244 241 232 / 94%); backdrop-filter:blur(16px); }

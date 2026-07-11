@@ -153,6 +153,28 @@ export function AuthPage({ mode }: { readonly mode: 'login' | 'signup' | 'forgot
             {content.button}
           </button>
         </form>
+        <nav aria-label="Other auth options" className="auth-links">
+          {mode === 'login' ? (
+            <>
+              <Link className="text-link auth-links__action" to="/forgot-password">
+                Forgot password?
+              </Link>
+              <p>
+                New to Loopin? <Link to="/signup">Create an account</Link>
+              </p>
+            </>
+          ) : null}
+          {mode === 'signup' ? (
+            <p>
+              Already have an account? <Link to="/login">Log in</Link>
+            </p>
+          ) : null}
+          {mode === 'forgot' || mode === 'reset' ? (
+            <Link className="text-link auth-links__action" to="/login">
+              Back to log in
+            </Link>
+          ) : null}
+        </nav>
         <Link className="text-link" to="/onboarding">
           Continue in fixture mode
         </Link>

@@ -43,13 +43,13 @@ export function LandingNav() {
         </div>
 
         <div className="landing-nav__actions">
-          <a
+          <Link
             className="landing-nav__login"
             data-analytics="login_clicked"
-            href="#login"
+            to="/login"
           >
             Log in
-          </a>
+          </Link>
           <Link
             className="button button--nav"
             data-analytics="primary_cta_clicked"
@@ -85,9 +85,9 @@ export function LandingNav() {
                 <span aria-hidden="true">↗</span>
               </a>
             ))}
-            <a href="#login" onClick={() => setOpen(false)}>
+            <Link to="/login" onClick={() => setOpen(false)}>
               Log in <span aria-hidden="true">↗</span>
-            </a>
+            </Link>
           </div>
           <Link
             className="button button--primary mobile-menu__cta"
