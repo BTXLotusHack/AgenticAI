@@ -74,8 +74,7 @@ export function toPublicPresence(presence: TravelPresenceV1, now: string): Publi
 }
 
 export function assertPublicPayloadHasNoPrivateFields(payload: unknown): void {
-  const serialized = JSON.stringify(payload);
-  const forbiddenKeys = [
+  const forbiddenKeys = new Set([
     "latitude",
     "longitude",
     "accuracyMeters",
@@ -84,12 +83,47 @@ export function assertPublicPayloadHasNoPrivateFields(payload: unknown): void {
     "liveCoordinates",
     "exactAddress",
     "checkInTime",
-  ];
-  for (const key of forbiddenKeys) {
-    if (serialized.includes(`"${key}"`)) {
-      throw new CommunityError("invalid-request", "Public community payloads must not expose private location fields.");
+  ]);
+  const stack = [payload];
+  while (stack.length > 0) {
+    const value = stack.pop();
+    if (!value || typeof value !== "object") continue;
+    if (Array.isArray(value)) {
+      stack.push(...value);
+      continue;
+    }
+    for (const [key, entry] of Object.entries(value)) {
+      if (forbiddenKeys.has(key)) {
+        throw new CommunityError("invalid-request", "Public community payloads must not expose private location fields.");
+      }
+      if (entry && typeof entry === "object") stack.push(entry);
     }
   }
+}
+
+export type ViewerPrivacyContext = {
+  readonly viewerUserId: string;
+  readonly blockedByViewer: ReadonlySet<string>;
+  readonly blockedViewer: ReadonlySet<string>;
+};
+
+export function createViewerPrivacyContext(
+  viewerUserId: string,
+  blockedByViewer: ReadonlySet<string>,
+  blockedViewer: ReadonlySet<string>,
+): ViewerPrivacyContext {
+  return {
+    viewerUserId,
+    blockedByViewer,
+    blockedViewer,
+  };
+}
+
+export function authorVisibleToViewer(
+  authorUserId: string,
+  context: ViewerPrivacyContext,
+): boolean {
+  return !usersBlocked(context.viewerUserId, authorUserId, context.blockedByViewer, context.blockedViewer);
 }
 
 export function usersBlocked(
@@ -99,5 +133,5 @@ export function usersBlocked(
   blockedViewer: ReadonlySet<string>,
 ): boolean {
   if (viewerUserId === authorUserId) return false;
-  return blockedByViewer.has(authorUserId) || blockedViewer.has(viewerUserId);
+  return blockedByViewer.has(authorUserId) || blockedViewer.has(authorUserId);
 }

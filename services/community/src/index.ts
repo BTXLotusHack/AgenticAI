@@ -44,9 +44,10 @@ import {
 import {
   assertPublicPayloadHasNoPrivateFields,
   assertTravelPresenceInputSafe,
+  authorVisibleToViewer,
+  createViewerPrivacyContext,
   toPublicPresence,
   toPublicReview,
-  usersBlocked,
 } from "./privacy";
 import type { Clock, CommunityRepositories } from "./repositories";
 
@@ -171,13 +172,16 @@ export class LoopinCommunityApplication {
     const request = ListPlaceReviewsRequestV1Schema.parse(rawRequest);
     const now = this.dependencies.clock.now();
     const cursor = request.cursor ? decodeReviewCursor(request.cursor) : null;
-    const blockedByViewer = new Set(await this.dependencies.repositories.blocks.listBlockedBy(parsedIdentity.userId));
-    const blockedViewer = new Set(await this.dependencies.repositories.blocks.listBlockedUsersOf(parsedIdentity.userId));
+    const privacyContext = createViewerPrivacyContext(
+      parsedIdentity.userId,
+      new Set(await this.dependencies.repositories.blocks.listBlockedBy(parsedIdentity.userId)),
+      new Set(await this.dependencies.repositories.blocks.listBlockedUsersOf(parsedIdentity.userId)),
+    );
 
     const page = (await this.dependencies.repositories.reviews.listByPlace(request.tascoPlaceId))
       .filter((review) => !review.deletedAt)
       .filter((review) => review.moderationState === "approved" || review.userId === parsedIdentity.userId)
-      .filter((review) => !usersBlocked(parsedIdentity.userId, review.userId, blockedByViewer, blockedViewer))
+      .filter((review) => authorVisibleToViewer(review.userId, privacyContext))
       .sort(compareReviews)
       .map((review): PublicPlaceReviewV1 | null => {
         if (review.userId === parsedIdentity.userId) {
@@ -314,13 +318,16 @@ export class LoopinCommunityApplication {
     const request = ListTravelPresenceRequestV1Schema.parse(rawRequest);
     const now = this.dependencies.clock.now();
     const cursor = request.cursor ? decodePresenceCursor(request.cursor) : null;
-    const blockedByViewer = new Set(await this.dependencies.repositories.blocks.listBlockedBy(parsedIdentity.userId));
-    const blockedViewer = new Set(await this.dependencies.repositories.blocks.listBlockedUsersOf(parsedIdentity.userId));
+    const privacyContext = createViewerPrivacyContext(
+      parsedIdentity.userId,
+      new Set(await this.dependencies.repositories.blocks.listBlockedBy(parsedIdentity.userId)),
+      new Set(await this.dependencies.repositories.blocks.listBlockedUsersOf(parsedIdentity.userId)),
+    );
 
     const page = (await this.dependencies.repositories.presence.listActive(now))
       .filter((presence) => presence.visibility === "public")
       .filter((presence) => !request.city || presence.city === request.city)
-      .filter((presence) => !usersBlocked(parsedIdentity.userId, presence.userId, blockedByViewer, blockedViewer))
+      .filter((presence) => authorVisibleToViewer(presence.userId, privacyContext))
       .sort(comparePresence)
       .map((presence) => toPublicPresence(presence, now))
       .filter((presence): presence is NonNullable<typeof presence> => presence !== null)

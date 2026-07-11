@@ -236,6 +236,40 @@ describe("blocking and reporting", () => {
     expect(reviews.items.map((item) => item.userId)).toEqual(["USER002"]);
   });
 
+  it("hides authors who blocked the viewer from review and presence listings", async () => {
+    const { app } = setup();
+    await app.upsertPlaceReview(
+      { userId: "USER001" },
+      { schemaVersion: 1, tascoPlaceId: placeId, rating: 5, comment: null, idempotencyKey: "rb1" },
+    );
+    await app.upsertTravelPresence(
+      { userId: "USER001" },
+      {
+        schemaVersion: 1,
+        city: "Ha Long",
+        approximateStartDate: "2026-08-01",
+        approximateEndDate: "2026-08-07",
+        interests: ["seafood"],
+        sharedPlaces: [],
+        visibility: "public",
+        retentionDays: 30,
+        idempotencyKey: "rb-presence",
+      },
+    );
+    await app.blockUser({ userId: "USER001" }, "USER003");
+
+    const reviews = await app.listPlaceReviews(
+      { userId: "USER003" },
+      { schemaVersion: 1, tascoPlaceId: placeId, limit: 20, cursor: null },
+    );
+    const presence = await app.listPublicTravelPresence(
+      { userId: "USER003" },
+      { schemaVersion: 1, city: "Ha Long", limit: 20, cursor: null },
+    );
+    expect(reviews.items).toHaveLength(0);
+    expect(presence.items).toHaveLength(0);
+  });
+
   it("queues reported reviews for moderation", async () => {
     const { app } = setup();
     const created = await app.upsertPlaceReview(
