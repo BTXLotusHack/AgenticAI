@@ -1,0 +1,9 @@
+# Loopin web asset attribution
+
+The following images are stored locally and used under the [Unsplash License](https://unsplash.com/license).
+
+| Local asset | Work | Creator | Source |
+|---|---|---|---|
+| `images/loopin-hero.jpg` | A winding road through a valley | Danish Prakash | <https://unsplash.com/photos/UB9qLuoWwTs> |
+
+The Bricolage Grotesque and Figtree font files are distributed through Fontsource packages under their included SIL Open Font License files.

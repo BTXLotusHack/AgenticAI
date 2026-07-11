@@ -1,8 +1,16 @@
+import { HeroRoute } from '../components/HeroRoute';
+import { LandingNav } from '../components/LandingNav';
+
 export function App() {
   return (
-    <main>
-      <h1>Every car. One journey.</h1>
-      <a href="#start">Start a group drive</a>
-    </main>
+    <>
+      <a className="skip-link" href="#main-content">
+        Skip to content
+      </a>
+      <LandingNav />
+      <main id="main-content">
+        <HeroRoute />
+      </main>
+    </>
   );
 }
