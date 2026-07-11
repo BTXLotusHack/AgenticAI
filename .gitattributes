@@ -1,2 +1,5 @@
 packages/contracts/generated/*.json text eol=lf
 apps/mobile/lib/contracts/generated/*.dart text eol=lf
+reference-materials/**/*.pdf binary
+reference-materials/**/*.zip binary
+reference-materials/**/*.xlsx binary
