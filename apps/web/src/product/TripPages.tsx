@@ -1,4 +1,4 @@
-import { ArrowRight, CalendarDays, Check, Copy, Navigation, QrCode, Share2, Users } from 'lucide-react';
+import { ArrowRight, CalendarDays, Check, Copy, QrCode, Share2, Users } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { useLiveTrip, usePlaceSearch, useTrip } from '../api/hooks';
 import { AppShell } from '../app/shell/AppShell';

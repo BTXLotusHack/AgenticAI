@@ -1,4 +1,4 @@
-import { Bell, Building2, ChevronRight, EyeOff, Flag, Heart, MapPin, MessageCircle, ShieldCheck, Star, Users } from 'lucide-react';
+import { Building2, ChevronRight, EyeOff, Flag, Heart, MapPin, MessageCircle, ShieldCheck, Star, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { AppShell } from '../app/shell/AppShell';
 import { PageHeader } from '../shared/product/PageHeader';
