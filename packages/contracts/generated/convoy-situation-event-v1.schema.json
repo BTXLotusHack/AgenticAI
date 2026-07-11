@@ -1,0 +1,195 @@
+{
+  "$id": "https://schemas.loopin.vn/contracts/convoy-situation-event-v1.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "properties": {
+    "eventId": {
+      "maxLength": 160,
+      "minLength": 1,
+      "type": "string"
+    },
+    "eventType": {
+      "enum": [
+        "convoySituationCreated",
+        "convoySituationUpdated"
+      ],
+      "type": "string"
+    },
+    "graphRevision": {
+      "maximum": 9007199254740991,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "occurredAt": {
+      "format": "date-time",
+      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+      "type": "string"
+    },
+    "schemaVersion": {
+      "const": 1,
+      "type": "number"
+    },
+    "situation": {
+      "additionalProperties": false,
+      "properties": {
+        "affectedComponentIds": {
+          "items": {
+            "maxLength": 160,
+            "minLength": 1,
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "confirmedAt": {
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+          "type": "string"
+        },
+        "evidence": {
+          "additionalProperties": false,
+          "properties": {
+            "durationSeconds": {
+              "minimum": 0,
+              "type": "number"
+            },
+            "etaGapSeconds": {
+              "minimum": 0,
+              "type": "number"
+            },
+            "frontBoundaryMemberId": {
+              "maxLength": 160,
+              "minLength": 1,
+              "type": "string"
+            },
+            "graphRevision": {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            },
+            "locationConfidence": {
+              "enum": [
+                "high",
+                "medium",
+                "low"
+              ],
+              "type": "string"
+            },
+            "maximumRouteGapMeters": {
+              "minimum": 0,
+              "type": "number"
+            },
+            "rearBoundaryMemberId": {
+              "maxLength": 160,
+              "minLength": 1,
+              "type": "string"
+            },
+            "routeGapMeters": {
+              "minimum": 0,
+              "type": "number"
+            },
+            "sourceEventIds": {
+              "items": {
+                "maxLength": 160,
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "durationSeconds",
+            "locationConfidence",
+            "graphRevision",
+            "sourceEventIds"
+          ],
+          "type": "object"
+        },
+        "lifecycle": {
+          "enum": [
+            "confirmed",
+            "notified",
+            "resolved"
+          ],
+          "type": "string"
+        },
+        "notifiedAt": {
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+          "type": "string"
+        },
+        "policyVersion": {
+          "maxLength": 160,
+          "minLength": 1,
+          "type": "string"
+        },
+        "resolvedAt": {
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+          "type": "string"
+        },
+        "severity": {
+          "enum": [
+            "medium",
+            "high"
+          ],
+          "type": "string"
+        },
+        "situationId": {
+          "maxLength": 160,
+          "minLength": 1,
+          "type": "string"
+        },
+        "tripId": {
+          "maxLength": 160,
+          "minLength": 1,
+          "type": "string"
+        },
+        "type": {
+          "const": "convoy-split",
+          "type": "string"
+        },
+        "updatedAt": {
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "situationId",
+        "tripId",
+        "type",
+        "lifecycle",
+        "severity",
+        "affectedComponentIds",
+        "evidence",
+        "policyVersion",
+        "confirmedAt",
+        "updatedAt"
+      ],
+      "type": "object"
+    },
+    "snapshotRevision": {
+      "maximum": 9007199254740991,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "tripId": {
+      "maxLength": 160,
+      "minLength": 1,
+      "type": "string"
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "eventId",
+    "tripId",
+    "snapshotRevision",
+    "graphRevision",
+    "eventType",
+    "occurredAt",
+    "situation"
+  ],
+  "title": "ConvoySituationEventV1",
+  "type": "object",
+  "x-schema-version": 1
+}

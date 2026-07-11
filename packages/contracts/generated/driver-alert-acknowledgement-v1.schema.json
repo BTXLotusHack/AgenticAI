@@ -1,0 +1,59 @@
+{
+  "$id": "https://schemas.loopin.vn/contracts/driver-alert-acknowledgement-v1.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "properties": {
+    "acknowledgedAt": {
+      "format": "date-time",
+      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+      "type": "string"
+    },
+    "acknowledgementId": {
+      "maxLength": 160,
+      "minLength": 1,
+      "type": "string"
+    },
+    "alertId": {
+      "maxLength": 160,
+      "minLength": 1,
+      "type": "string"
+    },
+    "idempotencyKey": {
+      "maxLength": 160,
+      "minLength": 1,
+      "type": "string"
+    },
+    "memberId": {
+      "maxLength": 160,
+      "minLength": 1,
+      "type": "string"
+    },
+    "notificationId": {
+      "maxLength": 160,
+      "minLength": 1,
+      "type": "string"
+    },
+    "schemaVersion": {
+      "const": 1,
+      "type": "number"
+    },
+    "tripId": {
+      "maxLength": 160,
+      "minLength": 1,
+      "type": "string"
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "acknowledgementId",
+    "alertId",
+    "notificationId",
+    "tripId",
+    "memberId",
+    "acknowledgedAt",
+    "idempotencyKey"
+  ],
+  "title": "DriverAlertAcknowledgementV1",
+  "type": "object",
+  "x-schema-version": 1
+}

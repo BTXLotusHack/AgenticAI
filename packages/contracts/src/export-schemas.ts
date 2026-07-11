@@ -2,11 +2,18 @@ import { z } from "zod";
 
 import {
   ConvoyGraphSchema,
+  ConvoySituationEventV1Schema,
+  DriverAlertAcknowledgementV1Schema,
+  DriverAlertV1Schema,
   EventEnvelopeSchema,
   JoinTripResultV1Schema,
+  LiveMemberSnapshotV1Schema,
+  LiveSnapshotV1Schema,
   LocationTelemetryV1Schema,
+  MemberTelemetryInputV1Schema,
   NotificationRequestSchema,
   ProjectedLocationV1Schema,
+  RealtimeEventV1Schema,
   SituationSchema,
   TascoPlaceRefV1Schema,
   TascoRoutePreviewV1Schema,
@@ -19,6 +26,7 @@ export const CONTRACT_SCHEMA_BASE_URL = "https://schemas.loopin.vn/contracts";
 
 export const contractSchemas = [
   ["LocationTelemetryV1", "location-telemetry-v1.schema.json", LocationTelemetryV1Schema],
+  ["MemberTelemetryInputV1", "member-telemetry-input-v1.schema.json", MemberTelemetryInputV1Schema],
   ["EventEnvelopeV1", "event-envelope-v1.schema.json", EventEnvelopeSchema],
   ["ProjectedLocationV1", "projected-location-v1.schema.json", ProjectedLocationV1Schema],
   ["ConvoyGraphV1", "convoy-graph-v1.schema.json", ConvoyGraphSchema],
@@ -29,6 +37,16 @@ export const contractSchemas = [
   ["TascoRoutePreviewV1", "tasco-route-preview-v1.schema.json", TascoRoutePreviewV1Schema],
   ["TripPlanSummaryV1", "trip-plan-summary-v1.schema.json", TripPlanSummaryV1Schema],
   ["JoinTripResultV1", "join-trip-result-v1.schema.json", JoinTripResultV1Schema],
+  ["LiveMemberSnapshotV1", "live-member-snapshot-v1.schema.json", LiveMemberSnapshotV1Schema],
+  ["LiveSnapshotV1", "live-snapshot-v1.schema.json", LiveSnapshotV1Schema],
+  ["ConvoySituationEventV1", "convoy-situation-event-v1.schema.json", ConvoySituationEventV1Schema],
+  ["DriverAlertV1", "driver-alert-v1.schema.json", DriverAlertV1Schema],
+  [
+    "DriverAlertAcknowledgementV1",
+    "driver-alert-acknowledgement-v1.schema.json",
+    DriverAlertAcknowledgementV1Schema,
+  ],
+  ["RealtimeEventV1", "realtime-event-v1.schema.json", RealtimeEventV1Schema],
 ] as const;
 
 function sortJson(value: unknown): unknown {

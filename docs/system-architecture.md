@@ -75,6 +75,16 @@ Client opens trip
 
 Raw GPS is not broadcast directly. Clients receive derived, rate-controlled state.
 
+### 3.5 Implemented live-state adapter
+
+The current deployed-shaped telemetry processor validates `LocationTelemetryV1`
+plus `ProjectedLocationV1`, invokes `@loopin/convoy-core`, persists `LIVE#STATE`,
+`LIVE#SNAPSHOT`, `LIVE#MEMBER#...`, telemetry idempotency and realtime event
+items in the DynamoDB single table, then publishes `RealtimeEventV1` through
+AppSync `publishRealtimeEvent`. AppSync subscribers receive derived events such
+as `liveSnapshotUpdated` and `driverAlertIssued`; they do not receive raw GPS
+points.
+
 ## 4. Reliability principles
 
 - End-to-end exactly-once delivery is not assumed.

@@ -1,13 +1,13 @@
 # Real-time telemetry specification
 
-> **Deployment status (2026-07).** The deployed telemetry path is IoT Core → Kinesis → `telemetry-processor` Lambda → DynamoDB single-table → AppSync GraphQL subscriptions. The **raw-archive and downstream-fan-out stages named below — Firehose/S3 archival, SQS DLQ/AI queues, and PostgreSQL — are not yet provisioned**; treat them as planned. See `CLAUDE.md` and `README.md`.
+> **Deployment status (2026-07).** The deployed telemetry path is IoT Core -> Kinesis -> `telemetry-processor` Lambda -> DynamoDB single-table -> AppSync GraphQL subscriptions. Firehose/S3 raw archival, SQS queues, PostgreSQL and downstream analytics stores are not provisioned in the current deployed spec and require a future ADR before introduction.
 
 ## 1. Goals
 
 - Accept intermittent, duplicated and delayed mobile GPS without corrupting state.
 - Update the live map within three seconds at p95 under initial load.
-- Isolate telemetry from relational, AI and analytics latency.
-- Preserve enough raw data for replay while controlling cost and privacy.
+- Preserve enough current state for live coordination while controlling privacy and cost.
+- Keep AI, summaries and analytics outside the critical alert path.
 - Provide an explicit migration path from Lambda to stateful stream processing.
 
 ## 2. Mobile sampling
@@ -18,7 +18,7 @@ Proposed adaptive policy:
 |---|---:|
 | Normal active driving | 5 seconds |
 | Suspected incident or route deviation | 2 seconds |
-| Expected stationary stop | 15–30 seconds |
+| Expected stationary stop | 15-30 seconds |
 | Offline | Buffer locally and retry with bounded storage |
 
 The native app assigns a monotonic sequence per trip/member session and records both observation and send time.
@@ -51,10 +51,10 @@ Maximum accepted clock skew, coordinate accuracy, payload size and replay age ar
 ## 4. MQTT topic layout
 
 ```text
-loopin/v1/trips/{tripId}/members/{memberId}/location
-loopin/v1/trips/{tripId}/members/{memberId}/status
-loopin/v1/trips/{tripId}/commands
-loopin/v1/trips/{tripId}/alerts/{memberId}
+trips/{tripId}/members/{memberId}/telemetry
+trips/{tripId}/members/{memberId}/status
+trips/{tripId}/commands
+trips/{tripId}/alerts/{memberId}
 ```
 
 IoT policies restrict a credential to the authenticated member and active trip. QoS 1 provides at-least-once delivery; it does not remove the need for idempotency.
@@ -63,16 +63,16 @@ IoT policies restrict a credential to the authenticated member and active trip. 
 
 For every record:
 
-1. Parse and validate the versioned schema.
+1. Parse and validate the versioned telemetry and projected-location schemas.
 2. Verify trip membership and active-trip authorization.
 3. Deduplicate by `eventId` and reject a sequence not newer than current accepted state.
 4. Validate timestamps, coordinate range, accuracy and plausible motion.
-5. Map-match to the planned route.
+5. Map-match to the planned route and produce `ProjectedLocationV1`.
 6. Calculate route progress, route deviation and confidence.
-7. Conditionally update the member state in DynamoDB.
-8. Recalculate affected adjacent edges and graph revision.
-9. Publish a derived event only when authoritative state changes.
-10. Archive raw telemetry independently through Firehose/S3.
+7. Run the shared convoy-core reducers in the backend adapter.
+8. Persist `LIVE#STATE`, `LIVE#SNAPSHOT`, `LIVE#MEMBER#...`, idempotency records and realtime event items in the DynamoDB single table with TTL.
+9. Publish derived AppSync `RealtimeEventV1` records only after authoritative state changes or member-visible live state changes.
+10. Treat raw archive/fan-out as a future ADR-backed addition, not current deployed behavior.
 
 ## 6. Ordering and partitioning
 
@@ -90,14 +90,14 @@ Initial proposed settings:
 
 | Setting | Value |
 |---|---|
-| Batch size | 50–200 |
-| Batch window | 0–1 second |
+| Batch size | 50-200 |
+| Batch window | 0-1 second |
 | Parallelization factor | 1 |
 | Partial batch response | Enabled |
 | Bisect batch on error | Enabled |
-| Maximum retry attempts | 2–3 |
-| Maximum record age | 5–15 minutes |
-| Failure destination | Encrypted S3 quarantine or SQS DLQ |
+| Maximum retry attempts | 2-3 |
+| Maximum record age | 5-15 minutes |
+| Failure destination | Not currently provisioned; future encrypted quarantine/DLQ requires ADR |
 
 Parallelization must not increase until conditional-update and graph-concurrency tests demonstrate correctness.
 
@@ -128,12 +128,21 @@ Do not publish every GPS point to every subscriber. Publish:
 - Material confidence/connectivity changes.
 - Approved actions and acknowledgements.
 
-Clients interpolate between fresh authoritative points for smooth rendering, stop extrapolating after 10–15 seconds and visibly mark stale members.
+Clients interpolate between fresh authoritative points for smooth rendering, stop extrapolating after 10-15 seconds and visibly mark stale members.
+
+Current generated contract artifacts include:
+
+- `MemberTelemetryInputV1` for the mobile publish boundary over MQTT, WSS or simulator transport, including offline queue metadata without changing the underlying GPS observation.
+- `LiveMemberSnapshotV1` for per-member current location, route progress, freshness, confidence, connectivity and source telemetry evidence.
+- `LiveSnapshotV1` for the viewer-scoped graph, member snapshots, active situations, recommendations and member notifications.
+- `ConvoySituationEventV1` for typed situation create/update realtime payloads.
+- `DriverAlertV1` and `DriverAlertAcknowledgementV1` for driver-visible alerts and idempotent acknowledgement commands/events.
+- `RealtimeEventV1` with event types `liveSnapshotUpdated`, `convoySituationCreated`, `convoySituationUpdated`, `regroupCandidateSelected`, `driverAlertIssued` and `driverAlertAcknowledged`.
 
 ## 11. Scale model
 
 ```text
-messages/month = vehicles × activeHoursPerDay × 3,600 ÷ intervalSeconds × 30
+messages/month = vehicles x activeHoursPerDay x 3,600 / intervalSeconds x 30
 ```
 
 At 100,000 simultaneously active vehicles and one 500-byte update every five seconds, ingestion is approximately 20,000 records/second, 10 MB/second and 864 GB/day before compression.
@@ -141,8 +150,8 @@ At 100,000 simultaneously active vehicles and one 500-byte update every five sec
 Therefore:
 
 - Raw telemetry does not enter PostgreSQL.
-- S3 uses compressed columnar storage and lifecycle rules.
-- Live state uses TTL.
+- S3/raw archive is not part of the current deployed spec and requires a future ADR before provisioning.
+- Live state uses DynamoDB TTL.
 - UI updates are derived and downsampled.
 - AI is invoked per confirmed situation or user request, never per GPS point.
 
@@ -154,7 +163,7 @@ When consumer lag grows:
 2. Alarms trigger on `MillisBehindLatest` and end-to-end event age.
 3. Lambda concurrency scales within a trip-safe bound.
 4. Noncritical AI, summaries and analytics yield capacity.
-5. Obsolete AI jobs expire in SQS.
+5. Obsolete guidance expires by `expiresAt`.
 6. The UI shows data age rather than pretending state is current.
 
 ## 13. Migration triggers

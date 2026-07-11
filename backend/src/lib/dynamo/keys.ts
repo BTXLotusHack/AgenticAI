@@ -29,6 +29,31 @@ export const keys = {
     PK: `TEAM#${teamId}`,
     SK: `INVITE#${inviteId}`,
   }),
+
+  liveSnapshot: (tripId: string) => ({
+    PK: `TRIP#${tripId}`,
+    SK: "LIVE#SNAPSHOT",
+  }),
+
+  liveTripState: (tripId: string) => ({
+    PK: `TRIP#${tripId}`,
+    SK: "LIVE#STATE",
+  }),
+
+  liveMember: (tripId: string, memberId: string) => ({
+    PK: `TRIP#${tripId}`,
+    SK: `LIVE#MEMBER#${memberId}`,
+  }),
+
+  telemetryEvent: (tripId: string, eventId: string) => ({
+    PK: `TRIP#${tripId}`,
+    SK: `TELEMETRY_EVENT#${eventId}`,
+  }),
+
+  realtimeEvent: (tripId: string, snapshotRevision: number, eventId: string) => ({
+    PK: `TRIP#${tripId}`,
+    SK: `REALTIME#${snapshotRevision.toString().padStart(10, "0")}#${eventId}`,
+  }),
 } as const;
 
 /** SK prefixes for begins_with queries. */
@@ -36,4 +61,6 @@ export const skPrefix = {
   member: "MEMBER#",
   invite: "INVITE#",
   team: "TEAM#",
+  liveMember: "LIVE#MEMBER#",
+  realtimeEvent: "REALTIME#",
 } as const;

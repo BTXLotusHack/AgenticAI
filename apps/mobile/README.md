@@ -1,8 +1,29 @@
 # Loopin mobile
 
 Flutter foundation for Loopin's low-distraction driver experience. The client
-owns device presentation and, in later slices, capture and offline delivery. It
-does not own convoy detection, regroup authorization, or other safety policy.
+owns device presentation, telemetry capture boundaries and offline delivery
+coordination. It does not own convoy detection, regroup authorization, or other
+safety policy.
+
+## Implemented slices
+
+- Generated Dart models consume the authoritative `packages/contracts` schemas,
+  including `MemberTelemetryInputV1`, `LiveMemberSnapshotV1`,
+  `LiveSnapshotV1`, `DriverAlertV1`, `DriverAlertAcknowledgementV1` and
+  `RealtimeEventV1`.
+- `features/tracking` builds `LocationTelemetryV1` with monotonic member
+  sequences, packages publish-ready MQTT/WSS/simulator telemetry envelopes and
+  keeps an ordered offline queue boundary.
+- `features/trip_setup` models join-trip readiness and foreground/background
+  location permission gates.
+- `features/live_trip` renders member-authorized alerts and deterministic safe
+  fallback guidance from server snapshots, surfaces acknowledge/report/leave
+  actions, and provides TTS/haptic adapter ports. It never creates convoy
+  instructions locally.
+
+Physical Android/iOS background capture, native permission prompts, AppSync/IoT
+credentials, concrete TTS/haptics implementations and local notification
+adapters remain external validation gates before production use.
 
 ## Environments
 

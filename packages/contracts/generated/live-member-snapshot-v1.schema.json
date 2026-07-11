@@ -1,0 +1,147 @@
+{
+  "$id": "https://schemas.loopin.vn/contracts/live-member-snapshot-v1.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "properties": {
+    "accuracyMeters": {
+      "maximum": 5000,
+      "minimum": 0,
+      "type": "number"
+    },
+    "confidence": {
+      "enum": [
+        "high",
+        "medium",
+        "low"
+      ],
+      "type": "string"
+    },
+    "connectivity": {
+      "enum": [
+        "healthy",
+        "degraded",
+        "stale",
+        "lost"
+      ],
+      "type": "string"
+    },
+    "headingDegrees": {
+      "anyOf": [
+        {
+          "exclusiveMaximum": 360,
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "latitude": {
+      "maximum": 90,
+      "minimum": -90,
+      "type": "number"
+    },
+    "longitude": {
+      "maximum": 180,
+      "minimum": -180,
+      "type": "number"
+    },
+    "memberId": {
+      "maxLength": 160,
+      "minLength": 1,
+      "type": "string"
+    },
+    "observedAt": {
+      "format": "date-time",
+      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+      "type": "string"
+    },
+    "policyVersion": {
+      "maxLength": 160,
+      "minLength": 1,
+      "type": "string"
+    },
+    "receivedAt": {
+      "format": "date-time",
+      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+      "type": "string"
+    },
+    "role": {
+      "enum": [
+        "leader",
+        "member"
+      ],
+      "type": "string"
+    },
+    "routeDeviationMeters": {
+      "minimum": 0,
+      "type": "number"
+    },
+    "routeProgressMeters": {
+      "minimum": 0,
+      "type": "number"
+    },
+    "sequence": {
+      "maximum": 9007199254740991,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "snappedLatitude": {
+      "maximum": 90,
+      "minimum": -90,
+      "type": "number"
+    },
+    "snappedLongitude": {
+      "maximum": 180,
+      "minimum": -180,
+      "type": "number"
+    },
+    "sourceTelemetryEventId": {
+      "maxLength": 160,
+      "minLength": 1,
+      "type": "string"
+    },
+    "speedKmh": {
+      "anyOf": [
+        {
+          "maximum": 300,
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "tripId": {
+      "maxLength": 160,
+      "minLength": 1,
+      "type": "string"
+    }
+  },
+  "required": [
+    "memberId",
+    "tripId",
+    "role",
+    "latitude",
+    "longitude",
+    "snappedLatitude",
+    "snappedLongitude",
+    "routeProgressMeters",
+    "routeDeviationMeters",
+    "speedKmh",
+    "headingDegrees",
+    "accuracyMeters",
+    "observedAt",
+    "receivedAt",
+    "sequence",
+    "sourceTelemetryEventId",
+    "confidence",
+    "connectivity",
+    "policyVersion"
+  ],
+  "title": "LiveMemberSnapshotV1",
+  "type": "object",
+  "x-schema-version": 1
+}

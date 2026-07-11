@@ -41,6 +41,19 @@ export const LocationTelemetryV1Schema = z
 
 export type LocationTelemetryV1 = z.infer<typeof LocationTelemetryV1Schema>;
 
+export const MemberTelemetryInputV1Schema = z
+  .object({
+    schemaVersion: z.literal(1),
+    telemetry: LocationTelemetryV1Schema,
+    transport: z.enum(["mqtt", "wss", "simulator"]),
+    queuedAt: IsoDateTimeSchema.optional(),
+    publishedAt: IsoDateTimeSchema,
+    offlineQueueDepth: z.number().int().nonnegative(),
+  })
+  .strict();
+
+export type MemberTelemetryInputV1 = z.infer<typeof MemberTelemetryInputV1Schema>;
+
 export const ProjectedLocationV1Schema = z
   .object({
     schemaVersion: z.literal(1),
@@ -382,6 +395,32 @@ export const TripSummaryV1Schema = z
 
 export type TripSummaryV1 = z.infer<typeof TripSummaryV1Schema>;
 
+export const LiveMemberSnapshotV1Schema = z
+  .object({
+    memberId: IdentifierSchema,
+    tripId: IdentifierSchema,
+    role: z.enum(["leader", "member"]),
+    latitude: z.number().gte(-90).lte(90),
+    longitude: z.number().gte(-180).lte(180),
+    snappedLatitude: z.number().gte(-90).lte(90),
+    snappedLongitude: z.number().gte(-180).lte(180),
+    routeProgressMeters: z.number().nonnegative(),
+    routeDeviationMeters: z.number().nonnegative(),
+    speedKmh: z.number().nonnegative().lte(300).nullable(),
+    headingDegrees: z.number().gte(0).lt(360).nullable(),
+    accuracyMeters: z.number().nonnegative().lte(5_000),
+    observedAt: IsoDateTimeSchema,
+    receivedAt: IsoDateTimeSchema,
+    sequence: z.number().int().nonnegative(),
+    sourceTelemetryEventId: IdentifierSchema,
+    confidence: LocationConfidenceSchema,
+    connectivity: ConnectivitySchema,
+    policyVersion: IdentifierSchema,
+  })
+  .strict();
+
+export type LiveMemberSnapshotV1 = z.infer<typeof LiveMemberSnapshotV1Schema>;
+
 export const ApiErrorSchema = z
   .object({
     code: IdentifierSchema,
@@ -530,6 +569,7 @@ export const LiveSnapshotV1Schema = z
         role: z.enum(["leader", "member"]),
       })
       .strict(),
+    members: z.array(LiveMemberSnapshotV1Schema),
     graph: ConvoyGraphSchema,
     situations: z.array(SituationSchema),
     recommendations: z.array(RegroupRecommendationV1Schema),
@@ -539,6 +579,51 @@ export const LiveSnapshotV1Schema = z
 
 export type LiveSnapshotV1 = z.infer<typeof LiveSnapshotV1Schema>;
 
+export const ConvoySituationEventV1Schema = z
+  .object({
+    schemaVersion: z.literal(1),
+    eventId: IdentifierSchema,
+    tripId: IdentifierSchema,
+    snapshotRevision: z.number().int().nonnegative(),
+    graphRevision: z.number().int().nonnegative(),
+    eventType: z.enum(["convoySituationCreated", "convoySituationUpdated"]),
+    occurredAt: IsoDateTimeSchema,
+    situation: SituationSchema,
+  })
+  .strict();
+
+export type ConvoySituationEventV1 = z.infer<typeof ConvoySituationEventV1Schema>;
+
+export const DriverAlertV1Schema = z
+  .object({
+    schemaVersion: z.literal(1),
+    alertId: IdentifierSchema,
+    tripId: IdentifierSchema,
+    recipientMemberId: IdentifierSchema,
+    issuedAt: IsoDateTimeSchema,
+    expiresAt: IsoDateTimeSchema,
+    notification: NotificationRequestSchema,
+    requiresAcknowledgement: z.boolean(),
+  })
+  .strict();
+
+export type DriverAlertV1 = z.infer<typeof DriverAlertV1Schema>;
+
+export const DriverAlertAcknowledgementV1Schema = z
+  .object({
+    schemaVersion: z.literal(1),
+    acknowledgementId: IdentifierSchema,
+    alertId: IdentifierSchema,
+    notificationId: IdentifierSchema,
+    tripId: IdentifierSchema,
+    memberId: IdentifierSchema,
+    acknowledgedAt: IsoDateTimeSchema,
+    idempotencyKey: IdentifierSchema,
+  })
+  .strict();
+
+export type DriverAlertAcknowledgementV1 = z.infer<typeof DriverAlertAcknowledgementV1Schema>;
+
 export const RealtimeAudienceV1Schema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("trip") }).strict(),
   z.object({ kind: z.literal("leader") }).strict(),
@@ -546,6 +631,17 @@ export const RealtimeAudienceV1Schema = z.discriminatedUnion("kind", [
 ]);
 
 export type RealtimeAudienceV1 = z.infer<typeof RealtimeAudienceV1Schema>;
+
+export const RealtimeEventTypeV1Schema = z.enum([
+  "liveSnapshotUpdated",
+  "convoySituationCreated",
+  "convoySituationUpdated",
+  "regroupCandidateSelected",
+  "driverAlertIssued",
+  "driverAlertAcknowledged",
+]);
+
+export type RealtimeEventTypeV1 = z.infer<typeof RealtimeEventTypeV1Schema>;
 
 export const RealtimeEventV1Schema = z
   .object({
@@ -555,7 +651,7 @@ export const RealtimeEventV1Schema = z
     snapshotRevision: z.number().int().nonnegative(),
     graphRevision: z.number().int().nonnegative(),
     audience: RealtimeAudienceV1Schema,
-    eventType: IdentifierSchema,
+    eventType: RealtimeEventTypeV1Schema,
     occurredAt: IsoDateTimeSchema,
     expiresAt: IsoDateTimeSchema,
     payload: z.record(z.string(), z.unknown()),

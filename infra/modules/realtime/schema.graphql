@@ -1,42 +1,44 @@
-# Road-snapped position fanned out to live clients. Readable by IAM (the
-# processor Lambda selecting the mutation result) and Cognito users (clients
-# receiving the subscription).
-type RiderPosition @aws_iam @aws_cognito_user_pools {
-  teamId: ID!
-  riderId: ID!
-  lat: Float!
-  lng: Float!
-  snappedLat: Float!
-  snappedLng: Float!
-  headingDegrees: Float
-  matchConfidence: Float
-  observedAt: AWSDateTime!
+# Backend-derived realtime event fanned out to live clients. The telemetry
+# processor is the only IAM publisher; Cognito clients subscribe after a
+# membership check in the resolver.
+type RealtimeEvent @aws_iam @aws_cognito_user_pools {
+  schemaVersion: Int!
+  eventId: ID!
+  tripId: ID!
+  snapshotRevision: Int!
+  graphRevision: Int!
+  audience: AWSJSON!
+  eventType: String!
+  occurredAt: AWSDateTime!
+  expiresAt: AWSDateTime!
+  payload: AWSJSON!
 }
 
-input RiderPositionInput {
-  teamId: ID!
-  riderId: ID!
-  lat: Float!
-  lng: Float!
-  snappedLat: Float!
-  snappedLng: Float!
-  headingDegrees: Float
-  matchConfidence: Float
-  observedAt: AWSDateTime!
+input RealtimeEventInput {
+  schemaVersion: Int!
+  eventId: ID!
+  tripId: ID!
+  snapshotRevision: Int!
+  graphRevision: Int!
+  audience: AWSJSON!
+  eventType: String!
+  occurredAt: AWSDateTime!
+  expiresAt: AWSDateTime!
+  payload: AWSJSON!
 }
 
 type Mutation {
-  # Called only by the telemetry processor Lambda via IAM (SigV4). Clients
-  # cannot invoke it — they only subscribe. This keeps the deterministic
-  # backend as the sole publisher of live positions.
-  publishRiderPosition(input: RiderPositionInput!): RiderPosition @aws_iam
+  # Called only by backend processors via IAM (SigV4). Clients cannot invoke it;
+  # they only subscribe. This keeps deterministic backend code as the sole live
+  # publisher.
+  publishRealtimeEvent(input: RealtimeEventInput!): RealtimeEvent @aws_iam
 }
 
 type Subscription {
   # Cognito identifies the caller. A DynamoDB resolver additionally requires a
-  # current USER#sub / TEAM#teamId membership before registering this channel.
-  onRiderPosition(teamId: ID!): RiderPosition
-    @aws_subscribe(mutations: ["publishRiderPosition"])
+  # current USER#sub / TEAM#tripId membership before registering this channel.
+  onRealtimeEvent(tripId: ID!): RealtimeEvent
+    @aws_subscribe(mutations: ["publishRealtimeEvent"])
     @aws_cognito_user_pools
 }
 

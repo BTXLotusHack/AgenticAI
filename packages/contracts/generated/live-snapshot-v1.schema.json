@@ -1,0 +1,871 @@
+{
+  "$id": "https://schemas.loopin.vn/contracts/live-snapshot-v1.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "properties": {
+    "generatedAt": {
+      "format": "date-time",
+      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+      "type": "string"
+    },
+    "graph": {
+      "additionalProperties": false,
+      "properties": {
+        "calculatedAt": {
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+          "type": "string"
+        },
+        "components": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "averageSpeedKmh": {
+                "anyOf": [
+                  {
+                    "maximum": 300,
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "componentId": {
+                "maxLength": 160,
+                "minLength": 1,
+                "type": "string"
+              },
+              "containsLeader": {
+                "type": "boolean"
+              },
+              "frontBoundaryMemberId": {
+                "maxLength": 160,
+                "minLength": 1,
+                "type": "string"
+              },
+              "memberIds": {
+                "items": {
+                  "maxLength": 160,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "rearBoundaryMemberId": {
+                "maxLength": 160,
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "required": [
+              "componentId",
+              "memberIds",
+              "frontBoundaryMemberId",
+              "rearBoundaryMemberId",
+              "containsLeader",
+              "averageSpeedKmh"
+            ],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "edges": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "aheadMemberId": {
+                "maxLength": 160,
+                "minLength": 1,
+                "type": "string"
+              },
+              "behindMemberId": {
+                "maxLength": 160,
+                "minLength": 1,
+                "type": "string"
+              },
+              "combinedUncertaintyMeters": {
+                "minimum": 0,
+                "type": "number"
+              },
+              "confidentLowerGapMeters": {
+                "minimum": 0,
+                "type": "number"
+              },
+              "etaGapSeconds": {
+                "anyOf": [
+                  {
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "policyVersion": {
+                "maxLength": 160,
+                "minLength": 1,
+                "type": "string"
+              },
+              "routeGapMeters": {
+                "minimum": 0,
+                "type": "number"
+              },
+              "state": {
+                "enum": [
+                  "healthy",
+                  "stretched",
+                  "broken",
+                  "recovering",
+                  "unknown"
+                ],
+                "type": "string"
+              },
+              "stateSince": {
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "aheadMemberId",
+              "behindMemberId",
+              "routeGapMeters",
+              "etaGapSeconds",
+              "combinedUncertaintyMeters",
+              "confidentLowerGapMeters",
+              "state",
+              "stateSince",
+              "policyVersion"
+            ],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "graphRevision": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "leaderMemberId": {
+          "anyOf": [
+            {
+              "maxLength": 160,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "orderedMemberIds": {
+          "items": {
+            "maxLength": 160,
+            "minLength": 1,
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "overallState": {
+          "enum": [
+            "together",
+            "stretched",
+            "split",
+            "degraded"
+          ],
+          "type": "string"
+        },
+        "policyVersion": {
+          "maxLength": 160,
+          "minLength": 1,
+          "type": "string"
+        },
+        "tripId": {
+          "maxLength": 160,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "tripId",
+        "leaderMemberId",
+        "graphRevision",
+        "calculatedAt",
+        "overallState",
+        "orderedMemberIds",
+        "edges",
+        "components",
+        "policyVersion"
+      ],
+      "type": "object"
+    },
+    "members": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "accuracyMeters": {
+            "maximum": 5000,
+            "minimum": 0,
+            "type": "number"
+          },
+          "confidence": {
+            "enum": [
+              "high",
+              "medium",
+              "low"
+            ],
+            "type": "string"
+          },
+          "connectivity": {
+            "enum": [
+              "healthy",
+              "degraded",
+              "stale",
+              "lost"
+            ],
+            "type": "string"
+          },
+          "headingDegrees": {
+            "anyOf": [
+              {
+                "exclusiveMaximum": 360,
+                "minimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "latitude": {
+            "maximum": 90,
+            "minimum": -90,
+            "type": "number"
+          },
+          "longitude": {
+            "maximum": 180,
+            "minimum": -180,
+            "type": "number"
+          },
+          "memberId": {
+            "maxLength": 160,
+            "minLength": 1,
+            "type": "string"
+          },
+          "observedAt": {
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+            "type": "string"
+          },
+          "policyVersion": {
+            "maxLength": 160,
+            "minLength": 1,
+            "type": "string"
+          },
+          "receivedAt": {
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+            "type": "string"
+          },
+          "role": {
+            "enum": [
+              "leader",
+              "member"
+            ],
+            "type": "string"
+          },
+          "routeDeviationMeters": {
+            "minimum": 0,
+            "type": "number"
+          },
+          "routeProgressMeters": {
+            "minimum": 0,
+            "type": "number"
+          },
+          "sequence": {
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "snappedLatitude": {
+            "maximum": 90,
+            "minimum": -90,
+            "type": "number"
+          },
+          "snappedLongitude": {
+            "maximum": 180,
+            "minimum": -180,
+            "type": "number"
+          },
+          "sourceTelemetryEventId": {
+            "maxLength": 160,
+            "minLength": 1,
+            "type": "string"
+          },
+          "speedKmh": {
+            "anyOf": [
+              {
+                "maximum": 300,
+                "minimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "tripId": {
+            "maxLength": 160,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "memberId",
+          "tripId",
+          "role",
+          "latitude",
+          "longitude",
+          "snappedLatitude",
+          "snappedLongitude",
+          "routeProgressMeters",
+          "routeDeviationMeters",
+          "speedKmh",
+          "headingDegrees",
+          "accuracyMeters",
+          "observedAt",
+          "receivedAt",
+          "sequence",
+          "sourceTelemetryEventId",
+          "confidence",
+          "connectivity",
+          "policyVersion"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "notifications": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "audience": {
+            "enum": [
+              "leader",
+              "front-section",
+              "rear-section",
+              "front-boundary",
+              "rear-boundary",
+              "resolution"
+            ],
+            "type": "string"
+          },
+          "channels": {
+            "items": {
+              "enum": [
+                "visual",
+                "voice",
+                "haptic",
+                "push"
+              ],
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+            "type": "string"
+          },
+          "dedupeKey": {
+            "maxLength": 160,
+            "minLength": 1,
+            "type": "string"
+          },
+          "expiresAt": {
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+            "type": "string"
+          },
+          "graphRevision": {
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "locale": {
+            "enum": [
+              "en",
+              "vi"
+            ],
+            "type": "string"
+          },
+          "message": {
+            "maxLength": 500,
+            "minLength": 1,
+            "type": "string"
+          },
+          "notificationId": {
+            "maxLength": 160,
+            "minLength": 1,
+            "type": "string"
+          },
+          "recipientMemberId": {
+            "maxLength": 160,
+            "minLength": 1,
+            "type": "string"
+          },
+          "severity": {
+            "enum": [
+              "info",
+              "medium",
+              "high"
+            ],
+            "type": "string"
+          },
+          "situationId": {
+            "maxLength": 160,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "notificationId",
+          "dedupeKey",
+          "situationId",
+          "recipientMemberId",
+          "locale",
+          "audience",
+          "severity",
+          "message",
+          "graphRevision",
+          "createdAt",
+          "expiresAt",
+          "channels"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "recommendations": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "approvedAt": {
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+            "type": "string"
+          },
+          "approvedByMemberId": {
+            "maxLength": 160,
+            "minLength": 1,
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+            "type": "string"
+          },
+          "excludedCandidates": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "poiId": {
+                  "maxLength": 160,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "reasonCodes": {
+                  "items": {
+                    "enum": [
+                      "illegal",
+                      "unsafe-stop",
+                      "closed",
+                      "inaccessible",
+                      "insufficient-parking",
+                      "reverse-direction",
+                      "excessive-detour",
+                      "low-source-confidence"
+                    ],
+                    "type": "string"
+                  },
+                  "type": "array"
+                }
+              },
+              "required": [
+                "poiId",
+                "reasonCodes"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "expiresAt": {
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+            "type": "string"
+          },
+          "policyVersion": {
+            "maxLength": 160,
+            "minLength": 1,
+            "type": "string"
+          },
+          "recommendationId": {
+            "maxLength": 160,
+            "minLength": 1,
+            "type": "string"
+          },
+          "schemaVersion": {
+            "const": 1,
+            "type": "number"
+          },
+          "selectedCandidate": {
+            "anyOf": [
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "amenitiesScore": {
+                    "maximum": 1,
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  "detourMeters": {
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  "detourScore": {
+                    "maximum": 1,
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  "etaFairnessScore": {
+                    "maximum": 1,
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  "fuelOrChargingScore": {
+                    "maximum": 1,
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  "hasSufficientParking": {
+                    "type": "boolean"
+                  },
+                  "isAccessible": {
+                    "type": "boolean"
+                  },
+                  "isLegal": {
+                    "type": "boolean"
+                  },
+                  "isOpen": {
+                    "type": "boolean"
+                  },
+                  "isSafeToStop": {
+                    "type": "boolean"
+                  },
+                  "maximumMemberEtaSeconds": {
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  "name": {
+                    "maxLength": 240,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "parkingScore": {
+                    "maximum": 1,
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  "poiId": {
+                    "maxLength": 160,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "requiresReverseDirection": {
+                    "type": "boolean"
+                  },
+                  "routeCompatibilityScore": {
+                    "maximum": 1,
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  "safeStopScore": {
+                    "maximum": 1,
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  "sourceConfidence": {
+                    "enum": [
+                      "high",
+                      "medium",
+                      "low"
+                    ],
+                    "type": "string"
+                  },
+                  "type": {
+                    "maxLength": 120,
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "poiId",
+                  "name",
+                  "type",
+                  "safeStopScore",
+                  "routeCompatibilityScore",
+                  "etaFairnessScore",
+                  "parkingScore",
+                  "detourScore",
+                  "fuelOrChargingScore",
+                  "amenitiesScore",
+                  "maximumMemberEtaSeconds",
+                  "isLegal",
+                  "isSafeToStop",
+                  "isOpen",
+                  "isAccessible",
+                  "hasSufficientParking",
+                  "requiresReverseDirection",
+                  "detourMeters",
+                  "sourceConfidence"
+                ],
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "situationId": {
+            "maxLength": 160,
+            "minLength": 1,
+            "type": "string"
+          },
+          "state": {
+            "enum": [
+              "pending",
+              "approved",
+              "expired"
+            ],
+            "type": "string"
+          },
+          "tripId": {
+            "maxLength": 160,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "schemaVersion",
+          "recommendationId",
+          "tripId",
+          "situationId",
+          "policyVersion",
+          "state",
+          "selectedCandidate",
+          "excludedCandidates",
+          "createdAt",
+          "expiresAt"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "schemaVersion": {
+      "const": 1,
+      "type": "number"
+    },
+    "situations": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "affectedComponentIds": {
+            "items": {
+              "maxLength": 160,
+              "minLength": 1,
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "confirmedAt": {
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+            "type": "string"
+          },
+          "evidence": {
+            "additionalProperties": false,
+            "properties": {
+              "durationSeconds": {
+                "minimum": 0,
+                "type": "number"
+              },
+              "etaGapSeconds": {
+                "minimum": 0,
+                "type": "number"
+              },
+              "frontBoundaryMemberId": {
+                "maxLength": 160,
+                "minLength": 1,
+                "type": "string"
+              },
+              "graphRevision": {
+                "maximum": 9007199254740991,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "locationConfidence": {
+                "enum": [
+                  "high",
+                  "medium",
+                  "low"
+                ],
+                "type": "string"
+              },
+              "maximumRouteGapMeters": {
+                "minimum": 0,
+                "type": "number"
+              },
+              "rearBoundaryMemberId": {
+                "maxLength": 160,
+                "minLength": 1,
+                "type": "string"
+              },
+              "routeGapMeters": {
+                "minimum": 0,
+                "type": "number"
+              },
+              "sourceEventIds": {
+                "items": {
+                  "maxLength": 160,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            },
+            "required": [
+              "durationSeconds",
+              "locationConfidence",
+              "graphRevision",
+              "sourceEventIds"
+            ],
+            "type": "object"
+          },
+          "lifecycle": {
+            "enum": [
+              "confirmed",
+              "notified",
+              "resolved"
+            ],
+            "type": "string"
+          },
+          "notifiedAt": {
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+            "type": "string"
+          },
+          "policyVersion": {
+            "maxLength": 160,
+            "minLength": 1,
+            "type": "string"
+          },
+          "resolvedAt": {
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+            "type": "string"
+          },
+          "severity": {
+            "enum": [
+              "medium",
+              "high"
+            ],
+            "type": "string"
+          },
+          "situationId": {
+            "maxLength": 160,
+            "minLength": 1,
+            "type": "string"
+          },
+          "tripId": {
+            "maxLength": 160,
+            "minLength": 1,
+            "type": "string"
+          },
+          "type": {
+            "const": "convoy-split",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "situationId",
+          "tripId",
+          "type",
+          "lifecycle",
+          "severity",
+          "affectedComponentIds",
+          "evidence",
+          "policyVersion",
+          "confirmedAt",
+          "updatedAt"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "snapshotRevision": {
+      "maximum": 9007199254740991,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "tripId": {
+      "maxLength": 160,
+      "minLength": 1,
+      "type": "string"
+    },
+    "viewer": {
+      "additionalProperties": false,
+      "properties": {
+        "memberId": {
+          "maxLength": 160,
+          "minLength": 1,
+          "type": "string"
+        },
+        "role": {
+          "enum": [
+            "leader",
+            "member"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "memberId",
+        "role"
+      ],
+      "type": "object"
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "tripId",
+    "snapshotRevision",
+    "generatedAt",
+    "viewer",
+    "members",
+    "graph",
+    "situations",
+    "recommendations",
+    "notifications"
+  ],
+  "title": "LiveSnapshotV1",
+  "type": "object",
+  "x-schema-version": 1
+}
