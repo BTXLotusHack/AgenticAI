@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "tripId": "PLAN001",
+  "name": "Hà Nội → Hạ Long Family Trip",
+  "lifecycle": "draft",
+  "version": 1,
+  "ownerUserId": "USER001",
+  "preferences": {
+    "schemaVersion": 1,
+    "travelMode": "auto",
+    "language": "vi",
+    "pace": "moderate",
+    "avoidTolls": false,
+    "avoidHighways": false,
+    "interestTags": ["rest", "view", "food"],
+    "vehicleCount": 4
+  },
+  "budget": {
+    "schemaVersion": 1,
+    "currency": "VND",
+    "totalBudgetMinorUnits": 12000000,
+    "dailyBudgetMinorUnits": 4000000
+  },
+  "itinerary": {
+    "schemaVersion": 1,
+    "itineraryId": "ITIN001",
+    "days": [
+      {
+        "schemaVersion": 1,
+        "dayId": "DAY001",
+        "date": "2026-07-20",
+        "label": "Hà Nội departure",
+        "stops": [
+          {
+            "schemaVersion": 1,
+            "stopId": "STOP001",
+            "tascoPlaceId": "tasco:poi:HN-OLD-QUARTER",
+            "place": {
+              "schemaVersion": 1,
+              "tascoPlaceId": "tasco:poi:HN-OLD-QUARTER",
+              "name": "Hoàn Kiếm, Hà Nội",
+              "label": "Hoàn Kiếm, Hà Nội",
+              "address": "Hoàn Kiếm, Hà Nội, Việt Nam",
+              "category": "City Center",
+              "coordinates": { "lat": 21.0285, "lon": 105.8542 },
+              "source": "tasco",
+              "rating": 4.6,
+              "tags": ["culture", "food"]
+            },
+            "sequence": 1,
+            "dwellMinutes": 30
+          }
+        ]
+      }
+    ]
+  }
+}
