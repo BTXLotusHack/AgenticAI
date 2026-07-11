@@ -14,6 +14,7 @@ import { AppShell } from '../app/shell/AppShell';
 import { PageHeader } from '../shared/product/PageHeader';
 
 export { AuthPage, OnboardingPage } from './AuthPages';
+export { DashboardPage, TripsPage } from './TripLibraryPages';
 
 function ProductShell({ children }: { readonly children: ReactNode }) {
   return <AppShell>{children}</AppShell>;
@@ -61,7 +62,7 @@ function TripRouteLine({ trip }: { readonly trip: TripPlanSummary }) {
   );
 }
 
-export function DashboardPage() {
+export function LegacyDashboardPage() {
   const trips = useTrips();
   return (
     <ProductShell>
@@ -103,7 +104,7 @@ export function DashboardPage() {
   );
 }
 
-export function TripsPage() {
+export function LegacyTripsPage() {
   const trips = useTrips();
   return (
     <ProductShell>
