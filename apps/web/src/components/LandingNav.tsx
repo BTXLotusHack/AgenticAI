@@ -1,6 +1,7 @@
 import { useEffect, useId, useState } from 'react';
 import { navigationItems } from '../app/content';
 import { BrandMark } from './BrandMark';
+import { Link } from 'react-router-dom';
 
 function MenuGlyph({ open }: { readonly open: boolean }) {
   return (
@@ -49,13 +50,13 @@ export function LandingNav() {
           >
             Log in
           </a>
-          <a
+          <Link
             className="button button--nav"
             data-analytics="primary_cta_clicked"
-            href="#start"
+            to="/trip/new"
           >
             Start a drive
-          </a>
+          </Link>
         </div>
 
         <button
@@ -88,14 +89,14 @@ export function LandingNav() {
               Log in <span aria-hidden="true">↗</span>
             </a>
           </div>
-          <a
+          <Link
             className="button button--primary mobile-menu__cta"
             data-analytics="primary_cta_clicked"
-            href="#start"
+            to="/trip/new"
             onClick={() => setOpen(false)}
           >
             Start a group drive <span aria-hidden="true">→</span>
-          </a>
+          </Link>
         </div>
       ) : null}
     </header>

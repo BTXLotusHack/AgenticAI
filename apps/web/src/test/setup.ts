@@ -1,6 +1,10 @@
 import '@testing-library/jest-dom/vitest';
-import { cleanup } from '@testing-library/react';
+import { cleanup, configure } from '@testing-library/react';
 import { afterEach, vi } from 'vitest';
+
+// Vite transforms lazy route chunks on first access in tests; allow that cold load
+// without weakening synchronous assertions elsewhere.
+configure({ asyncUtilTimeout: 10_000 });
 
 Object.defineProperty(window, 'matchMedia', {
   configurable: true,

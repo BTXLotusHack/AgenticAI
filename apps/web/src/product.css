@@ -60,6 +60,8 @@
 .product-empty h1 { margin: 1rem 0 0; font-family: "Bricolage Grotesque Variable", sans-serif; font-size: clamp(3rem, 7vw, 6rem); letter-spacing: -.07em; line-height: .9; }
 .product-empty > p:not(.product-kicker) { max-width: 35rem; color: #596a61; line-height: 1.6; }
 .product-empty .button { margin-top: 1rem; }
+.product-loading { display:grid; min-height:100svh; place-content:center; justify-items:center; color:#687970; background:#eeeae0; }
+.product-loading span { color:var(--loopin-green); font-family:"Bricolage Grotesque Variable",sans-serif; font-size:2rem; font-weight:720; letter-spacing:-.05em; }
 
 .trip-topbar { position: sticky; top: 0; z-index: 20; display: grid; min-height: 5.5rem; padding: .7rem 1.25rem; grid-template-columns: minmax(18rem,1fr) auto auto auto; gap: 1.25rem; }
 .trip-topbar__identity { display: flex; align-items: center; gap: 1.25rem; }
@@ -184,3 +186,30 @@
 @media (prefers-reduced-motion: reduce) {
   .route-canvas * { transition-duration:.01ms !important; animation-duration:.01ms !important; }
 }
+
+.summary-page main { width:min(100% - 2.5rem,88rem); margin-inline:auto; padding:clamp(4rem,8vw,8rem) 0 5rem; }
+.summary-hero { display:grid; grid-template-columns:.55fr 1.45fr; gap:1rem 4rem; }
+.summary-hero h1 { max-width:60rem; margin:0; font-family:"Bricolage Grotesque Variable",sans-serif; font-size:clamp(3.5rem,7vw,7rem); font-weight:540; letter-spacing:-.075em; line-height:.88; }
+.summary-hero > p:last-child { margin:1.5rem 0 0; grid-column:2; color:#5f7067; }
+.summary-facts { margin-top:5rem; }
+.summary-facts dl { display:grid; margin:1.5rem 0 0; grid-template-columns:repeat(3,1fr); border-top:1px solid #abb7af; }
+.summary-facts dl div { min-height:8.5rem; padding:1.25rem 1rem 1rem 0; border-bottom:1px solid #c5cdc7; }
+.summary-facts dt { color:#718178; font-size:.67rem; letter-spacing:.07em; text-transform:uppercase; }
+.summary-facts dd { max-width:15rem; margin:2rem 0 0; font-family:"Bricolage Grotesque Variable",sans-serif; font-size:1.25rem; font-weight:600; letter-spacing:-.03em; }
+.summary-history { display:grid; margin-top:6rem; grid-template-columns:1.15fr .85fr; gap:6rem; }
+.summary-history h2 { margin:.6rem 0 0; font-family:"Bricolage Grotesque Variable",sans-serif; font-size:2.7rem; letter-spacing:-.05em; }
+.summary-timeline { margin:2rem 0 0; padding:0; list-style:none; }
+.summary-timeline li { display:grid; min-height:5rem; align-items:start; grid-template-columns:4.5rem 1rem 1fr; gap:.8rem; }
+.summary-timeline time { color:#718178; font-size:.67rem; }
+.summary-timeline i { width:.6rem; height:.6rem; border-radius:50%; background:var(--loopin-green); box-shadow:0 0 0 5px #d6e2d8; }
+.summary-timeline li:not(:last-child) i::after { display:block; width:1px; height:4.3rem; margin:.6rem auto 0; background:#aebbb2; content:""; }
+.summary-timeline strong { font-size:.85rem; }
+.summary-timeline p { margin:.25rem 0 0; color:#66766e; font-size:.75rem; }
+.summary-history aside { align-self:start; padding:2rem; color:white; background:#13271d; }
+.summary-history aside > span { color:#a8c9b1; font-size:.65rem; letter-spacing:.08em; text-transform:uppercase; }
+.summary-history blockquote { margin:2rem 0 0; font-family:"Bricolage Grotesque Variable",sans-serif; font-size:clamp(1.6rem,3vw,2.5rem); letter-spacing:-.045em; line-height:1.1; }
+.summary-history aside p { margin:2rem 0 0; color:#9eb0a6; font-size:.74rem; }
+.summary-actions { display:flex; margin-top:5rem; align-items:center; gap:1rem; }
+.summary-actions__quiet { border-color:#9eaaa2; background:transparent; color:var(--road-ink); }
+.summary-actions .text-link { margin:0 0 0 auto; }
+@media (max-width:760px) { .summary-page main{width:calc(100% - 2rem);padding-top:3rem}.summary-hero{grid-template-columns:1fr}.summary-hero h1{margin-top:1rem;font-size:clamp(3.4rem,15vw,5rem)}.summary-hero>p:last-child{grid-column:1}.summary-facts dl{grid-template-columns:1fr}.summary-facts dl div{min-height:6.5rem}.summary-facts dd{margin-top:1rem}.summary-history{grid-template-columns:1fr;gap:3rem}.summary-actions{align-items:stretch;flex-direction:column}.summary-actions .text-link{margin:1rem 0 0}}

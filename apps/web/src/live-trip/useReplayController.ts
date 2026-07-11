@@ -1,5 +1,5 @@
 import { createGoldenR001Replay, createReplayController } from '@loopin/demo-scenarios';
-import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { appendAuditEntry } from '../demo-session/audit';
 import type { DemoSessionV1 } from '../demo-session/schema';
 import { writeDemoSession } from '../demo-session/storage';
@@ -41,5 +41,15 @@ export function useReplayController(session: DemoSessionV1) {
     sessionRef.current = nextSession;
     writeDemoSession(window.sessionStorage, nextSession);
   };
-  return { approveRegroup, controller, snapshot };
+  const completeTrip = useCallback(() => {
+    if (sessionRef.current.auditEntries.some((entry) => entry.eventType === 'DemoTripCompleted')) return;
+    const current = controller.getSnapshot();
+    const nextSession = appendAuditEntry(
+      { ...sessionRef.current, frameIndex: current.frameIndex },
+      { eventType: 'DemoTripCompleted', occurredAt: current.frame.occurredAt, frameIndex: current.frameIndex, graphRevision: current.frame.graph.graphRevision },
+    );
+    sessionRef.current = nextSession;
+    writeDemoSession(window.sessionStorage, nextSession);
+  }, [controller]);
+  return { approveRegroup, completeTrip, controller, snapshot };
 }

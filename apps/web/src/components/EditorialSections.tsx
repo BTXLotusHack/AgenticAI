@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import { motion, useReducedMotion, useScroll, useTransform } from 'motion/react';
 import { benefits, organizationAudiences } from '../app/content';
+import { Link } from 'react-router-dom';
 
 function Reveal({
   children,
@@ -210,13 +211,13 @@ function FinalCta() {
         <p>Next trip</p>
         <h2 id="start-title">Keep the journey together.</h2>
         <p>Start your first group drive with the people already going your way.</p>
-        <a
+        <Link
           className="button button--light route-link"
           data-analytics="primary_cta_clicked"
-          href="#top"
+          to="/trip/new"
         >
           Start a group drive <span aria-hidden="true">→</span>
-        </a>
+        </Link>
       </Reveal>
     </section>
   );

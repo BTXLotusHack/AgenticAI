@@ -17,10 +17,10 @@ function renderSetup() {
 describe('TripSetupPage', () => {
   beforeEach(() => window.sessionStorage.clear());
 
-  it('renders the workbook route and all four readiness rows', () => {
+  it('renders the workbook route and all four readiness rows', async () => {
     renderSetup();
 
-    expect(screen.getByRole('heading', { name: /set up the hà nội.*hạ long drive/i })).toBeVisible();
+    expect(await screen.findByRole('heading', { name: /set up the hà nội.*hạ long drive/i })).toBeVisible();
     expect(screen.getByText(/TRIP001 · R001/i)).toBeVisible();
     expect(screen.getByText(/20 jul 2026.*07:30/i)).toBeVisible();
     const readiness = screen.getByRole('table', { name: /member readiness/i });
@@ -34,7 +34,7 @@ describe('TripSetupPage', () => {
   it('blocks launch when required location consent is disabled', async () => {
     const user = userEvent.setup();
     renderSetup();
-    const start = screen.getByRole('button', { name: /start trip/i });
+    const start = await screen.findByRole('button', { name: /start trip/i });
     const consent = screen.getByRole('checkbox', { name: /share location for anh huy/i });
 
     expect(start).toBeEnabled();
@@ -48,9 +48,10 @@ describe('TripSetupPage', () => {
     const user = userEvent.setup();
     renderSetup();
 
-    await user.click(screen.getByRole('button', { name: /start trip/i }));
+    await user.click(await screen.findByRole('button', { name: /start trip/i }));
 
-    expect(await screen.findByRole('heading', { name: /TRIP001 live trip/i })).toBeVisible();
+    expect(await screen.findByRole('heading', { name: /hà nội.*hạ long/i })).toBeVisible();
+    expect(screen.getByText(/TRIP001 · live demo/i)).toBeVisible();
     const stored = JSON.parse(window.sessionStorage.getItem(DEMO_SESSION_KEY) ?? '{}');
     expect(stored).toMatchObject({ schemaVersion: 1, tripId: 'TRIP001', setupComplete: true, frameIndex: 0 });
     expect(stored.auditEntries).toHaveLength(1);

@@ -13,7 +13,8 @@ function renderLive() {
 }
 
 async function reachSplit(user: ReturnType<typeof userEvent.setup>) {
-  for (let index = 0; index < 8; index += 1) await user.click(screen.getByRole('button', { name: /next frame/i }));
+  const next = await screen.findByRole('button', { name: /next frame/i });
+  for (let index = 0; index < 8; index += 1) await user.click(next);
 }
 
 describe('SituationInspector', () => {
@@ -22,7 +23,7 @@ describe('SituationInspector', () => {
   it('explains degraded confidence without confirming a split', async () => {
     const user = userEvent.setup();
     renderLive();
-    await user.click(screen.getByRole('button', { name: /next frame/i }));
+    await user.click(await screen.findByRole('button', { name: /next frame/i }));
     const inspector = screen.getByRole('complementary', { name: /trip inspector/i });
     expect(within(inspector).getByRole('heading', { name: /signal check/i })).toBeVisible();
     expect(within(inspector).getByText(/no split is confirmed/i)).toBeVisible();

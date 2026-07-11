@@ -20,9 +20,16 @@ describe('Loopin landing page', () => {
         /plan together, stay connected, and regroup safely—without turning the drive into a group chat/i,
       ),
     ).toBeVisible();
-    expect(
-      screen.getByRole('link', { name: /see how it works/i }),
-    ).toHaveAttribute('href', '#how-it-works');
+    for (const link of screen.getAllByRole('link', { name: /start a group drive|start a drive/i })) {
+      expect(link).toHaveAttribute('href', '/trip/new');
+    }
+    expect(screen.getByRole('link', { name: /watch the demo/i })).toHaveAttribute(
+      'href',
+      '/trips/TRIP001/live?autoplay=true',
+    );
+    for (const link of screen.getAllByRole('link', { name: /how it works/i })) {
+      expect(link).toHaveAttribute('href', '#how-it-works');
+    }
   });
 
   it('provides the main public routes and an operable mobile menu', async () => {

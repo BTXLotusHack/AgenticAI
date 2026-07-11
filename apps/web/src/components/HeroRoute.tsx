@@ -1,4 +1,5 @@
 import { motion, useReducedMotion } from 'motion/react';
+import { Link } from 'react-router-dom';
 
 const nodes = [
   { cx: 92, cy: 302, delay: 0.75 },
@@ -102,20 +103,20 @@ export function HeroRoute() {
           className="hero__actions"
           transition={{ duration: 0.75, delay: 0.4 }}
         >
-          <a
+          <Link
             className="button button--primary"
             data-analytics="primary_cta_clicked"
-            href="#start"
+            to="/trip/new"
           >
             Start a group drive <span aria-hidden="true">→</span>
-          </a>
-          <a
+          </Link>
+          <Link
             className="button button--quiet"
-            data-analytics="how_it_works_started"
-            href="#how-it-works"
+            data-analytics="demo_started"
+            to="/trips/TRIP001/live?autoplay=true"
           >
-            See how it works <span aria-hidden="true">↓</span>
-          </a>
+            Watch the demo <span aria-hidden="true">→</span>
+          </Link>
         </motion.div>
       </div>
 
