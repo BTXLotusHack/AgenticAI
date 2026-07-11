@@ -62,3 +62,20 @@ variable "enable_push" {
   type        = bool
   default     = false
 }
+
+variable "allowed_web_origins" {
+  description = "Exact HTTPS origins allowed by the HTTP API. Empty disables browser CORS."
+  type        = list(string)
+  default     = []
+
+  validation {
+    condition     = alltrue([for origin in var.allowed_web_origins : can(regex("^https://", origin)) || can(regex("^http://(localhost|127\\.0\\.0\\.1)(:[0-9]+)?$", origin))])
+    error_message = "Origins must use HTTPS, except explicit localhost development origins."
+  }
+}
+
+variable "web_acl_arn" {
+  description = "Optional us-east-1 CloudFront WAFv2 web ACL ARN."
+  type        = string
+  default     = null
+}

@@ -70,8 +70,8 @@ resource "aws_iam_role_policy" "iot_to_kinesis" {
 }
 
 resource "aws_iot_topic_rule" "telemetry" {
-  name        = replace("${var.name_prefix}_telemetry", "-", "_")
-  enabled     = true
+  name    = replace("${var.name_prefix}_telemetry", "-", "_")
+  enabled = true
   # Bind client claims to trusted broker context before records enter Kinesis.
   # The processor rejects records where the payload identity differs.
   sql         = "SELECT *, topic(2) AS _topicTeamId, topic(4) AS _topicRiderId, principal() AS _publisherPrincipal FROM '${local.topic_filter}'"

@@ -8,6 +8,7 @@ variable "create_team_zip" { type = string }
 variable "create_team_hash" { type = string }
 variable "invite_user_zip" { type = string }
 variable "invite_user_hash" { type = string }
+variable "allowed_origins" { type = list(string) }
 
 # --- Shared Lambda execution role (control plane) -----------------------------
 resource "aws_iam_role" "api" {
@@ -61,6 +62,17 @@ resource "aws_iam_role_policy" "api" {
 resource "aws_apigatewayv2_api" "http" {
   name          = "${var.name_prefix}-api"
   protocol_type = "HTTP"
+
+  dynamic "cors_configuration" {
+    for_each = length(var.allowed_origins) == 0 ? [] : [1]
+    content {
+      allow_origins  = var.allowed_origins
+      allow_methods  = ["GET", "POST", "PATCH", "DELETE", "OPTIONS"]
+      allow_headers  = ["authorization", "content-type", "x-request-id"]
+      expose_headers = ["x-request-id"]
+      max_age        = 3600
+    }
+  }
 }
 
 resource "aws_apigatewayv2_authorizer" "cognito" {
@@ -79,6 +91,12 @@ resource "aws_apigatewayv2_stage" "default" {
   api_id      = aws_apigatewayv2_api.http.id
   name        = "$default"
   auto_deploy = true
+
+  default_route_settings {
+    detailed_metrics_enabled = true
+    throttling_burst_limit   = 100
+    throttling_rate_limit    = 50
+  }
 }
 
 # --- Handlers -----------------------------------------------------------------

@@ -42,3 +42,15 @@ output "iot_telemetry_topic_filter" {
 output "kinesis_stream_name" {
   value = module.telemetry.stream_name
 }
+
+output "web_bucket_name" {
+  value = module.web.bucket_name
+}
+
+output "web_distribution_id" {
+  value = module.web.distribution_id
+}
+
+output "web_url" {
+  value = module.web.url
+}
