@@ -1,8 +1,9 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
 import { App } from './App';
+import { LANDING_ANALYTICS_EVENT } from './analytics';
 
 describe('Loopin landing page', () => {
   it('gives visitors one dominant way to start a group drive', () => {
@@ -107,5 +108,29 @@ describe('Loopin landing page', () => {
     expect(screen.queryByText(/speed up|hurry|brake suddenly/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/\bpricing\b|\btestimonial\b|\btrusted by\b/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/\d+%/)).not.toBeInTheDocument();
+  });
+
+  it('emits privacy-safe view and CTA events from the rendered page', async () => {
+    const user = userEvent.setup();
+    const received: string[] = [];
+    const listener = (event: Event) => {
+      received.push((event as CustomEvent<{ name: string }>).detail.name);
+    };
+    window.addEventListener(LANDING_ANALYTICS_EVENT, listener);
+    render(<App />, { wrapper: MemoryRouter });
+
+    await waitFor(() => expect(received).toContain('landing_viewed'));
+    const hero = screen
+      .getByRole('heading', { name: /every car\. one journey\./i })
+      .closest('section');
+    expect(hero).not.toBeNull();
+    await user.click(
+      within(hero as HTMLElement).getByRole('link', {
+        name: /start a group drive/i,
+      }),
+    );
+
+    expect(received).toContain('primary_cta_clicked');
+    window.removeEventListener(LANDING_ANALYTICS_EVENT, listener);
   });
 });

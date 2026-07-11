@@ -168,7 +168,11 @@ function OrganizationPath() {
           Start with a simple group drive. Add managed groups, policy profiles,
           operator views, analytics, and integrations when the journey grows.
         </p>
-        <a className="text-link" href="#start">
+        <a
+          className="text-link"
+          data-analytics="organization_cta_clicked"
+          href="#start"
+        >
           Bring Loopin to your organization <span aria-hidden="true">→</span>
         </a>
       </div>
@@ -199,7 +203,11 @@ function FinalCta() {
         <p>Next trip</p>
         <h2 id="start-title">Keep the journey together.</h2>
         <p>Start your first group drive with the people already going your way.</p>
-        <a className="button button--light route-link" href="#top">
+        <a
+          className="button button--light route-link"
+          data-analytics="primary_cta_clicked"
+          href="#top"
+        >
           Start a group drive <span aria-hidden="true">→</span>
         </a>
       </Reveal>

@@ -42,10 +42,18 @@ export function LandingNav() {
         </div>
 
         <div className="landing-nav__actions">
-          <a className="landing-nav__login" href="#login">
+          <a
+            className="landing-nav__login"
+            data-analytics="login_clicked"
+            href="#login"
+          >
             Log in
           </a>
-          <a className="button button--nav" href="#start">
+          <a
+            className="button button--nav"
+            data-analytics="primary_cta_clicked"
+            href="#start"
+          >
             Start a drive
           </a>
         </div>
@@ -82,6 +90,7 @@ export function LandingNav() {
           </div>
           <a
             className="button button--primary mobile-menu__cta"
+            data-analytics="primary_cta_clicked"
             href="#start"
             onClick={() => setOpen(false)}
           >

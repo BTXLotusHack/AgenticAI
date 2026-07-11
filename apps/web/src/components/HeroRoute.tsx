@@ -95,10 +95,18 @@ export function HeroRoute() {
           className="hero__actions"
           transition={{ duration: 0.75, delay: 0.4 }}
         >
-          <a className="button button--primary" href="#start">
+          <a
+            className="button button--primary"
+            data-analytics="primary_cta_clicked"
+            href="#start"
+          >
             Start a group drive <span aria-hidden="true">→</span>
           </a>
-          <a className="button button--quiet" href="#how-it-works">
+          <a
+            className="button button--quiet"
+            data-analytics="how_it_works_started"
+            href="#how-it-works"
+          >
             See how it works <span aria-hidden="true">↓</span>
           </a>
         </motion.div>
