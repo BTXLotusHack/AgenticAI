@@ -1,0 +1,117 @@
+[
+  {
+    "caseId": "accepted",
+    "expectedContract": "valid",
+    "expectedIngestionStatus": "accepted",
+    "telemetry": {
+      "schemaVersion": 1,
+      "eventId": "telemetry-M003-8",
+      "tripId": "TRIP001",
+      "memberId": "M003",
+      "deviceId": "device-M003",
+      "sequence": 8,
+      "observedAt": "2026-07-11T03:00:00.000Z",
+      "sentAt": "2026-07-11T03:00:01.000Z",
+      "latitude": 21.0285,
+      "longitude": 105.8542,
+      "accuracyMeters": 8,
+      "speedKmh": 72,
+      "headingDegrees": 90,
+      "batteryPercent": 80,
+      "networkQuality": "good",
+      "source": "simulator"
+    }
+  },
+  {
+    "caseId": "duplicate",
+    "expectedContract": "valid",
+    "expectedIngestionStatus": "duplicate",
+    "telemetry": {
+      "schemaVersion": 1,
+      "eventId": "telemetry-M003-8",
+      "tripId": "TRIP001",
+      "memberId": "M003",
+      "deviceId": "device-M003",
+      "sequence": 8,
+      "observedAt": "2026-07-11T03:00:00.000Z",
+      "sentAt": "2026-07-11T03:00:02.000Z",
+      "latitude": 21.0285,
+      "longitude": 105.8542,
+      "accuracyMeters": 8,
+      "speedKmh": 72,
+      "headingDegrees": 90,
+      "batteryPercent": 80,
+      "networkQuality": "good",
+      "source": "simulator"
+    }
+  },
+  {
+    "caseId": "stale-sequence",
+    "expectedContract": "valid",
+    "expectedIngestionStatus": "stale-sequence",
+    "telemetry": {
+      "schemaVersion": 1,
+      "eventId": "telemetry-M003-7-late",
+      "tripId": "TRIP001",
+      "memberId": "M003",
+      "deviceId": "device-M003",
+      "sequence": 7,
+      "observedAt": "2026-07-11T02:59:55.000Z",
+      "sentAt": "2026-07-11T03:00:03.000Z",
+      "latitude": 21.0284,
+      "longitude": 105.8541,
+      "accuracyMeters": 9,
+      "speedKmh": 70,
+      "headingDegrees": 90,
+      "batteryPercent": 80,
+      "networkQuality": "weak",
+      "source": "simulator"
+    }
+  },
+  {
+    "caseId": "history-only-offline-replay",
+    "expectedContract": "valid",
+    "expectedIngestionStatus": "history-only",
+    "telemetry": {
+      "schemaVersion": 1,
+      "eventId": "telemetry-M003-6-offline",
+      "tripId": "TRIP001",
+      "memberId": "M003",
+      "deviceId": "device-M003",
+      "sequence": 6,
+      "observedAt": "2026-07-11T02:55:00.000Z",
+      "sentAt": "2026-07-11T03:00:04.000Z",
+      "latitude": 21.0283,
+      "longitude": 105.854,
+      "accuracyMeters": 12,
+      "speedKmh": 68,
+      "headingDegrees": 90,
+      "batteryPercent": 79,
+      "networkQuality": "offline-replay",
+      "source": "simulator"
+    }
+  },
+  {
+    "caseId": "incompatible-version",
+    "expectedContract": "invalid",
+    "expectedIngestionStatus": "rejected",
+    "telemetry": {
+      "schemaVersion": 2,
+      "eventId": "telemetry-M003-v2",
+      "tripId": "TRIP001",
+      "memberId": "M003",
+      "deviceId": "device-M003",
+      "sequence": 9,
+      "observedAt": "2026-07-11T03:00:05.000Z",
+      "sentAt": "2026-07-11T03:00:06.000Z",
+      "latitude": 21.0285,
+      "longitude": 105.8542,
+      "accuracyMeters": 8,
+      "speedKmh": 72,
+      "headingDegrees": 90,
+      "batteryPercent": 80,
+      "networkQuality": "good",
+      "source": "simulator"
+    }
+  }
+]

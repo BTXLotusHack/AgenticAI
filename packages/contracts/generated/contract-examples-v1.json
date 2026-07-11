@@ -1,0 +1,269 @@
+{
+  "schemaVersion": 1,
+  "cases": [
+    {
+      "caseId": "valid-golden",
+      "expectedContract": "valid",
+      "expectedIngestionStatus": "accepted",
+      "telemetry": {
+        "schemaVersion": 1,
+        "eventId": "gps:30:M003",
+        "tripId": "TRIP001",
+        "memberId": "M003",
+        "deviceId": "device:M003",
+        "sequence": 303,
+        "observedAt": "2026-07-20T00:00:30.000Z",
+        "sentAt": "2026-07-20T00:00:31.000Z",
+        "latitude": 21.0285,
+        "longitude": 105.8572,
+        "accuracyMeters": 5,
+        "speedKmh": 70,
+        "headingDegrees": 90,
+        "batteryPercent": 80,
+        "networkQuality": "good",
+        "source": "simulator"
+      },
+      "projectedLocation": {
+        "schemaVersion": 1,
+        "eventId": "projection:gps:30:M003",
+        "sourceTelemetryEventId": "gps:30:M003",
+        "tripId": "TRIP001",
+        "memberId": "M003",
+        "role": "member",
+        "routeProgressMeters": 10400,
+        "routeDeviationMeters": 0,
+        "matchConfidence": "high",
+        "projectedAt": "2026-07-20T00:00:31.000Z"
+      },
+      "eventEnvelope": {
+        "schemaVersion": 1,
+        "eventId": "accepted:gps:30:M003",
+        "eventType": "MemberLocationAccepted",
+        "occurredAt": "2026-07-20T00:00:30.000Z",
+        "producedAt": "2026-07-20T00:00:31.000Z",
+        "correlationId": "golden-r001",
+        "causationId": "gps:30:M003",
+        "tripId": "TRIP001",
+        "producer": "golden-scenario",
+        "payload": {
+          "memberId": "M003",
+          "sequence": 303
+        }
+      },
+      "convoyGraph": {
+        "tripId": "TRIP001",
+        "leaderMemberId": "M001",
+        "graphRevision": 5,
+        "calculatedAt": "2026-07-20T00:00:35.000Z",
+        "overallState": "split",
+        "orderedMemberIds": [
+          "M001",
+          "M002",
+          "M003",
+          "M004"
+        ],
+        "edges": [
+          {
+            "aheadMemberId": "M001",
+            "behindMemberId": "M002",
+            "routeGapMeters": 100,
+            "etaGapSeconds": 5,
+            "combinedUncertaintyMeters": 7.0710678118654755,
+            "confidentLowerGapMeters": 92.92893218813452,
+            "state": "healthy",
+            "stateSince": "2026-07-20T00:00:00.000Z",
+            "policyVersion": "convoy-v1"
+          },
+          {
+            "aheadMemberId": "M002",
+            "behindMemberId": "M003",
+            "routeGapMeters": 100,
+            "etaGapSeconds": 5,
+            "combinedUncertaintyMeters": 7.0710678118654755,
+            "confidentLowerGapMeters": 92.92893218813452,
+            "state": "healthy",
+            "stateSince": "2026-07-20T00:00:00.000Z",
+            "policyVersion": "convoy-v1"
+          },
+          {
+            "aheadMemberId": "M003",
+            "behindMemberId": "M004",
+            "routeGapMeters": 900,
+            "etaGapSeconds": 46,
+            "combinedUncertaintyMeters": 7.0710678118654755,
+            "confidentLowerGapMeters": 892.9289321881345,
+            "state": "broken",
+            "stateSince": "2026-07-20T00:00:35.000Z",
+            "policyVersion": "convoy-v1"
+          }
+        ],
+        "components": [
+          {
+            "componentId": "component:M001+M002+M003",
+            "memberIds": [
+              "M001",
+              "M002",
+              "M003"
+            ],
+            "frontBoundaryMemberId": "M001",
+            "rearBoundaryMemberId": "M003",
+            "containsLeader": true,
+            "averageSpeedKmh": 70
+          },
+          {
+            "componentId": "component:M004",
+            "memberIds": [
+              "M004"
+            ],
+            "frontBoundaryMemberId": "M004",
+            "rearBoundaryMemberId": "M004",
+            "containsLeader": false,
+            "averageSpeedKmh": 70
+          }
+        ],
+        "policyVersion": "convoy-v1"
+      },
+      "situation": {
+        "situationId": "split:TRIP001:M003:M004",
+        "tripId": "TRIP001",
+        "type": "convoy-split",
+        "lifecycle": "confirmed",
+        "severity": "medium",
+        "affectedComponentIds": [
+          "component:M001+M002+M003",
+          "component:M004"
+        ],
+        "evidence": {
+          "frontBoundaryMemberId": "M003",
+          "rearBoundaryMemberId": "M004",
+          "routeGapMeters": 900,
+          "maximumRouteGapMeters": 900,
+          "etaGapSeconds": 46,
+          "durationSeconds": 0,
+          "locationConfidence": "high",
+          "graphRevision": 5,
+          "sourceEventIds": [
+            "gps:35:M001",
+            "gps:35:M002",
+            "gps:35:M003",
+            "gps:35:M004"
+          ]
+        },
+        "policyVersion": "convoy-v1",
+        "confirmedAt": "2026-07-20T00:00:35.000Z",
+        "updatedAt": "2026-07-20T00:00:35.000Z"
+      },
+      "notificationRequest": {
+        "notificationId": "notification:split:TRIP001:M003:M004:confirmed:M001:vi",
+        "dedupeKey": "split:TRIP001:M003:M004:confirmed:M001:vi",
+        "situationId": "split:TRIP001:M003:M004",
+        "recipientMemberId": "M001",
+        "locale": "vi",
+        "audience": "leader",
+        "severity": "medium",
+        "message": "Đoàn xe tách giữa M003 và M004; khoảng cách theo tuyến 900 m. Hãy điều phối tại điểm dừng đã được phê duyệt.",
+        "graphRevision": 5,
+        "createdAt": "2026-07-20T00:00:35.000Z",
+        "expiresAt": "2026-07-20T00:05:35.000Z",
+        "channels": [
+          "visual",
+          "voice",
+          "haptic",
+          "push"
+        ]
+      }
+    },
+    {
+      "caseId": "duplicate",
+      "expectedContract": "valid",
+      "expectedIngestionStatus": "duplicate",
+      "telemetry": {
+        "schemaVersion": 1,
+        "eventId": "gps:0:M001",
+        "tripId": "TRIP001",
+        "memberId": "M001",
+        "deviceId": "device:M001",
+        "sequence": 1,
+        "observedAt": "2026-07-20T00:00:00.000Z",
+        "sentAt": "2026-07-20T00:00:01.000Z",
+        "latitude": 21.0285,
+        "longitude": 105.8542,
+        "accuracyMeters": 5,
+        "speedKmh": 70,
+        "headingDegrees": 90,
+        "batteryPercent": 80,
+        "networkQuality": "good",
+        "source": "simulator"
+      }
+    },
+    {
+      "caseId": "stale",
+      "expectedContract": "valid",
+      "expectedIngestionStatus": "stale-sequence",
+      "telemetry": {
+        "schemaVersion": 1,
+        "eventId": "gps:stale:M002",
+        "tripId": "TRIP001",
+        "memberId": "M002",
+        "deviceId": "device:M002",
+        "sequence": 2,
+        "observedAt": "2026-07-20T00:00:00.000Z",
+        "sentAt": "2026-07-20T00:00:01.000Z",
+        "latitude": 21.0285,
+        "longitude": 105.8542,
+        "accuracyMeters": 5,
+        "speedKmh": 70,
+        "headingDegrees": 90,
+        "batteryPercent": 80,
+        "networkQuality": "good",
+        "source": "simulator"
+      }
+    },
+    {
+      "caseId": "history-only",
+      "expectedContract": "valid",
+      "expectedIngestionStatus": "history-only",
+      "telemetry": {
+        "schemaVersion": 1,
+        "eventId": "gps:replay:M003",
+        "tripId": "TRIP001",
+        "memberId": "M003",
+        "deviceId": "device:M003",
+        "sequence": 999,
+        "observedAt": "2026-07-20T00:00:00.000Z",
+        "sentAt": "2026-07-20T00:00:01.000Z",
+        "latitude": 21.0285,
+        "longitude": 105.8542,
+        "accuracyMeters": 5,
+        "speedKmh": 70,
+        "headingDegrees": 90,
+        "batteryPercent": 80,
+        "networkQuality": "offline-replay",
+        "source": "simulator"
+      }
+    },
+    {
+      "caseId": "invalid-version",
+      "expectedContract": "invalid",
+      "expectedIngestionStatus": "rejected",
+      "telemetry": {
+        "schemaVersion": 2,
+        "eventId": "gps:30:M003",
+        "tripId": "TRIP001",
+        "memberId": "M003",
+        "deviceId": "device:M003",
+        "sequence": 303,
+        "observedAt": "2026-07-20T00:00:30.000Z",
+        "sentAt": "2026-07-20T00:00:31.000Z",
+        "latitude": 21.0285,
+        "longitude": 105.8572,
+        "accuracyMeters": 5,
+        "speedKmh": 70,
+        "headingDegrees": 90,
+        "batteryPercent": 80,
+        "networkQuality": "good",
+        "source": "simulator"
+      }
+    }
+  ]
+}

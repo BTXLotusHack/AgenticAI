@@ -13,10 +13,25 @@ Before planning or editing, read:
 
 Do not infer that a designed component is already implemented. Inspect the repository first.
 
+## Frontend experience rules
+
+For landing pages, websites, prototypes and visually led product work:
+
+- Invoke `frontend-skill` before design or implementation.
+- Read `docs/frontend-standards.md` and the owning page specification.
+- Write and approve a visual thesis, content plan and interaction thesis before code.
+- Preserve a full-bleed, image-led landing hero unless the approved specification says otherwise.
+- Avoid generic SaaS card grids, fabricated proof, excessive typefaces and competing accents.
+- Use 21st.dev patterns only after reviewing accessibility, performance, dependencies, framework compatibility and licensing.
+- Support responsive layouts, keyboard use and `prefers-reduced-motion` from the first implementation.
+- Verify visually in a real browser at desktop and mobile sizes before completion.
+- Record sources and licenses for external imagery and imported components.
+
 ## Architectural invariants
 
 - React/Vite owns web presentation, not safety rules.
-- Expo owns device capture and driver experience, not authoritative convoy state.
+- Flutter owns device capture and driver experience, not authoritative convoy state.
+- Flutter/Dart models consume generated versioned contract artifacts and shared golden fixtures; do not hand-copy or reinterpret safety contracts.
 - Pure packages own graph, geo, policy and regroup logic.
 - AWS handlers adapt external events to pure domain operations.
 - DynamoDB owns current live state; PostgreSQL owns relational/geospatial history; S3 owns raw telemetry.
@@ -44,3 +59,5 @@ Do not infer that a designed component is already implemented. Inspect the repos
 ## Verification
 
 Before claiming completion, run the narrow tests, type checks and contract checks for the change, then the relevant simulator scenario. Report what was verified and any external dependency that remains unvalidated.
+
+Visually led frontend work also requires a production build, accessibility check, reduced-motion check, responsive screenshots and real-browser interaction verification.

@@ -22,6 +22,9 @@ Loopin contains safety-sensitive coordination logic. Changes must be understanda
 - Do not log precise location, tokens, join codes or raw voice content by default.
 - Do not add an AWS service without documenting cost, failure behavior and deletion lifecycle.
 - Do not place safety authority in an LLM prompt or UI component.
+- Visually led frontend changes must follow `docs/frontend-standards.md` and invoke `frontend-skill` before implementation.
+- Landing-page work requires an approved visual thesis, content plan and interaction thesis.
+- External visual assets and imported community components require source and license records.
 
 ## Testing expectations
 
@@ -30,6 +33,7 @@ Loopin contains safety-sensitive coordination logic. Changes must be understanda
 - Verify duplicate, late, stale, low-confidence and offline-replay inputs.
 - Run contract, simulator and end-to-end tests proportional to the changed boundary.
 - A changed safety policy must pass the golden workbook scenarios.
+- Frontend changes must verify responsive layouts, keyboard behavior, reduced motion, accessibility, production build output and real-browser interaction.
 
 ## Pull request checklist
 

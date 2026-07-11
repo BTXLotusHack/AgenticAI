@@ -1,0 +1,35 @@
+{
+  "name": "loopin",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "services/*",
+    "infrastructure/*"
+  ],
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "scripts": {
+    "dev": "npm run dev --workspace @loopin/web --",
+    "dev:services": "cross-env LOOPIN_ENV=local npm run dev --workspace @loopin/local-dev --",
+    "images:optimize": "npm run images:optimize --workspace @loopin/web",
+    "build": "npm run build --workspaces --if-present",
+    "contracts:generate": "npm run generate --workspace @loopin/contracts",
+    "contracts:check": "npm run check --workspace @loopin/contracts",
+    "preview": "npm run preview --workspace @loopin/web --",
+    "lint": "npm run lint --workspaces --if-present",
+    "mobile:analyze": "cd apps/mobile && flutter analyze",
+    "mobile:format-check": "cd apps/mobile && dart run tool/format_check.dart",
+    "mobile:test": "cd apps/mobile && flutter test",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present --",
+    "test:core": "npm run test --workspace @loopin/convoy-core -- --run && npm run test --workspace @loopin/simulator -- --run",
+    "simulate": "npm run simulate --workspace @loopin/simulator --",
+    "test:e2e": "npm run test:e2e --workspace @loopin/web"
+  },
+  "devDependencies": {
+    "cross-env": "10.1.0"
+  }
+}
