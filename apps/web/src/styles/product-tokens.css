@@ -1,0 +1,21 @@
+.product-shell,
+.auth-page,
+.setup-page,
+.live-page,
+.summary-page {
+  --product-bone: #f1eee5;
+  --product-paper: #f8f6ef;
+  --product-ink: #14251c;
+  --product-muted: #627168;
+  --product-green: #18724b;
+  --product-green-soft: #dce9df;
+  --product-forest: #11251a;
+  --product-forest-soft: #1b3527;
+  --product-amber: #d79728;
+  --product-red: #9a493c;
+  --product-divider: #c9d0ca;
+  --product-rail-width: 15.5rem;
+  --product-context-height: 4.5rem;
+  color: var(--product-ink);
+  font-family: "Figtree Variable", system-ui, sans-serif;
+}

@@ -66,10 +66,14 @@ describe('Agent 1 product routes', () => {
     renderRoute('/app/trips/TRIP001');
 
     expect(await screen.findByRole('banner', { name: /loopin product/i })).toBeVisible();
-    const nav = screen.getByRole('navigation', { name: /app sections/i });
-    for (const label of ['Dashboard', 'Trips', 'Explore', 'Now', 'Settings']) {
+    const nav = screen.getByRole('navigation', { name: /^primary$/i });
+    for (const label of ['Home', 'Trips', 'Explore', 'Now', 'Community']) {
       expect(within(nav).getByRole('link', { name: label })).toBeVisible();
     }
+    expect(within(nav).getByRole('link', { name: 'Trips' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('navigation', { name: /workspace utilities/i })).toBeVisible();
+    expect(screen.getByRole('link', { name: /open mai's profile/i })).toBeVisible();
+    expect(screen.getByRole('main')).toHaveAttribute('id', 'product-content');
     expect(screen.getByRole('link', { name: /open live trip/i })).toHaveAttribute(
       'href',
       '/app/trips/TRIP001/live',

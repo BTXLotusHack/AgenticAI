@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { ReactNode } from 'react';
-import { Link, NavLink, useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import {
   useLiveTrip,
   useLocationVisibilityPolicy,
@@ -11,35 +11,12 @@ import {
   useTrips,
 } from '../api/hooks';
 import type { TripPlanSummary } from '../api/types';
+import { AppShell } from '../app/shell/AppShell';
 import { ProductBrand } from '../shared/ProductBrand';
-
-const navItems = [
-  { label: 'Dashboard', to: '/app' },
-  { label: 'Trips', to: '/app/trips' },
-  { label: 'Explore', to: '/app/explore' },
-  { label: 'Now', to: '/app/now' },
-  { label: 'Settings', to: '/app/settings' },
-] as const;
+import { PageHeader } from '../shared/product/PageHeader';
 
 function ProductShell({ children }: { readonly children: ReactNode }) {
-  return (
-    <div className="product-shell platform-shell">
-      <header aria-label="Loopin product" className="platform-topbar">
-        <ProductBrand />
-        <nav aria-label="App sections" className="platform-nav">
-          {navItems.map((item) => (
-            <NavLink end={item.to === '/app'} key={item.to} to={item.to}>
-              {item.label}
-            </NavLink>
-          ))}
-        </nav>
-        <Link className="platform-topbar__account" to="/app/profile">
-          Fixture user
-        </Link>
-      </header>
-      <main className="platform-main">{children}</main>
-    </div>
-  );
+  return <AppShell>{children}</AppShell>;
 }
 
 function PageIntro({
@@ -51,13 +28,7 @@ function PageIntro({
   readonly title: string;
   readonly children: ReactNode;
 }) {
-  return (
-    <section className="platform-intro">
-      <p className="product-kicker">{eyebrow}</p>
-      <h1>{title}</h1>
-      <p>{children}</p>
-    </section>
-  );
+  return <PageHeader description={children} eyebrow={eyebrow} title={title} />;
 }
 
 function LoadingState({ label }: { readonly label: string }) {
