@@ -42,25 +42,28 @@ Participating drivers use the native mobile application because mobile browsers 
 
 ### AWS backend
 
-| Capability | Service |
-|---|---|
-| Identity | Amazon Cognito |
-| HTTP APIs | API Gateway HTTP API + AWS Lambda |
-| GPS ingestion | AWS IoT Core over MQTT/WSS QoS 1 |
-| Telemetry stream | Kinesis Data Streams |
-| Initial processing | Kinesis-triggered Lambda |
-| Live state and idempotency | DynamoDB with TTL |
-| Domain events | EventBridge |
-| Client real-time updates | AWS AppSync Events |
-| AI language layer | Amazon Bedrock |
-| Speech-to-text | Amazon Transcribe Streaming |
-| Vietnamese speech output | Native mobile TTS behind a provider interface |
-| Static web delivery | S3, CloudFront, Route 53 and AWS WAF |
-| Observability | CloudWatch, X-Ray and OpenTelemetry |
-| Infrastructure | Terraform (`infra/`) |
-| Delivery | GitHub Actions with AWS OIDC |
+The table separates what `infra/` + `backend/` actually deploy today from services the product design anticipates but does not yet provision. Only the **Deployed** rows exist in the current Terraform (`infra/modules/{data,identity,realtime,telemetry,api,notifications}`).
 
-The primary deployment region is `ap-southeast-1` (Singapore).
+| Capability | Service | Status |
+|---|---|---|
+| Identity | Amazon Cognito (user pool + client) | Deployed |
+| HTTP APIs | API Gateway HTTP API + AWS Lambda | Deployed |
+| GPS ingestion | AWS IoT Core over MQTT/WSS QoS 1 (topic rule) | Deployed |
+| Telemetry stream | Kinesis Data Streams | Deployed |
+| Initial processing | Kinesis-triggered Lambda (`telemetry-processor`) | Deployed |
+| Live state and idempotency | DynamoDB single-table with TTL | Deployed |
+| Client real-time updates | AWS AppSync (GraphQL API + subscriptions) | Deployed |
+| Push notifications | SNS platform application → APNs / FCM | Deployed |
+| Infrastructure | Terraform (`infra/`) | Deployed |
+| Vietnamese speech output | Native mobile TTS behind a provider interface | Client-side |
+| Domain events | EventBridge | Planned |
+| AI language layer | Amazon Bedrock | Planned |
+| Speech-to-text | Amazon Transcribe Streaming | Planned |
+| Static web delivery | S3, CloudFront, Route 53 and AWS WAF | Planned |
+| Observability | CloudWatch, X-Ray and OpenTelemetry | Planned |
+| Delivery | GitHub Actions with AWS OIDC | Planned |
+
+The primary deployment region is `ap-southeast-1` (Singapore). "Planned" services are described elsewhere in the spec but are intentionally not in the current Terraform; adding one means adding its module, not just wiring a client.
 
 ## System overview
 
@@ -210,7 +213,7 @@ Start with the [documentation index](docs/README.md).
 | [System Architecture](docs/system-architecture.md) | Boundaries, data flows and architectural decisions |
 | [Convoy Intelligence](docs/convoy-intelligence.md) | Graph, thresholds, ordering, incidents and notifications |
 | [Real-time Telemetry](docs/realtime-telemetry.md) | GPS contract, processing, consistency, backpressure and scale |
-| [AWS Deployment](docs/aws-deployment.md) | Environments, CDK stacks, CI/CD, networking and cost controls |
+| [AWS Deployment](docs/aws-deployment.md) | Environments, Terraform (`infra/`), CI/CD, networking and cost controls |
 | [Data and API Contracts](docs/data-and-api-contracts.md) | Entities, DynamoDB keys, events and endpoints |
 | [Safety, Security and Privacy](docs/safety-security-privacy.md) | Guardrails, authorization, retention and threat controls |
 | [Testing and Operations](docs/testing-and-operations.md) | Simulator, verification, SLOs, alarms and runbooks |
