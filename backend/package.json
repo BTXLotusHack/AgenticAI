@@ -1,0 +1,35 @@
+{
+  "name": "@loopin/backend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Loopin backend: telemetry processor and control-plane API Lambdas.",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "build": "node esbuild.mjs",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "@aws-crypto/sha256-js": "^5.2.0",
+    "@aws-sdk/client-dynamodb": "^3.658.0",
+    "@aws-sdk/client-sns": "^3.658.0",
+    "@aws-sdk/credential-provider-node": "^3.658.0",
+    "@aws-sdk/lib-dynamodb": "^3.658.0",
+    "@smithy/protocol-http": "^4.1.0",
+    "@smithy/signature-v4": "^4.1.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.145",
+    "@types/node": "^22.7.4",
+    "esbuild": "^0.24.0",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.6.2",
+    "vitest": "^2.1.1"
+  }
+}
