@@ -16,7 +16,8 @@ describe('community platform routes', () => {
     renderRoute('/app/community');
 
     expect(await screen.findByRole('heading', { name: /community signals/i })).toBeVisible();
-    expect(screen.getByText(/place presence is approximate, opt-in, and revocable/i)).toBeVisible();
+    expect(screen.getByRole('heading', { name: /travel activity/i })).toBeVisible();
+    expect(screen.getAllByText(/place presence is approximate, opt-in, and revocable/i).length).toBeGreaterThan(0);
     expect(screen.queryByText(/public live location/i)).not.toBeInTheDocument();
   });
 
@@ -24,7 +25,7 @@ describe('community platform routes', () => {
     renderRoute('/app/places/tasco:poi:POI001/reviews');
 
     expect(await screen.findByRole('heading', { name: /bai chay rest area reviews/i })).toBeVisible();
-    expect(screen.getByText(/tasco facts stay separate/i)).toBeVisible();
+    expect(screen.getAllByText(/tasco facts stay separate/i).length).toBeGreaterThan(0);
     expect(screen.getByRole('button', { name: /report review/i })).toBeVisible();
   });
 
@@ -40,6 +41,7 @@ describe('community platform routes', () => {
 
     expect(await screen.findByRole('heading', { name: /travel profile/i })).toBeVisible();
     expect(screen.getByLabelText(/display name/i)).toHaveValue('Mai');
+    expect(screen.getByRole('link', { name: /privacy settings/i })).toHaveAttribute('href', '/app/settings/privacy');
   });
 
   it('shows moderation and partner surfaces without fabricated proof', async () => {
@@ -55,5 +57,12 @@ describe('community platform routes', () => {
     expect(await screen.findByRole('heading', { name: /partner platform/i })).toBeVisible();
     expect(screen.getByText(/aggregated or anonymized/i)).toBeVisible();
     expect(screen.queryByText(/\d+%|trusted by|pricing|testimonial/i)).not.toBeInTheDocument();
+  });
+
+  it('separates critical, planning, community, and marketing notification groups', async () => {
+    renderRoute('/app/settings/notifications');
+    for (const category of ['Convoy-critical', 'Planning', 'Community', 'Marketing']) {
+      expect(await screen.findByRole('group', { name: category })).toBeVisible();
+    }
   });
 });
