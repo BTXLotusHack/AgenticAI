@@ -10,6 +10,12 @@ export type CreateInviteRequest = z.infer<typeof CreateInviteRequest>;
 export const InviteStatus = z.enum(["PENDING", "ACCEPTED", "EXPIRED", "REVOKED"]);
 export type InviteStatus = z.infer<typeof InviteStatus>;
 
+/** Body of POST /teams/{teamId}/invites/{inviteId}/accept. */
+export const AcceptInviteRequest = z.object({
+  token: z.string().min(16),
+});
+export type AcceptInviteRequest = z.infer<typeof AcceptInviteRequest>;
+
 export const Invite = z.object({
   inviteId: Id,
   teamId: Id,

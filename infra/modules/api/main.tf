@@ -12,6 +12,16 @@ variable "upsert_profile_zip" { type = string }
 variable "upsert_profile_hash" { type = string }
 variable "get_profile_zip" { type = string }
 variable "get_profile_hash" { type = string }
+variable "accept_invite_zip" { type = string }
+variable "accept_invite_hash" { type = string }
+variable "transfer_leader_zip" { type = string }
+variable "transfer_leader_hash" { type = string }
+variable "list_my_teams_zip" { type = string }
+variable "list_my_teams_hash" { type = string }
+variable "list_team_members_zip" { type = string }
+variable "list_team_members_hash" { type = string }
+variable "remove_member_zip" { type = string }
+variable "remove_member_hash" { type = string }
 
 # --- Shared Lambda execution role (control plane) -----------------------------
 resource "aws_iam_role" "api" {
@@ -47,6 +57,7 @@ resource "aws_iam_role_policy" "api" {
           "dynamodb:GetItem",
           "dynamodb:PutItem",
           "dynamodb:UpdateItem",
+          "dynamodb:DeleteItem",
           "dynamodb:Query",
           "dynamodb:TransactWriteItems",
         ]
@@ -155,6 +166,91 @@ resource "aws_lambda_function" "get_profile" {
   }
 }
 
+resource "aws_lambda_function" "accept_invite" {
+  function_name    = "${var.name_prefix}-accept-invite"
+  role             = aws_iam_role.api.arn
+  runtime          = "nodejs22.x"
+  handler          = "index.handler"
+  filename         = var.accept_invite_zip
+  source_code_hash = var.accept_invite_hash
+  timeout          = 10
+  memory_size      = 256
+
+  environment {
+    variables = {
+      TABLE_NAME = var.table_name
+    }
+  }
+}
+
+resource "aws_lambda_function" "transfer_leader" {
+  function_name    = "${var.name_prefix}-transfer-leader"
+  role             = aws_iam_role.api.arn
+  runtime          = "nodejs22.x"
+  handler          = "index.handler"
+  filename         = var.transfer_leader_zip
+  source_code_hash = var.transfer_leader_hash
+  timeout          = 10
+  memory_size      = 256
+
+  environment {
+    variables = {
+      TABLE_NAME = var.table_name
+    }
+  }
+}
+
+resource "aws_lambda_function" "list_my_teams" {
+  function_name    = "${var.name_prefix}-list-my-teams"
+  role             = aws_iam_role.api.arn
+  runtime          = "nodejs22.x"
+  handler          = "index.handler"
+  filename         = var.list_my_teams_zip
+  source_code_hash = var.list_my_teams_hash
+  timeout          = 10
+  memory_size      = 256
+
+  environment {
+    variables = {
+      TABLE_NAME = var.table_name
+    }
+  }
+}
+
+resource "aws_lambda_function" "list_team_members" {
+  function_name    = "${var.name_prefix}-list-team-members"
+  role             = aws_iam_role.api.arn
+  runtime          = "nodejs22.x"
+  handler          = "index.handler"
+  filename         = var.list_team_members_zip
+  source_code_hash = var.list_team_members_hash
+  timeout          = 10
+  memory_size      = 256
+
+  environment {
+    variables = {
+      TABLE_NAME = var.table_name
+    }
+  }
+}
+
+resource "aws_lambda_function" "remove_member" {
+  function_name    = "${var.name_prefix}-remove-member"
+  role             = aws_iam_role.api.arn
+  runtime          = "nodejs22.x"
+  handler          = "index.handler"
+  filename         = var.remove_member_zip
+  source_code_hash = var.remove_member_hash
+  timeout          = 10
+  memory_size      = 256
+
+  environment {
+    variables = {
+      TABLE_NAME = var.table_name
+    }
+  }
+}
+
 # --- Integrations + routes ----------------------------------------------------
 resource "aws_apigatewayv2_integration" "create_team" {
   api_id                 = aws_apigatewayv2_api.http.id
@@ -181,6 +277,41 @@ resource "aws_apigatewayv2_integration" "get_profile" {
   api_id                 = aws_apigatewayv2_api.http.id
   integration_type       = "AWS_PROXY"
   integration_uri        = aws_lambda_function.get_profile.invoke_arn
+  payload_format_version = "2.0"
+}
+
+resource "aws_apigatewayv2_integration" "accept_invite" {
+  api_id                 = aws_apigatewayv2_api.http.id
+  integration_type       = "AWS_PROXY"
+  integration_uri        = aws_lambda_function.accept_invite.invoke_arn
+  payload_format_version = "2.0"
+}
+
+resource "aws_apigatewayv2_integration" "transfer_leader" {
+  api_id                 = aws_apigatewayv2_api.http.id
+  integration_type       = "AWS_PROXY"
+  integration_uri        = aws_lambda_function.transfer_leader.invoke_arn
+  payload_format_version = "2.0"
+}
+
+resource "aws_apigatewayv2_integration" "list_my_teams" {
+  api_id                 = aws_apigatewayv2_api.http.id
+  integration_type       = "AWS_PROXY"
+  integration_uri        = aws_lambda_function.list_my_teams.invoke_arn
+  payload_format_version = "2.0"
+}
+
+resource "aws_apigatewayv2_integration" "list_team_members" {
+  api_id                 = aws_apigatewayv2_api.http.id
+  integration_type       = "AWS_PROXY"
+  integration_uri        = aws_lambda_function.list_team_members.invoke_arn
+  payload_format_version = "2.0"
+}
+
+resource "aws_apigatewayv2_integration" "remove_member" {
+  api_id                 = aws_apigatewayv2_api.http.id
+  integration_type       = "AWS_PROXY"
+  integration_uri        = aws_lambda_function.remove_member.invoke_arn
   payload_format_version = "2.0"
 }
 
@@ -216,6 +347,46 @@ resource "aws_apigatewayv2_route" "get_profile" {
   authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
 }
 
+resource "aws_apigatewayv2_route" "accept_invite" {
+  api_id             = aws_apigatewayv2_api.http.id
+  route_key          = "POST /teams/{teamId}/invites/{inviteId}/accept"
+  target             = "integrations/${aws_apigatewayv2_integration.accept_invite.id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+}
+
+resource "aws_apigatewayv2_route" "transfer_leader" {
+  api_id             = aws_apigatewayv2_api.http.id
+  route_key          = "PUT /teams/{teamId}/leader"
+  target             = "integrations/${aws_apigatewayv2_integration.transfer_leader.id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+}
+
+resource "aws_apigatewayv2_route" "list_my_teams" {
+  api_id             = aws_apigatewayv2_api.http.id
+  route_key          = "GET /me/teams"
+  target             = "integrations/${aws_apigatewayv2_integration.list_my_teams.id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+}
+
+resource "aws_apigatewayv2_route" "list_team_members" {
+  api_id             = aws_apigatewayv2_api.http.id
+  route_key          = "GET /teams/{teamId}/members"
+  target             = "integrations/${aws_apigatewayv2_integration.list_team_members.id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+}
+
+resource "aws_apigatewayv2_route" "remove_member" {
+  api_id             = aws_apigatewayv2_api.http.id
+  route_key          = "DELETE /teams/{teamId}/members/{userId}"
+  target             = "integrations/${aws_apigatewayv2_integration.remove_member.id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+}
+
 # --- Invoke permissions -------------------------------------------------------
 resource "aws_lambda_permission" "create_team" {
   statement_id  = "AllowApiGwCreateTeam"
@@ -245,6 +416,46 @@ resource "aws_lambda_permission" "get_profile" {
   statement_id  = "AllowApiGwGetProfile"
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.get_profile.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_apigatewayv2_api.http.execution_arn}/*/*"
+}
+
+resource "aws_lambda_permission" "accept_invite" {
+  statement_id  = "AllowApiGwAcceptInvite"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.accept_invite.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_apigatewayv2_api.http.execution_arn}/*/*"
+}
+
+resource "aws_lambda_permission" "transfer_leader" {
+  statement_id  = "AllowApiGwTransferLeader"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.transfer_leader.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_apigatewayv2_api.http.execution_arn}/*/*"
+}
+
+resource "aws_lambda_permission" "list_my_teams" {
+  statement_id  = "AllowApiGwListMyTeams"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.list_my_teams.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_apigatewayv2_api.http.execution_arn}/*/*"
+}
+
+resource "aws_lambda_permission" "list_team_members" {
+  statement_id  = "AllowApiGwListTeamMembers"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.list_team_members.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_apigatewayv2_api.http.execution_arn}/*/*"
+}
+
+resource "aws_lambda_permission" "remove_member" {
+  statement_id  = "AllowApiGwRemoveMember"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.remove_member.function_name
   principal     = "apigateway.amazonaws.com"
   source_arn    = "${aws_apigatewayv2_api.http.execution_arn}/*/*"
 }

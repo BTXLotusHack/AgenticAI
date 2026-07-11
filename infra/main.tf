@@ -39,6 +39,36 @@ data "archive_file" "get_profile" {
   output_path = "${path.module}/.build/get-profile.zip"
 }
 
+data "archive_file" "accept_invite" {
+  type        = "zip"
+  source_dir  = "${path.module}/${var.backend_dist_dir}/accept-invite"
+  output_path = "${path.module}/.build/accept-invite.zip"
+}
+
+data "archive_file" "transfer_leader" {
+  type        = "zip"
+  source_dir  = "${path.module}/${var.backend_dist_dir}/transfer-leader"
+  output_path = "${path.module}/.build/transfer-leader.zip"
+}
+
+data "archive_file" "list_my_teams" {
+  type        = "zip"
+  source_dir  = "${path.module}/${var.backend_dist_dir}/list-my-teams"
+  output_path = "${path.module}/.build/list-my-teams.zip"
+}
+
+data "archive_file" "list_team_members" {
+  type        = "zip"
+  source_dir  = "${path.module}/${var.backend_dist_dir}/list-team-members"
+  output_path = "${path.module}/.build/list-team-members.zip"
+}
+
+data "archive_file" "remove_member" {
+  type        = "zip"
+  source_dir  = "${path.module}/${var.backend_dist_dir}/remove-member"
+  output_path = "${path.module}/.build/remove-member.zip"
+}
+
 # --- Control-plane data store -------------------------------------------------
 
 module "data" {
@@ -105,6 +135,17 @@ module "api" {
   upsert_profile_hash = data.archive_file.upsert_profile.output_base64sha256
   get_profile_zip     = data.archive_file.get_profile.output_path
   get_profile_hash    = data.archive_file.get_profile.output_base64sha256
+
+  accept_invite_zip      = data.archive_file.accept_invite.output_path
+  accept_invite_hash     = data.archive_file.accept_invite.output_base64sha256
+  transfer_leader_zip    = data.archive_file.transfer_leader.output_path
+  transfer_leader_hash   = data.archive_file.transfer_leader.output_base64sha256
+  list_my_teams_zip      = data.archive_file.list_my_teams.output_path
+  list_my_teams_hash     = data.archive_file.list_my_teams.output_base64sha256
+  list_team_members_zip  = data.archive_file.list_team_members.output_path
+  list_team_members_hash = data.archive_file.list_team_members.output_base64sha256
+  remove_member_zip      = data.archive_file.remove_member.output_path
+  remove_member_hash     = data.archive_file.remove_member.output_base64sha256
 }
 
 # --- Push notifications (optional; needs APNs/FCM credentials) -----------------

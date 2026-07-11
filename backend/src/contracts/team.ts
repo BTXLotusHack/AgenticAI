@@ -25,3 +25,9 @@ export const TeamMembership = z.object({
   joinedAt: IsoTimestamp,
 });
 export type TeamMembership = z.infer<typeof TeamMembership>;
+
+/** Body of PUT /teams/{teamId}/leader — the member to promote to LEADER. */
+export const TransferLeaderRequest = z.object({
+  userId: Id,
+});
+export type TransferLeaderRequest = z.infer<typeof TransferLeaderRequest>;
