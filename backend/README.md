@@ -51,7 +51,17 @@ npm run build         # esbuild → dist/<handler>/index.js (consumed by Terrafo
 | `MAPS_API_KEY` | telemetry-processor | optional Tasco bearer token |
 | `APPSYNC_HTTP_URL` | telemetry-processor | AppSync GraphQL HTTP endpoint |
 
+## Maps map-matching (validated)
+
+`telemetry-processor` map-matches via Tasco's Valhalla `/trace_attributes`
+(`https://tasco-maps.dnpwater.vn/route/trace_attributes`, Valhalla 3.7.0,
+accepts requests with no auth). The `matched_points[]` response shape matches
+`lib/maps/valhalla.ts`. Constraint: `shape_match: "map_snap"` rejects a trace
+whose consecutive points are more than **2000 m** apart (`error_code 172`); on
+any error the adapter falls back to raw, `matchConfidence: null` positions, so
+sparse GPS batches silently skip snapping.
+
 ## Not yet validated (external)
 
-Tasco Maps auth/quotas and the exact `/trace_attributes` response shape; SNS
-platform application setup for APNs/FCM. See `docs/` for the owning specs.
+Tasco Maps production auth/quotas (the hackathon Valhalla is currently open);
+SNS platform application setup for APNs/FCM. See `docs/` for the owning specs.
