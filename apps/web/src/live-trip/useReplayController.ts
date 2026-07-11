@@ -23,7 +23,10 @@ export function useReplayController(session: DemoSessionV1) {
     writeDemoSession(window.sessionStorage, nextSession);
   }, [snapshot]);
 
-  useEffect(() => () => controller.destroy(), [controller]);
+  // Pause clears the replay timer without permanently invalidating the store.
+  // React Strict Mode intentionally runs an effect cleanup/reconnect cycle in
+  // development, so destroying here would break the second subscription.
+  useEffect(() => () => controller.pause(), [controller]);
   const approveRegroup = (candidateId: string) => {
     const before = controller.getSnapshot();
     controller.approveRegroup(candidateId);

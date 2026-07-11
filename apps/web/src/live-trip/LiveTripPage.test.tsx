@@ -1,6 +1,7 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
+import { StrictMode } from 'react';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { App } from '../app/App';
@@ -52,6 +53,20 @@ describe('LiveTripPage', () => {
       'M001', 'M002', 'M003', 'M004',
     ]);
     expect(screen.getAllByLabelText(/vehicle node/i)).toHaveLength(4);
+  });
+
+  it('survives the Strict Mode effect cleanup and reconnect cycle', async () => {
+    writeDemoSession(window.sessionStorage, createInitialDemoSession());
+    render(
+      <StrictMode>
+        <MemoryRouter initialEntries={['/trips/TRIP001/live']}>
+          <App />
+        </MemoryRouter>
+      </StrictMode>,
+    );
+
+    expect(await screen.findByRole('heading', { name: /hà nội.*hạ long/i })).toBeVisible();
+    expect(screen.getByRole('button', { name: /next frame/i })).toBeEnabled();
   });
 
   it('supports stepping, restart, playback, and exact speed controls', async () => {
