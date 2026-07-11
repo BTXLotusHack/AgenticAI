@@ -21,6 +21,7 @@ import {
   type CommunityIdentity,
   type ListPlaceReviewsRequestV1,
   type ListTravelPresenceRequestV1,
+  type ParsedCommunityIdentity,
   type PlaceReviewV1,
   type PublicPlaceReviewV1,
   type ReportContentRequestV1,
@@ -56,8 +57,8 @@ type CommunityDependencies = {
   readonly clock: Clock;
 };
 
-function requireModerator(identity: CommunityIdentity): void {
-  if (!identity.isModerator) {
+function requireModerator(identity: ParsedCommunityIdentity): void {
+  if (identity.authSource !== "trusted-auth-context" || !identity.roles.includes("community-moderator")) {
     throw new CommunityError("forbidden", "Moderator privileges are required.");
   }
 }

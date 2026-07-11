@@ -32,9 +32,13 @@ describe("authorization", () => {
       { userId: "USER002" },
       { schemaVersion: 1, reviewId: created.review.reviewId, moderationState: "approved" },
     )).rejects.toMatchObject({ code: "forbidden" });
+    await expect(app.setReviewModeration(
+      { userId: "USER002", isModerator: true },
+      { schemaVersion: 1, reviewId: created.review.reviewId, moderationState: "approved" },
+    )).rejects.toMatchObject({ code: "forbidden" });
 
     const moderated = await app.setReviewModeration(
-      { userId: "MOD001", isModerator: true },
+      { userId: "MOD001", authSource: "trusted-auth-context", roles: ["community-moderator"] },
       { schemaVersion: 1, reviewId: created.review.reviewId, moderationState: "approved" },
     );
     expect(moderated.moderationState).toBe("approved");

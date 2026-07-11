@@ -107,7 +107,7 @@ describe("place reviews", () => {
       { schemaVersion: 1, tascoPlaceId: placeId, rating: 3, comment: null, idempotencyKey: "3" },
     );
     await app.setReviewModeration(
-      { userId: "MOD001", isModerator: true },
+      { userId: "MOD001", authSource: "trusted-auth-context", roles: ["community-moderator"] },
       { schemaVersion: 1, reviewId: `review:${placeId}:USER002`, moderationState: "approved" },
     );
 

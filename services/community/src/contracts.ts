@@ -10,11 +10,14 @@ export type TascoPlaceId = z.infer<typeof TascoPlaceIdSchema>;
 export const CommunityIdentitySchema = z
   .object({
     userId: IdentifierSchema,
+    authSource: z.enum(["trusted-auth-context", "local-fixture"]).default("local-fixture"),
+    roles: z.array(z.enum(["community-moderator"])).default([]),
     isModerator: z.boolean().optional(),
   })
   .strict();
 
-export type CommunityIdentity = z.infer<typeof CommunityIdentitySchema>;
+export type CommunityIdentity = z.input<typeof CommunityIdentitySchema>;
+export type ParsedCommunityIdentity = z.infer<typeof CommunityIdentitySchema>;
 
 export const ModerationStateSchema = z.enum(["pending", "approved", "rejected", "hidden"]);
 export type ModerationState = z.infer<typeof ModerationStateSchema>;
