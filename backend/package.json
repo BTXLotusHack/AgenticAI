@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@aws-crypto/sha256-js": "^5.2.0",
+    "@aws-sdk/client-bedrock-runtime": "^3.1085.0",
     "@aws-sdk/client-dynamodb": "^3.658.0",
     "@aws-sdk/client-sns": "^3.658.0",
     "@aws-sdk/credential-provider-node": "^3.658.0",

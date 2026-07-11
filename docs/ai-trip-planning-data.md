@@ -62,6 +62,9 @@ data_pipeline/apify_roadtrip_pipeline_v2/data/processed/
 |---|---|
 | `places_ai_suggestions.jsonl` | Primary AI-ready dataset. Prefer this for app ingestion and streaming reads. |
 | `places_ai_suggestions.csv` | Same AI-ready dataset in spreadsheet-friendly form. |
+| `places_trip_planning_slim.jsonl` | Slim serving dataset for AI Trip Planner geo filtering and candidate scoring. |
+| `places_trip_planning_slim.csv` | Spreadsheet-friendly copy of the slim serving dataset. |
+| `trip_planning_serving_manifest.json` | Row count, field list and safety-boundary manifest for the slim serving dataset. |
 | `places_clean.csv` / `places_clean.jsonl` | Clean deduped POI rows with full retained structured columns. |
 | `coverage_by_location_group.csv` | Coverage audit for every configured location/group cell. |
 | `coverage_gaps.csv` | Remaining cells below minimum configured coverage. |
@@ -130,13 +133,16 @@ The first AI trip-planning feature should use this dataset for:
 
 Recommended retrieval shape:
 
-1. Filter by corridor/segment/location and requested place type.
-2. Filter out rows with `eligible_for_ai_destination_suggestions = false`.
-3. Prefer higher `source_confidence`, `completeness_score`, `rating` and
+1. Load `places_trip_planning_slim.jsonl` when the app needs a compact
+   serving artifact; fall back to `places_ai_suggestions.jsonl` when full
+   retained columns are needed.
+2. Filter by corridor/segment/location and requested place type.
+3. Filter out rows with `eligible_for_ai_destination_suggestions = false`.
+4. Prefer higher `source_confidence`, `completeness_score`, `rating` and
    `reviews_count`.
-4. Use `ai_use_cases` to route a row into meal, attraction, lodging, support or
+5. Use `ai_use_cases` to route a row into meal, attraction, lodging, support or
    roadside-support flows.
-5. Let the LLM explain or summarize a bounded candidate set. Do not let it
+6. Let the LLM explain or summarize a bounded candidate set. Do not let it
    invent stops outside the candidate set.
 
 ## Safety Boundaries
@@ -191,5 +197,6 @@ cd data_pipeline/apify_roadtrip_pipeline_v2
 .\.venv\Scripts\python.exe -m src.clean
 .\.venv\Scripts\python.exe -m src.audit
 .\.venv\Scripts\python.exe -m src.validate_outputs --min-rows 1
+.\.venv\Scripts\python.exe -m src.build_serving_dataset --min-rows 3359
 .\.venv\Scripts\python.exe -m unittest discover -s tests
 ```

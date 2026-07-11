@@ -1,3 +1,5 @@
+
+
 import { lazy, Suspense } from 'react';
 import { Route, Routes } from 'react-router-dom';
 import { ConvoyStory } from '../components/ConvoyStory';
@@ -11,6 +13,7 @@ import { useLandingAnalytics } from './analytics';
 const TripSetupPage = lazy(() => import('../trip-setup/TripSetupPage').then((module) => ({ default: module.TripSetupPage })));
 const LiveTripPage = lazy(() => import('../live-trip/LiveTripPage').then((module) => ({ default: module.LiveTripPage })));
 const TripSummaryPage = lazy(() => import('../trip-summary/TripSummaryPage').then((module) => ({ default: module.TripSummaryPage })));
+const AITripPlannerPage = lazy(() => import('../ai-trip-planner/AITripPlannerPage').then((module) => ({ default: module.AITripPlannerPage })));
 
 function LandingPage() {
   const handleAnalyticsClick = useLandingAnalytics();
@@ -26,6 +29,7 @@ export function App() {
     <Routes>
       <Route element={<LandingPage />} path="/" />
       <Route element={<Suspense fallback={<ProductFallback />}><TripSetupPage /></Suspense>} path="/trip/new" />
+      <Route element={<Suspense fallback={<ProductFallback />}><AITripPlannerPage /></Suspense>} path="/trip-planner" />
       <Route element={<Suspense fallback={<ProductFallback />}><LiveTripPage /></Suspense>} path="/trips/TRIP001/live" />
       <Route element={<Suspense fallback={<ProductFallback />}><TripSummaryPage /></Suspense>} path="/trips/TRIP001/summary" />
       <Route element={<NotFoundPage />} path="*" />

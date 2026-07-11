@@ -25,4 +25,11 @@ export interface TraceRequest {
 export interface MapsProvider {
   /** Snap a rider's raw GPS trace onto the road network. */
   traceAttributes(request: TraceRequest): Promise<SnappedPoint[]>;
+
+  // --- Trip Planning Extensions ---
+  geocodePlace?(query: string): Promise<{ lat: number; lng: number; address: string } | null>;
+  calculateRoute?(origin: Coordinate, destination: Coordinate): Promise<{ distanceMeters: number; durationSeconds: number; polyline: Coordinate[] } | null>;
+  calculateEta?(origin: Coordinate, destination: Coordinate): Promise<number | null>;
+  calculateDetour?(routePolyline: Coordinate[], stop: Coordinate): Promise<number | null>;
+  validateStopOnRoute?(routePolyline: Coordinate[], stop: Coordinate): Promise<{ status: "not_checked" | "compatible" | "detour_warning" | "rejected"; detourMeters?: number }>;
 }
