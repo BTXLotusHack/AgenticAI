@@ -1,4 +1,8 @@
-import { RiderTelemetry, type RiderPosition } from "../contracts/telemetry.js";
+import {
+  BoundRiderTelemetry,
+  type RiderPosition,
+  type RiderTelemetry,
+} from "../contracts/telemetry.js";
 import type { SnappedPoint } from "../lib/maps/provider.js";
 
 /**
@@ -15,8 +19,11 @@ export function decodeRecord(base64Data: string): RiderTelemetry | null {
   } catch {
     return null;
   }
-  const result = RiderTelemetry.safeParse(json);
-  return result.success ? result.data : null;
+  const result = BoundRiderTelemetry.safeParse(json);
+  if (!result.success) return null;
+
+  const { _topicTeamId, _topicRiderId, _publisherPrincipal, ...telemetry } = result.data;
+  return telemetry;
 }
 
 /**

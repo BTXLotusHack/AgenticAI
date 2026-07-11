@@ -1,0 +1,5 @@
+bucket       = "loopin-terraform-state-ACCOUNT_ID"
+key          = "loopin/dev/terraform.tfstate"
+region       = "ap-southeast-1"
+encrypt      = true
+use_lockfile = true

@@ -33,8 +33,8 @@ type Mutation {
 }
 
 type Subscription {
-  # Clients subscribe with their Cognito user-pool JWT. The teamId argument
-  # auto-filters the stream so a client only receives its own team's positions.
+  # Cognito identifies the caller. A DynamoDB resolver additionally requires a
+  # current USER#sub / TEAM#teamId membership before registering this channel.
   onRiderPosition(teamId: ID!): RiderPosition
     @aws_subscribe(mutations: ["publishRiderPosition"])
     @aws_cognito_user_pools

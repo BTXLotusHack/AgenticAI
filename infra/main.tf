@@ -49,6 +49,8 @@ module "realtime" {
   region           = var.region
   user_pool_id     = module.identity.user_pool_id
   user_pool_region = var.region
+  table_name       = module.data.table_name
+  table_arn        = module.data.table_arn
 }
 
 # --- Telemetry fast path (IoT + Kinesis + processor Lambda) -------------------
@@ -88,6 +90,16 @@ module "api" {
   create_team_hash = data.archive_file.create_team.output_base64sha256
   invite_user_zip  = data.archive_file.invite_user.output_path
   invite_user_hash = data.archive_file.invite_user.output_base64sha256
+  allowed_origins  = concat(var.allowed_web_origins, [module.web.url])
+}
+
+# --- Static React/Vite delivery ----------------------------------------------
+
+module "web" {
+  source = "./modules/web"
+
+  name_prefix = local.name_prefix
+  web_acl_arn = var.web_acl_arn
 }
 
 # --- Push notifications (optional; needs APNs/FCM credentials) -----------------
