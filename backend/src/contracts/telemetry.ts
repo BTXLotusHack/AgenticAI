@@ -23,6 +23,24 @@ export const RiderTelemetry = z.object({
 export type RiderTelemetry = z.infer<typeof RiderTelemetry>;
 
 /**
+ * Metadata injected by the IoT rule from the authenticated MQTT connection and
+ * topic. These fields are not trusted when supplied by a device; the rule
+ * overwrites them before Kinesis receives the record.
+ */
+export const BoundRiderTelemetry = RiderTelemetry.extend({
+  _topicTeamId: Id,
+  _topicRiderId: Id,
+  _publisherPrincipal: z.string().min(1).max(512),
+}).superRefine((value, context) => {
+  if (value.teamId !== value._topicTeamId) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "teamId does not match MQTT topic" });
+  }
+  if (value.riderId !== value._topicRiderId) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "riderId does not match MQTT topic" });
+  }
+});
+
+/**
  * Road-snapped position produced after map-matching, fanned out to live clients
  * via the AppSync `publishRiderPosition` mutation.
  */

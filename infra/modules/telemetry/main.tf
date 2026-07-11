@@ -27,10 +27,18 @@ resource "aws_kinesis_stream" "telemetry" {
   shard_count = var.kinesis_on_demand ? null : var.kinesis_shard_count
 
   retention_period = 24
+  encryption_type  = "KMS"
+  kms_key_id       = "alias/aws/kinesis"
 
   stream_mode_details {
     stream_mode = var.kinesis_on_demand ? "ON_DEMAND" : "PROVISIONED"
   }
+}
+
+resource "aws_sqs_queue" "quarantine" {
+  name                      = "${var.name_prefix}-telemetry-quarantine"
+  message_retention_seconds = 1209600
+  sqs_managed_sse_enabled   = true
 }
 
 # --- IoT topic rule: forwards MQTT telemetry into Kinesis ---------------------
@@ -64,7 +72,9 @@ resource "aws_iam_role_policy" "iot_to_kinesis" {
 resource "aws_iot_topic_rule" "telemetry" {
   name        = replace("${var.name_prefix}_telemetry", "-", "_")
   enabled     = true
-  sql         = "SELECT * FROM '${local.topic_filter}'"
+  # Bind client claims to trusted broker context before records enter Kinesis.
+  # The processor rejects records where the payload identity differs.
+  sql         = "SELECT *, topic(2) AS _topicTeamId, topic(4) AS _topicRiderId, principal() AS _publisherPrincipal FROM '${local.topic_filter}'"
   sql_version = "2016-03-23"
 
   kinesis {
@@ -124,8 +134,19 @@ resource "aws_iam_role_policy" "processor" {
         Action   = ["appsync:GraphQL"]
         Resource = "${var.appsync_api_arn}/types/Mutation/fields/publishRiderPosition"
       },
+      {
+        Sid      = "QuarantineFailedBatch"
+        Effect   = "Allow"
+        Action   = ["sqs:SendMessage"]
+        Resource = aws_sqs_queue.quarantine.arn
+      },
     ]
   })
+}
+
+resource "aws_cloudwatch_log_group" "processor" {
+  name              = "/aws/lambda/${var.name_prefix}-telemetry-processor"
+  retention_in_days = 14
 }
 
 resource "aws_lambda_function" "processor" {
@@ -137,6 +158,7 @@ resource "aws_lambda_function" "processor" {
   source_code_hash = var.lambda_hash
   timeout          = 15
   memory_size      = 256
+  depends_on       = [aws_cloudwatch_log_group.processor]
 
   environment {
     variables = {
@@ -156,7 +178,15 @@ resource "aws_lambda_event_source_mapping" "kinesis" {
   # Poison records are retried a bounded number of times then skipped so one bad
   # payload cannot stall the shard.
   maximum_retry_attempts         = 5
+  maximum_record_age_in_seconds  = 300
   bisect_batch_on_function_error = true
+  function_response_types        = ["ReportBatchItemFailures"]
+
+  destination_config {
+    on_failure {
+      destination_arn = aws_sqs_queue.quarantine.arn
+    }
+  }
 }
 
 output "stream_name" {
@@ -165,4 +195,8 @@ output "stream_name" {
 
 output "topic_filter" {
   value = local.topic_filter
+}
+
+output "quarantine_queue_url" {
+  value = aws_sqs_queue.quarantine.url
 }

@@ -21,6 +21,9 @@ const base = {
   speedKmh: 40,
   accuracyMeters: 5,
   observedAt: "2026-07-11T10:00:00.000Z",
+  _topicTeamId: "t1",
+  _topicRiderId: "r1",
+  _publisherPrincipal: "cognito-identity-1",
 };
 
 describe("decodeRecord", () => {
@@ -35,6 +38,19 @@ describe("decodeRecord", () => {
 
   it("returns null when coordinates are out of range", () => {
     expect(decodeRecord(encode({ ...base, coords: [999, 106.7] }))).toBeNull();
+  });
+
+  it("rejects a payload whose team does not match its server-derived topic", () => {
+    expect(decodeRecord(encode({ ...base, teamId: "other-team" }))).toBeNull();
+  });
+
+  it("rejects a payload whose rider does not match its server-derived topic", () => {
+    expect(decodeRecord(encode({ ...base, riderId: "other-rider" }))).toBeNull();
+  });
+
+  it("rejects records without trusted topic and publisher metadata", () => {
+    const { _topicTeamId, _topicRiderId, _publisherPrincipal, ...unbound } = base;
+    expect(decodeRecord(encode(unbound))).toBeNull();
   });
 });
 
