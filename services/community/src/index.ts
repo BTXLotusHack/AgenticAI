@@ -374,11 +374,7 @@ export class LoopinCommunityApplication {
       if (existingIdempotency.fingerprint !== fingerprint) {
         throw new CommunityError("conflict", "The idempotency key was already used for a different report payload.");
       }
-      const report = await this.dependencies.repositories.reports.findOpenByReporterAndTarget(
-        parsedIdentity.userId,
-        request.targetType,
-        request.targetId,
-      );
+      const report = await this.dependencies.repositories.reports.getById(existingIdempotency.resultRef);
       if (!report) throw new CommunityError("conflict", "The prior idempotent report result is unavailable.");
       return ReportContentResponseV1Schema.parse({ schemaVersion: 1, report });
     }

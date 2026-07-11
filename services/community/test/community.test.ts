@@ -4,6 +4,7 @@ import {
   CommunityError,
   FixedClock,
   LoopinCommunityApplication,
+  MemoryIdempotencyRepository,
   createMemoryCommunityRepositories,
 } from "../src/index";
 
@@ -290,6 +291,41 @@ describe("blocking and reporting", () => {
     expect(report.report.status).toBe("open");
     const ownerView = await app.getMyPlaceReview({ userId: "USER001" }, placeId);
     expect(ownerView?.moderationState).toBe("pending");
+  });
+
+  it("returns the exact report for repeated idempotent report requests after moderation state changes", async () => {
+    const { app, repositories } = setup();
+    const created = await app.upsertPlaceReview(
+      { userId: "USER001" },
+      { schemaVersion: 1, tascoPlaceId: placeId, rating: 2, comment: null, idempotencyKey: "report-idem-review" },
+    );
+    const payload = {
+      schemaVersion: 1 as const,
+      targetType: "place-review" as const,
+      targetId: created.review.reviewId,
+      reasonCode: "misleading" as const,
+      details: "Not accurate.",
+      idempotencyKey: "report-repeat",
+    };
+
+    const first = await app.reportContent({ userId: "USER002" }, payload);
+    await repositories.reports.save({ ...first.report, status: "resolved" });
+
+    const second = await app.reportContent({ userId: "USER002" }, payload);
+    expect(second.report).toEqual({ ...first.report, status: "resolved" });
+  });
+});
+
+describe("idempotency storage", () => {
+  it("keeps scope and idempotency key boundaries distinct when values contain separators", async () => {
+    const repository = new MemoryIdempotencyRepository();
+    await repository.save("review:USER001", "place:key", {
+      fingerprint: "first",
+      resultRef: "review-1",
+      expiresAt: "2026-07-21T08:00:00.000Z",
+    });
+
+    await expect(repository.get("review:USER001:place", "key", now)).resolves.toBeNull();
   });
 });
 

@@ -155,6 +155,11 @@ export class MemoryReportRepository implements ReportRepository {
     }
   }
 
+  async getById(reportId: string): Promise<ContentReportV1 | null> {
+    const report = this.reports.get(reportId);
+    return report ? structuredClone(report) : null;
+  }
+
   async findOpenByReporterAndTarget(
     reporterUserId: string,
     targetType: ContentReportV1["targetType"],
@@ -182,7 +187,7 @@ export class MemoryIdempotencyRepository implements IdempotencyRepository {
   private readonly records = new Map<string, IdempotencyRecord>();
 
   private key(scope: string, idempotencyKey: string): string {
-    return `${scope}:${idempotencyKey}`;
+    return JSON.stringify([scope, idempotencyKey]);
   }
 
   async get(scope: string, idempotencyKey: string, now: string): Promise<IdempotencyRecord | null> {

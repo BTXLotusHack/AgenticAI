@@ -43,6 +43,7 @@ export interface BlockRepository {
 }
 
 export interface ReportRepository {
+  getById(reportId: string): Promise<ContentReportV1 | null>;
   findOpenByReporterAndTarget(
     reporterUserId: string,
     targetType: ContentReportV1["targetType"],
