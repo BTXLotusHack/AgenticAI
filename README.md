@@ -115,7 +115,7 @@ Default cohesion values and state transitions are specified in [Convoy Intellige
 ```text
 loopin/
 ├── apps/
-│   ├── web/                       # React + Vite
+│   ├── web/                       # Implemented landing, setup, live replay and summary
 │   ├── mobile/                    # Expo/React Native
 │   └── simulator/                 # Runnable dataset-driven convoy simulation
 ├── services/
@@ -129,6 +129,7 @@ loopin/
 ├── packages/
 │   ├── contracts/                 # Versioned Zod schemas
 │   ├── convoy-core/               # Implemented contracts, graph, safety, regroup and summaries
+│   ├── demo-scenarios/            # Shared golden frames and deterministic replay controller
 │   ├── domain/                    # Future broader trip and role logic
 │   ├── convoy-graph/              # Future split if scale/ownership requires it
 │   ├── geo/                       # Route progress and distance
@@ -143,7 +144,7 @@ loopin/
 └── docs/
 ```
 
-The consumer landing page is implemented in `apps/web`. The deterministic convoy engine is implemented in `packages/convoy-core`, and the workbook-backed golden journey is runnable from `apps/simulator`. The mobile client, AWS services, maps adapter, broader product web shell, and CDK infrastructure remain approved designs that will be delivered as tested vertical slices rather than empty scaffolds.
+The consumer landing page and deterministic setup/live/summary trip journey are implemented in `apps/web`. The convoy engine is implemented in `packages/convoy-core`; `packages/demo-scenarios` owns the shared golden frames and replay controller used by both the web experience and `apps/simulator`. The mobile client, AWS services, maps adapter and CDK infrastructure remain approved designs that will be delivered as tested vertical slices rather than empty scaffolds.
 
 ## Run the convoy demo
 
@@ -155,7 +156,7 @@ npm.cmd run simulate
 
 Use `npm.cmd run simulate -- --json` for the complete graph, incident, notification, regroup, ingestion, and summary output. See [Runnable Convoy Core Demo](docs/core-demo-slice.md) for behavior, workbook provenance, limitations, and AWS integration seams.
 
-## Run the landing page
+## Run the web experience
 
 Requirements:
 
@@ -175,6 +176,18 @@ Vite prints the local address, normally <http://localhost:5173>. To bind an expl
 npm.cmd run dev -- --host 127.0.0.1 --port 4173
 ```
 
+Implemented routes:
+
+| Route | Behavior |
+|---|---|
+| `/` | Public landing page with setup and direct-demo entry points |
+| `/trip/new` | TRIP001 route, readiness and trip-scoped location-consent setup |
+| `/trips/TRIP001/live` | Deterministic live convoy workspace; requires a completed setup session |
+| `/trips/TRIP001/live?autoplay=true` | Direct landing-page demo; creates a demo session, plays and pauses at the confirmed split |
+| `/trips/TRIP001/summary` | Measured facts and event timeline; refuses incomplete sessions |
+
+The live workspace supports previous/next, play/pause, restart and 1×/2×/4× playback. It stops at the confirmed split until POI001 is approved, then continues through reconnection and automatically opens the summary. Browser-only demo state is schema-validated in `sessionStorage` under `loopin.demo-session`; **Start another demo** clears it, while **Replay trip** resets the same approved scenario. This adapter is intentionally not production persistence or authentication.
+
 Run the complete web verification pipeline:
 
 ```powershell
@@ -186,6 +199,8 @@ npx.cmd playwright install chromium
 npm.cmd run test:e2e
 ```
 
+The Playwright gate runs the landing and complete trip journey across desktop, mobile and reduced-motion projects. It checks serious/critical WCAG violations, console errors, route behavior, the consent gate, degraded GPS, the exact `M003 → M004` split, four recipient messages, POI002 hard exclusion, POI001 approval, reconnection, summary facts and horizontal overflow down to 320 CSS pixels.
+
 Preview the production build:
 
 ```powershell
@@ -193,6 +208,8 @@ npm.cmd run preview -- --host 127.0.0.1 --port 4173
 ```
 
 The web output is written to `apps/web/dist` and is compatible with the documented S3 and CloudFront deployment model.
+
+`test-results/`, `playwright-report/` and `dist/` are generated evidence/build artifacts and are not committed. Visual QA screenshots are reviewed through the browser workflow and kept outside source control.
 
 ## Documentation
 
@@ -219,6 +236,8 @@ Contributors should also read [CONTRIBUTING.md](CONTRIBUTING.md). Automated cont
 The hackathon demonstration must prove one complete path: create a trip, join vehicles, stream simulated or real GPS, detect a persistent component split, alert front and rear sections differently, recommend a safe regroup point, reconnect, and summarize the trip.
 
 Production architecture is documented, but features are implemented in vertical slices rather than by creating many empty microservices.
+
+The current browser journey is a deterministic workbook-backed demonstration. It does not claim live Tasco map matching, production identity, shared multi-client state, MQTT ingestion, AppSync delivery, push notifications or background mobile GPS; those replace adapters behind the existing versioned contracts.
 
 ## External dependencies to validate
 

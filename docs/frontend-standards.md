@@ -64,10 +64,11 @@ Motion must:
 
 ## Responsive design
 
-- Validate at 360, 390, 768, 1024, 1280 and 1440 CSS-pixel widths.
+- Validate at 360, 390, 768, 1024, 1280 and 1440 CSS-pixel widths, with a 320-pixel compact-width overflow guard.
 - Persistent navigation plus hero content must fit the initial viewport at common desktop and mobile sizes.
 - Touch targets are at least 44 by 44 CSS pixels where practical.
 - No horizontal overflow is allowed.
+- Entrance transforms must not expand the document width; clip the owning workspace while preserving deliberate nested scrollers.
 - Text remains readable over every responsive image crop.
 - Sticky desktop stories become shorter scenes on mobile when sustained pinning harms usability.
 

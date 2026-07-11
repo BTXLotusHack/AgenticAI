@@ -46,7 +46,9 @@ AWS, mobile, web, and map providers are adapters around these pure functions. Th
 | `notifications.ts` | Recipient policy, bilingual templates, dedupe and expiry |
 | `regroup.ts` | Candidate exclusions, score breakdown and deterministic ties |
 | `summary.ts` | Measured post-trip facts and template narrative |
-| `apps/simulator` | Dataset normalization, orchestration and console output only |
+| `packages/demo-scenarios` | Shared workbook-backed golden frames and deterministic replay controller |
+| `apps/simulator` | CLI compatibility adapter and console/JSON output only |
+| `apps/web` | Browser session adapter and setup/live/regroup/summary presentation only |
 
 ## Run it
 
@@ -66,6 +68,8 @@ together → degraded → together → stretched → split → stretched → tog
 ```
 
 The confirmed split has front component `M001, M002, M003`, rear component `M004`, boundary `M003 → M004`, and measured route gap `900 m`. `POI001` Minh Châu Rest Stop is selected; `POI002` Highway Shoulder KM62 is excluded as unsafe and unsuitable for convoy parking.
+
+The CLI and browser import the same `@loopin/demo-scenarios` frames. Neither client carries its own copy of the convoy decisions. The browser controller adds play/pause, step, restart, speed and approval gates without recalculating authoritative outcomes.
 
 ## Workbook provenance
 
@@ -93,5 +97,5 @@ The pure package has no AWS SDK, React, database, clock, network, or LLM depende
 - No production authentication, authorization, persistence, MQTT, AppSync, push, or background mobile capture exists in this slice.
 - Phone GPS is not precise following-distance or collision-avoidance equipment.
 - Cohesion thresholds are proposed defaults requiring simulation, Tasco review, and field calibration.
-- Ordinary regroup approval UI and navigation delivery belong to the following web/mobile vertical slices.
+- The deterministic web slice includes ordinary regroup review and approval; real navigation delivery and driver acknowledgements remain mobile/AWS work.
 - AI does not detect, authorize, or score safety decisions; future Bedrock usage is explanation-only with deterministic fallback.
