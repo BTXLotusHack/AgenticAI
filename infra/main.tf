@@ -93,7 +93,8 @@ module "api" {
 # --- Push notifications (optional; needs APNs/FCM credentials) -----------------
 
 module "notifications" {
-  source      = "./modules/notifications"
-  name_prefix = local.name_prefix
-  enable_push = var.enable_push
+  source         = "./modules/notifications"
+  name_prefix    = local.name_prefix
+  enable_push    = var.enable_push
+  fcm_credential = var.fcm_credential
 }
