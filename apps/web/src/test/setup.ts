@@ -17,4 +17,47 @@ Object.defineProperty(window, 'matchMedia', {
   writable: true,
 });
 
+class MockIntersectionObserver implements IntersectionObserver {
+  readonly root = null;
+  readonly rootMargin = '0px';
+  readonly thresholds = [0];
+  readonly #callback: IntersectionObserverCallback;
+
+  constructor(callback: IntersectionObserverCallback) {
+    this.#callback = callback;
+  }
+
+  disconnect() {}
+
+  observe(target: Element) {
+    const rectangle = target.getBoundingClientRect();
+    this.#callback(
+      [
+        {
+          boundingClientRect: rectangle,
+          intersectionRatio: 1,
+          intersectionRect: rectangle,
+          isIntersecting: true,
+          rootBounds: null,
+          target,
+          time: performance.now(),
+        },
+      ],
+      this,
+    );
+  }
+
+  takeRecords() {
+    return [];
+  }
+
+  unobserve() {}
+}
+
+Object.defineProperty(globalThis, 'IntersectionObserver', {
+  configurable: true,
+  value: MockIntersectionObserver,
+  writable: true,
+});
+
 afterEach(() => cleanup());

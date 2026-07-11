@@ -28,15 +28,17 @@ describe('Loopin landing page', () => {
     const user = userEvent.setup();
     render(<App />, { wrapper: MemoryRouter });
 
-    expect(screen.getByLabelText(/loopin home/i)).toBeVisible();
+    expect(screen.getAllByLabelText(/loopin home/i).length).toBeGreaterThan(0);
     expect(screen.getByRole('navigation', { name: /primary/i })).toBeVisible();
     expect(
       screen.getAllByRole('link', { name: /how it works/i }).length,
     ).toBeGreaterThan(0);
-    expect(screen.getByRole('link', { name: /safety/i })).toBeVisible();
     expect(
-      screen.getByRole('link', { name: /for organizations/i }),
-    ).toBeVisible();
+      screen.getAllByRole('link', { name: /safety/i }).length,
+    ).toBeGreaterThan(0);
+    expect(
+      screen.getAllByRole('link', { name: /for organizations/i }).length,
+    ).toBeGreaterThan(0);
     expect(screen.getByRole('link', { name: /log in/i })).toBeVisible();
 
     const menuButton = screen.getByRole('button', { name: /open menu/i });
@@ -71,5 +73,39 @@ describe('Loopin landing page', () => {
     expect(
       await screen.findByText(/continue safely to the shared regroup point/i),
     ).toBeVisible();
+  });
+
+  it('completes the user journey without fabricated proof or unsafe driving copy', () => {
+    render(<App />, { wrapper: MemoryRouter });
+
+    expect(screen.getByRole('heading', { name: /know the group/i })).toBeVisible();
+    expect(screen.getByRole('heading', { name: /catch the gap/i })).toBeVisible();
+    expect(screen.getByRole('heading', { name: /regroup safely/i })).toBeVisible();
+    expect(
+      screen.getByRole('heading', {
+        name: /less “where are you\?” more “we’ve got you\.”/i,
+      }),
+    ).toBeVisible();
+    expect(
+      screen.getByText(/cars 4 and 5 are behind.*maintain a safe pace/i),
+    ).toBeVisible();
+    expect(
+      screen.getByRole('heading', { name: /your trip stays with your group/i }),
+    ).toBeVisible();
+
+    for (const audience of ['Families', 'Clubs', 'Tours', 'Events', 'Fleets']) {
+      expect(screen.getByText(audience)).toBeVisible();
+    }
+
+    expect(
+      screen.getByRole('link', { name: /bring loopin to your organization/i }),
+    ).toBeVisible();
+    expect(
+      screen.getByRole('heading', { name: /keep the journey together/i }),
+    ).toBeVisible();
+
+    expect(screen.queryByText(/speed up|hurry|brake suddenly/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/\bpricing\b|\btestimonial\b|\btrusted by\b/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/\d+%/)).not.toBeInTheDocument();
   });
 });
