@@ -33,6 +33,22 @@ NotificationRequestV1 notificationRequestV1FromJson(String str) => NotificationR
 
 String notificationRequestV1ToJson(NotificationRequestV1 data) => json.encode(data.toJson());
 
+PlaceCommunitySummaryV1 placeCommunitySummaryV1FromJson(String str) => PlaceCommunitySummaryV1.fromJson(json.decode(str));
+
+String placeCommunitySummaryV1ToJson(PlaceCommunitySummaryV1 data) => json.encode(data.toJson());
+
+LocationVisibilityPolicyV1 locationVisibilityPolicyV1FromJson(String str) => LocationVisibilityPolicyV1.fromJson(json.decode(str));
+
+String locationVisibilityPolicyV1ToJson(LocationVisibilityPolicyV1 data) => json.encode(data.toJson());
+
+UserTravelProfileV1 userTravelProfileV1FromJson(String str) => UserTravelProfileV1.fromJson(json.decode(str));
+
+String userTravelProfileV1ToJson(UserTravelProfileV1 data) => json.encode(data.toJson());
+
+ContentReportV1 contentReportV1FromJson(String str) => ContentReportV1.fromJson(json.decode(str));
+
+String contentReportV1ToJson(ContentReportV1 data) => json.encode(data.toJson());
+
 class LocationTelemetryV1 {
     final double accuracyMeters;
     final double? batteryPercent;
@@ -47,7 +63,7 @@ class LocationTelemetryV1 {
     final double schemaVersion;
     final DateTime sentAt;
     final int sequence;
-    final Source source;
+    final LocationTelemetryV1Source source;
     final double? speedKmh;
     final String tripId;
 
@@ -86,7 +102,7 @@ class LocationTelemetryV1 {
         schemaVersion: json["schemaVersion"]?.toDouble(),
         sentAt: DateTime.parse(json["sentAt"]),
         sequence: json["sequence"],
-        source: sourceValues.map[json["source"]]!,
+        source: locationTelemetryV1SourceValues.map[json["source"]]!,
         speedKmh: json["speedKmh"]?.toDouble(),
         tripId: json["tripId"],
     );
@@ -106,7 +122,7 @@ class LocationTelemetryV1 {
         "schemaVersion": schemaVersion,
         "sentAt": sentAt.toIso8601String(),
         "sequence": sequence,
-        "source": sourceValues.reverse[source],
+        "source": locationTelemetryV1SourceValues.reverse[source],
         "speedKmh": speedKmh,
         "tripId": tripId,
     };
@@ -124,14 +140,14 @@ final networkQualityValues = EnumValues({
     "weak": NetworkQuality.WEAK
 });
 
-enum Source {
+enum LocationTelemetryV1Source {
     GPS,
     SIMULATOR
 }
 
-final sourceValues = EnumValues({
-    "gps": Source.GPS,
-    "simulator": Source.SIMULATOR
+final locationTelemetryV1SourceValues = EnumValues({
+    "gps": LocationTelemetryV1Source.GPS,
+    "simulator": LocationTelemetryV1Source.SIMULATOR
 });
 
 class EventEnvelopeV1 {
@@ -692,6 +708,294 @@ final notificationRequestV1SeverityValues = EnumValues({
     "high": NotificationRequestV1Severity.HIGH,
     "info": NotificationRequestV1Severity.INFO,
     "medium": NotificationRequestV1Severity.MEDIUM
+});
+
+class PlaceCommunitySummaryV1 {
+    final double? averageRating;
+    final int commentCount;
+    final int reviewCount;
+    final double schemaVersion;
+    final PlaceCommunitySummaryV1Source source;
+    final String tascoPlaceId;
+    final bool viewerCanReview;
+    final bool viewerHasReviewed;
+
+    PlaceCommunitySummaryV1({
+        required this.averageRating,
+        required this.commentCount,
+        required this.reviewCount,
+        required this.schemaVersion,
+        required this.source,
+        required this.tascoPlaceId,
+        required this.viewerCanReview,
+        required this.viewerHasReviewed,
+    });
+
+    factory PlaceCommunitySummaryV1.fromJson(Map<String, dynamic> json) => PlaceCommunitySummaryV1(
+        averageRating: json["averageRating"]?.toDouble(),
+        commentCount: json["commentCount"],
+        reviewCount: json["reviewCount"],
+        schemaVersion: json["schemaVersion"]?.toDouble(),
+        source: placeCommunitySummaryV1SourceValues.map[json["source"]]!,
+        tascoPlaceId: json["tascoPlaceId"],
+        viewerCanReview: json["viewerCanReview"],
+        viewerHasReviewed: json["viewerHasReviewed"],
+    );
+
+    Map<String, dynamic> toJson() => {
+        "averageRating": averageRating,
+        "commentCount": commentCount,
+        "reviewCount": reviewCount,
+        "schemaVersion": schemaVersion,
+        "source": placeCommunitySummaryV1SourceValues.reverse[source],
+        "tascoPlaceId": tascoPlaceId,
+        "viewerCanReview": viewerCanReview,
+        "viewerHasReviewed": viewerHasReviewed,
+    };
+}
+
+enum PlaceCommunitySummaryV1Source {
+    USER_GENERATED
+}
+
+final placeCommunitySummaryV1SourceValues = EnumValues({
+    "user-generated": PlaceCommunitySummaryV1Source.USER_GENERATED
+});
+
+class LocationVisibilityPolicyV1 {
+    final List<String> blockedUserIds;
+    final PlacePresenceVisibility placePresenceVisibility;
+    final RetentionPreference retentionPreference;
+    final double schemaVersion;
+    final TripVisibility tripVisibility;
+    final DateTime updatedAt;
+    final String userId;
+
+    LocationVisibilityPolicyV1({
+        required this.blockedUserIds,
+        required this.placePresenceVisibility,
+        required this.retentionPreference,
+        required this.schemaVersion,
+        required this.tripVisibility,
+        required this.updatedAt,
+        required this.userId,
+    });
+
+    factory LocationVisibilityPolicyV1.fromJson(Map<String, dynamic> json) => LocationVisibilityPolicyV1(
+        blockedUserIds: List<String>.from(json["blockedUserIds"].map((x) => x)),
+        placePresenceVisibility: placePresenceVisibilityValues.map[json["placePresenceVisibility"]]!,
+        retentionPreference: retentionPreferenceValues.map[json["retentionPreference"]]!,
+        schemaVersion: json["schemaVersion"]?.toDouble(),
+        tripVisibility: tripVisibilityValues.map[json["tripVisibility"]]!,
+        updatedAt: DateTime.parse(json["updatedAt"]),
+        userId: json["userId"],
+    );
+
+    Map<String, dynamic> toJson() => {
+        "blockedUserIds": List<dynamic>.from(blockedUserIds.map((x) => x)),
+        "placePresenceVisibility": placePresenceVisibilityValues.reverse[placePresenceVisibility],
+        "retentionPreference": retentionPreferenceValues.reverse[retentionPreference],
+        "schemaVersion": schemaVersion,
+        "tripVisibility": tripVisibilityValues.reverse[tripVisibility],
+        "updatedAt": updatedAt.toIso8601String(),
+        "userId": userId,
+    };
+}
+
+enum PlacePresenceVisibility {
+    CONNECTIONS,
+    PRIVATE,
+    PUBLIC
+}
+
+final placePresenceVisibilityValues = EnumValues({
+    "connections": PlacePresenceVisibility.CONNECTIONS,
+    "private": PlacePresenceVisibility.PRIVATE,
+    "public": PlacePresenceVisibility.PUBLIC
+});
+
+enum RetentionPreference {
+    EXTENDED,
+    MINIMAL,
+    STANDARD
+}
+
+final retentionPreferenceValues = EnumValues({
+    "extended": RetentionPreference.EXTENDED,
+    "minimal": RetentionPreference.MINIMAL,
+    "standard": RetentionPreference.STANDARD
+});
+
+enum TripVisibility {
+    GROUP,
+    LEADER_ONLY,
+    PAUSED
+}
+
+final tripVisibilityValues = EnumValues({
+    "group": TripVisibility.GROUP,
+    "leader-only": TripVisibility.LEADER_ONLY,
+    "paused": TripVisibility.PAUSED
+});
+
+class UserTravelProfileV1 {
+    final List<String> accessibilityPreferences;
+    final List<String> dietaryPreferences;
+    final String displayName;
+    final String? homeCity;
+    final List<String> interests;
+    final List<Locale> preferredLanguages;
+    final double schemaVersion;
+    final List<String> travelStyles;
+    final DateTime updatedAt;
+    final String userId;
+
+    UserTravelProfileV1({
+        required this.accessibilityPreferences,
+        required this.dietaryPreferences,
+        required this.displayName,
+        required this.homeCity,
+        required this.interests,
+        required this.preferredLanguages,
+        required this.schemaVersion,
+        required this.travelStyles,
+        required this.updatedAt,
+        required this.userId,
+    });
+
+    factory UserTravelProfileV1.fromJson(Map<String, dynamic> json) => UserTravelProfileV1(
+        accessibilityPreferences: List<String>.from(json["accessibilityPreferences"].map((x) => x)),
+        dietaryPreferences: List<String>.from(json["dietaryPreferences"].map((x) => x)),
+        displayName: json["displayName"],
+        homeCity: json["homeCity"],
+        interests: List<String>.from(json["interests"].map((x) => x)),
+        preferredLanguages: List<Locale>.from(json["preferredLanguages"].map((x) => localeValues.map[x]!)),
+        schemaVersion: json["schemaVersion"]?.toDouble(),
+        travelStyles: List<String>.from(json["travelStyles"].map((x) => x)),
+        updatedAt: DateTime.parse(json["updatedAt"]),
+        userId: json["userId"],
+    );
+
+    Map<String, dynamic> toJson() => {
+        "accessibilityPreferences": List<dynamic>.from(accessibilityPreferences.map((x) => x)),
+        "dietaryPreferences": List<dynamic>.from(dietaryPreferences.map((x) => x)),
+        "displayName": displayName,
+        "homeCity": homeCity,
+        "interests": List<dynamic>.from(interests.map((x) => x)),
+        "preferredLanguages": List<dynamic>.from(preferredLanguages.map((x) => localeValues.reverse[x])),
+        "schemaVersion": schemaVersion,
+        "travelStyles": List<dynamic>.from(travelStyles.map((x) => x)),
+        "updatedAt": updatedAt.toIso8601String(),
+        "userId": userId,
+    };
+}
+
+class ContentReportV1 {
+    final DateTime createdAt;
+    final String? details;
+    final ReasonCode reasonCode;
+    final String reporterUserId;
+    final String reportId;
+    final Resolution? resolution;
+    final DateTime? resolvedAt;
+    final String? resolvedByUserId;
+    final double schemaVersion;
+    final Status status;
+    final String targetId;
+    final TargetType targetType;
+
+    ContentReportV1({
+        required this.createdAt,
+        required this.details,
+        required this.reasonCode,
+        required this.reporterUserId,
+        required this.reportId,
+        required this.resolution,
+        required this.resolvedAt,
+        required this.resolvedByUserId,
+        required this.schemaVersion,
+        required this.status,
+        required this.targetId,
+        required this.targetType,
+    });
+
+    factory ContentReportV1.fromJson(Map<String, dynamic> json) => ContentReportV1(
+        createdAt: DateTime.parse(json["createdAt"]),
+        details: json["details"],
+        reasonCode: reasonCodeValues.map[json["reasonCode"]]!,
+        reporterUserId: json["reporterUserId"],
+        reportId: json["reportId"],
+        resolution: resolutionValues.map[json["resolution"]],
+        resolvedAt: json["resolvedAt"] == null ? null : DateTime.parse(json["resolvedAt"]),
+        resolvedByUserId: json["resolvedByUserId"],
+        schemaVersion: json["schemaVersion"]?.toDouble(),
+        status: statusValues.map[json["status"]]!,
+        targetId: json["targetId"],
+        targetType: targetTypeValues.map[json["targetType"]]!,
+    );
+
+    Map<String, dynamic> toJson() => {
+        "createdAt": createdAt.toIso8601String(),
+        "details": details,
+        "reasonCode": reasonCodeValues.reverse[reasonCode],
+        "reporterUserId": reporterUserId,
+        "reportId": reportId,
+        "resolution": resolutionValues.reverse[resolution],
+        "resolvedAt": resolvedAt?.toIso8601String(),
+        "resolvedByUserId": resolvedByUserId,
+        "schemaVersion": schemaVersion,
+        "status": statusValues.reverse[status],
+        "targetId": targetId,
+        "targetType": targetTypeValues.reverse[targetType],
+    };
+}
+
+enum ReasonCode {
+    HARASSMENT,
+    MISLEADING,
+    OTHER,
+    PRIVACY_VIOLATION,
+    SPAM
+}
+
+final reasonCodeValues = EnumValues({
+    "harassment": ReasonCode.HARASSMENT,
+    "misleading": ReasonCode.MISLEADING,
+    "other": ReasonCode.OTHER,
+    "privacy-violation": ReasonCode.PRIVACY_VIOLATION,
+    "spam": ReasonCode.SPAM
+});
+
+enum Resolution {
+    APPROVE_TARGET,
+    HIDE_TARGET,
+    RESOLVE_REPORT
+}
+
+final resolutionValues = EnumValues({
+    "approve-target": Resolution.APPROVE_TARGET,
+    "hide-target": Resolution.HIDE_TARGET,
+    "resolve-report": Resolution.RESOLVE_REPORT
+});
+
+enum Status {
+    OPEN,
+    RESOLVED
+}
+
+final statusValues = EnumValues({
+    "open": Status.OPEN,
+    "resolved": Status.RESOLVED
+});
+
+enum TargetType {
+    PLACE_REVIEW,
+    TRAVEL_PRESENCE
+}
+
+final targetTypeValues = EnumValues({
+    "place-review": TargetType.PLACE_REVIEW,
+    "travel-presence": TargetType.TRAVEL_PRESENCE
 });
 
 class EnumValues<T> {

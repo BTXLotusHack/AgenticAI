@@ -1,0 +1,61 @@
+{
+  "$id": "https://schemas.loopin.vn/contracts/place-community-summary-v1.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "properties": {
+    "averageRating": {
+      "anyOf": [
+        {
+          "maximum": 5,
+          "minimum": 1,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "commentCount": {
+      "maximum": 9007199254740991,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "reviewCount": {
+      "maximum": 9007199254740991,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "schemaVersion": {
+      "const": 1,
+      "type": "number"
+    },
+    "source": {
+      "const": "user-generated",
+      "type": "string"
+    },
+    "tascoPlaceId": {
+      "maxLength": 160,
+      "minLength": 1,
+      "type": "string"
+    },
+    "viewerCanReview": {
+      "type": "boolean"
+    },
+    "viewerHasReviewed": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "tascoPlaceId",
+    "averageRating",
+    "reviewCount",
+    "commentCount",
+    "viewerCanReview",
+    "viewerHasReviewed",
+    "source"
+  ],
+  "title": "PlaceCommunitySummaryV1",
+  "type": "object",
+  "x-schema-version": 1
+}

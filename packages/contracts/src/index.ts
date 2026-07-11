@@ -291,6 +291,77 @@ export const ApiErrorSchema = z
 
 export type ApiError = z.infer<typeof ApiErrorSchema>;
 
+export const TascoPlaceIdSchema = IdentifierSchema;
+export type TascoPlaceId = z.infer<typeof TascoPlaceIdSchema>;
+
+export const CommunityVisibilityPolicySchema = z.enum(["public", "connections", "private"]);
+export type CommunityVisibilityPolicy = z.infer<typeof CommunityVisibilityPolicySchema>;
+
+export const LocationVisibilityPolicyV1Schema = z
+  .object({
+    schemaVersion: z.literal(1),
+    userId: IdentifierSchema,
+    tripVisibility: z.enum(["group", "leader-only", "paused"]),
+    placePresenceVisibility: CommunityVisibilityPolicySchema,
+    retentionPreference: z.enum(["minimal", "standard", "extended"]),
+    blockedUserIds: z.array(IdentifierSchema).max(200),
+    updatedAt: IsoDateTimeSchema,
+  })
+  .strict();
+
+export type LocationVisibilityPolicyV1 = z.infer<typeof LocationVisibilityPolicyV1Schema>;
+
+export const UserTravelProfileV1Schema = z
+  .object({
+    schemaVersion: z.literal(1),
+    userId: IdentifierSchema,
+    displayName: z.string().trim().min(1).max(80),
+    homeCity: z.string().trim().min(1).max(120).nullable(),
+    travelStyles: z.array(z.string().trim().min(1).max(80)).max(12),
+    interests: z.array(z.string().trim().min(1).max(80)).max(24),
+    preferredLanguages: z.array(z.enum(["en", "vi"])).min(1).max(2),
+    dietaryPreferences: z.array(z.string().trim().min(1).max(80)).max(12),
+    accessibilityPreferences: z.array(z.string().trim().min(1).max(120)).max(12),
+    updatedAt: IsoDateTimeSchema,
+  })
+  .strict();
+
+export type UserTravelProfileV1 = z.infer<typeof UserTravelProfileV1Schema>;
+
+export const PlaceCommunitySummaryV1Schema = z
+  .object({
+    schemaVersion: z.literal(1),
+    tascoPlaceId: TascoPlaceIdSchema,
+    averageRating: z.number().gte(1).lte(5).nullable(),
+    reviewCount: z.number().int().nonnegative(),
+    commentCount: z.number().int().nonnegative(),
+    viewerCanReview: z.boolean(),
+    viewerHasReviewed: z.boolean(),
+    source: z.literal("user-generated"),
+  })
+  .strict();
+
+export type PlaceCommunitySummaryV1 = z.infer<typeof PlaceCommunitySummaryV1Schema>;
+
+export const ContentReportV1Schema = z
+  .object({
+    schemaVersion: z.literal(1),
+    reportId: IdentifierSchema,
+    reporterUserId: IdentifierSchema,
+    targetType: z.enum(["place-review", "travel-presence"]),
+    targetId: IdentifierSchema,
+    reasonCode: z.enum(["spam", "harassment", "privacy-violation", "misleading", "other"]),
+    details: z.string().max(1_000).nullable(),
+    createdAt: IsoDateTimeSchema,
+    status: z.enum(["open", "resolved"]),
+    resolvedAt: IsoDateTimeSchema.nullable(),
+    resolvedByUserId: IdentifierSchema.nullable(),
+    resolution: z.enum(["resolve-report", "hide-target", "approve-target"]).nullable(),
+  })
+  .strict();
+
+export type ContentReportV1 = z.infer<typeof ContentReportV1Schema>;
+
 export const CommandEnvelopeV1Schema = z
   .object({
     schemaVersion: z.literal(1),

@@ -233,6 +233,109 @@ export const ListTravelPresenceResponseV1Schema = z
 
 export type ListTravelPresenceResponseV1 = z.infer<typeof ListTravelPresenceResponseV1Schema>;
 
+export const UserTravelProfileV1Schema = z
+  .object({
+    schemaVersion: z.literal(1),
+    userId: IdentifierSchema,
+    displayName: z.string().trim().min(1).max(80),
+    homeCity: z.string().trim().min(1).max(120).nullable(),
+    travelStyles: z.array(z.string().trim().min(1).max(80)).max(12),
+    interests: z.array(z.string().trim().min(1).max(80)).max(24),
+    preferredLanguages: z.array(z.enum(["en", "vi"])).min(1).max(2),
+    dietaryPreferences: z.array(z.string().trim().min(1).max(80)).max(12),
+    accessibilityPreferences: z.array(z.string().trim().min(1).max(120)).max(12),
+    updatedAt: IsoDateTimeSchema,
+  })
+  .strict();
+
+export type UserTravelProfileV1 = z.infer<typeof UserTravelProfileV1Schema>;
+
+export const UpdateUserTravelProfileRequestV1Schema = z
+  .object({
+    schemaVersion: z.literal(1),
+    userId: IdentifierSchema.optional(),
+    displayName: z.string().trim().min(1).max(80),
+    homeCity: z.string().trim().min(1).max(120).nullable(),
+    travelStyles: z.array(z.string().trim().min(1).max(80)).max(12),
+    interests: z.array(z.string().trim().min(1).max(80)).max(24),
+    preferredLanguages: z.array(z.enum(["en", "vi"])).min(1).max(2),
+    dietaryPreferences: z.array(z.string().trim().min(1).max(80)).max(12),
+    accessibilityPreferences: z.array(z.string().trim().min(1).max(120)).max(12),
+  })
+  .strict();
+
+export type UpdateUserTravelProfileRequestV1 = z.infer<typeof UpdateUserTravelProfileRequestV1Schema>;
+
+export const UpdateUserTravelProfileResponseV1Schema = z
+  .object({
+    schemaVersion: z.literal(1),
+    profile: UserTravelProfileV1Schema,
+  })
+  .strict();
+
+export type UpdateUserTravelProfileResponseV1 = z.infer<typeof UpdateUserTravelProfileResponseV1Schema>;
+
+export const LocationVisibilityPolicyV1Schema = z
+  .object({
+    schemaVersion: z.literal(1),
+    userId: IdentifierSchema,
+    tripVisibility: z.enum(["group", "leader-only", "paused"]),
+    placePresenceVisibility: VisibilityPolicySchema,
+    retentionPreference: z.enum(["minimal", "standard", "extended"]),
+    blockedUserIds: z.array(IdentifierSchema).max(200),
+    updatedAt: IsoDateTimeSchema,
+  })
+  .strict();
+
+export type LocationVisibilityPolicyV1 = z.infer<typeof LocationVisibilityPolicyV1Schema>;
+
+export const UpdateLocationVisibilityPolicyRequestV1Schema = z
+  .object({
+    schemaVersion: z.literal(1),
+    tripVisibility: z.enum(["group", "leader-only", "paused"]),
+    placePresenceVisibility: VisibilityPolicySchema,
+    retentionPreference: z.enum(["minimal", "standard", "extended"]),
+    blockedUserIds: z.array(IdentifierSchema).max(200),
+  })
+  .strict();
+
+export type UpdateLocationVisibilityPolicyRequestV1 = z.infer<typeof UpdateLocationVisibilityPolicyRequestV1Schema>;
+
+export const UpdateLocationVisibilityPolicyResponseV1Schema = z
+  .object({
+    schemaVersion: z.literal(1),
+    policy: LocationVisibilityPolicyV1Schema,
+  })
+  .strict();
+
+export type UpdateLocationVisibilityPolicyResponseV1 = z.infer<typeof UpdateLocationVisibilityPolicyResponseV1Schema>;
+
+export const PlaceCommunitySummaryV1Schema = z
+  .object({
+    schemaVersion: z.literal(1),
+    tascoPlaceId: TascoPlaceIdSchema,
+    averageRating: z.number().gte(1).lte(5).nullable(),
+    reviewCount: z.number().int().nonnegative(),
+    commentCount: z.number().int().nonnegative(),
+    viewerCanReview: z.boolean(),
+    viewerHasReviewed: z.boolean(),
+    source: z.literal("user-generated"),
+  })
+  .strict();
+
+export type PlaceCommunitySummaryV1 = z.infer<typeof PlaceCommunitySummaryV1Schema>;
+
+export const ListPlacePresenceRequestV1Schema = z
+  .object({
+    schemaVersion: z.literal(1),
+    tascoPlaceId: TascoPlaceIdSchema,
+    limit: z.number().int().min(1).max(50).default(20),
+    cursor: z.string().min(1).max(512).nullable(),
+  })
+  .strict();
+
+export type ListPlacePresenceRequestV1 = z.infer<typeof ListPlacePresenceRequestV1Schema>;
+
 export const BlockUserRequestV1Schema = z
   .object({
     schemaVersion: z.literal(1),
@@ -269,6 +372,9 @@ export const ContentReportV1Schema = z
     details: z.string().max(1_000).nullable(),
     createdAt: IsoDateTimeSchema,
     status: z.enum(["open", "resolved"]),
+    resolvedAt: IsoDateTimeSchema.nullable(),
+    resolvedByUserId: IdentifierSchema.nullable(),
+    resolution: z.enum(["resolve-report", "hide-target", "approve-target"]).nullable(),
   })
   .strict();
 
@@ -292,3 +398,45 @@ export const SetReviewModerationRequestV1Schema = z
   .strict();
 
 export type SetReviewModerationRequestV1 = z.infer<typeof SetReviewModerationRequestV1Schema>;
+
+export const ListModerationReportsRequestV1Schema = z
+  .object({
+    schemaVersion: z.literal(1),
+    status: z.enum(["open", "resolved"]).nullable(),
+    limit: z.number().int().min(1).max(100).default(50),
+    cursor: z.string().min(1).max(512).nullable(),
+  })
+  .strict();
+
+export type ListModerationReportsRequestV1 = z.infer<typeof ListModerationReportsRequestV1Schema>;
+
+export const ListModerationReportsResponseV1Schema = z
+  .object({
+    schemaVersion: z.literal(1),
+    items: z.array(ContentReportV1Schema),
+    nextCursor: z.string().min(1).max(512).nullable(),
+    ordering: z.literal("createdAtDescReportIdAsc"),
+  })
+  .strict();
+
+export type ListModerationReportsResponseV1 = z.infer<typeof ListModerationReportsResponseV1Schema>;
+
+export const ApplyModerationActionRequestV1Schema = z
+  .object({
+    schemaVersion: z.literal(1),
+    reportId: IdentifierSchema,
+    action: z.enum(["resolve-report", "hide-target", "approve-target"]),
+    reviewModerationState: ModerationStateSchema.nullable().optional(),
+  })
+  .strict();
+
+export type ApplyModerationActionRequestV1 = z.infer<typeof ApplyModerationActionRequestV1Schema>;
+
+export const ApplyModerationActionResponseV1Schema = z
+  .object({
+    schemaVersion: z.literal(1),
+    report: ContentReportV1Schema,
+  })
+  .strict();
+
+export type ApplyModerationActionResponseV1 = z.infer<typeof ApplyModerationActionResponseV1Schema>;

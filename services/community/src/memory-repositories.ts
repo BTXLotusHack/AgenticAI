@@ -1,8 +1,10 @@
 import type {
   ContentReportV1,
+  LocationVisibilityPolicyV1,
   PlaceRatingAggregateV1,
   PlaceReviewV1,
   TravelPresenceV1,
+  UserTravelProfileV1,
 } from "./contracts";
 import type {
   AggregateRepository,
@@ -10,10 +12,12 @@ import type {
   CommunityRepositories,
   IdempotencyRecord,
   IdempotencyRepository,
+  PrivacyPolicyRepository,
   ReportRepository,
   ReviewLookupKey,
   ReviewRepository,
   TravelPresenceRepository,
+  UserProfileRepository,
 } from "./repositories";
 
 function reviewKey(key: ReviewLookupKey): string {
@@ -101,6 +105,14 @@ export class MemoryTravelPresenceRepository implements TravelPresenceRepository 
       .map((presence) => structuredClone(presence));
   }
 
+  async listBySharedPlace(tascoPlaceId: string, now: string): Promise<readonly TravelPresenceV1[]> {
+    const parsedNow = Date.parse(now);
+    return [...this.byUser.values()]
+      .filter((presence) => !presence.deletedAt && Date.parse(presence.expiresAt) > parsedNow)
+      .filter((presence) => presence.sharedPlaces.some((place) => place.tascoPlaceId === tascoPlaceId))
+      .map((presence) => structuredClone(presence));
+  }
+
   async save(presence: TravelPresenceV1): Promise<void> {
     const copy = structuredClone(presence);
     this.byUser.set(presence.userId, copy);
@@ -129,6 +141,15 @@ export class MemoryBlockRepository implements BlockRepository {
       if (blockedUsers.has(userId)) blockedBy.add(blockerUserId);
     }
     return [...blockedBy];
+  }
+
+  async setBlockedBy(userId: string, blockedUserIds: readonly string[]): Promise<void> {
+    const next = new Set(blockedUserIds.filter((blockedUserId) => blockedUserId !== userId));
+    if (next.size === 0) {
+      this.blocked.delete(userId);
+      return;
+    }
+    this.blocked.set(userId, next);
   }
 
   async block(blockerUserId: string, blockedUserId: string): Promise<void> {
@@ -160,6 +181,17 @@ export class MemoryReportRepository implements ReportRepository {
     return report ? structuredClone(report) : null;
   }
 
+  async list(status: ContentReportV1["status"] | null): Promise<readonly ContentReportV1[]> {
+    return [...this.reports.values()]
+      .filter((report) => !status || report.status === status)
+      .sort((left, right) => {
+        const createdAtDelta = Date.parse(right.createdAt) - Date.parse(left.createdAt);
+        if (createdAtDelta !== 0) return createdAtDelta;
+        return left.reportId.localeCompare(right.reportId);
+      })
+      .map((report) => structuredClone(report));
+  }
+
   async findOpenByReporterAndTarget(
     reporterUserId: string,
     targetType: ContentReportV1["targetType"],
@@ -180,6 +212,44 @@ export class MemoryReportRepository implements ReportRepository {
 
   async save(report: ContentReportV1): Promise<void> {
     this.reports.set(report.reportId, structuredClone(report));
+  }
+}
+
+export class MemoryUserProfileRepository implements UserProfileRepository {
+  private readonly profiles = new Map<string, UserTravelProfileV1>();
+
+  constructor(initial: readonly UserTravelProfileV1[] = []) {
+    for (const profile of initial) {
+      this.profiles.set(profile.userId, structuredClone(profile));
+    }
+  }
+
+  async get(userId: string): Promise<UserTravelProfileV1 | null> {
+    const profile = this.profiles.get(userId);
+    return profile ? structuredClone(profile) : null;
+  }
+
+  async save(profile: UserTravelProfileV1): Promise<void> {
+    this.profiles.set(profile.userId, structuredClone(profile));
+  }
+}
+
+export class MemoryPrivacyPolicyRepository implements PrivacyPolicyRepository {
+  private readonly policies = new Map<string, LocationVisibilityPolicyV1>();
+
+  constructor(initial: readonly LocationVisibilityPolicyV1[] = []) {
+    for (const policy of initial) {
+      this.policies.set(policy.userId, structuredClone(policy));
+    }
+  }
+
+  async get(userId: string): Promise<LocationVisibilityPolicyV1 | null> {
+    const policy = this.policies.get(userId);
+    return policy ? structuredClone(policy) : null;
+  }
+
+  async save(policy: LocationVisibilityPolicyV1): Promise<void> {
+    this.policies.set(policy.userId, structuredClone(policy));
   }
 }
 
@@ -210,6 +280,8 @@ export function createMemoryCommunityRepositories(options: {
   readonly presence?: readonly TravelPresenceV1[];
   readonly blocks?: ReadonlyArray<{ blockerUserId: string; blockedUserId: string }>;
   readonly reports?: readonly ContentReportV1[];
+  readonly profiles?: readonly UserTravelProfileV1[];
+  readonly privacyPolicies?: readonly LocationVisibilityPolicyV1[];
 } = {}): CommunityRepositories {
   return {
     reviews: new MemoryReviewRepository(options.reviews),
@@ -217,6 +289,8 @@ export function createMemoryCommunityRepositories(options: {
     presence: new MemoryTravelPresenceRepository(options.presence),
     blocks: new MemoryBlockRepository(options.blocks),
     reports: new MemoryReportRepository(options.reports),
+    profiles: new MemoryUserProfileRepository(options.profiles),
+    privacyPolicies: new MemoryPrivacyPolicyRepository(options.privacyPolicies),
     idempotency: new MemoryIdempotencyRepository(),
   };
 }

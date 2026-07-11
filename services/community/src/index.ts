@@ -2,23 +2,39 @@ import { randomUUID } from "node:crypto";
 
 import { calculatePlaceAggregate } from "./aggregates";
 import {
+  ApplyModerationActionRequestV1Schema,
+  ApplyModerationActionResponseV1Schema,
   BlockUserRequestV1Schema,
   CommunityIdentitySchema,
+  ListModerationReportsRequestV1Schema,
+  ListModerationReportsResponseV1Schema,
+  ListPlacePresenceRequestV1Schema,
   ListPlaceReviewsRequestV1Schema,
   ListPlaceReviewsResponseV1Schema,
   ListTravelPresenceRequestV1Schema,
   ListTravelPresenceResponseV1Schema,
+  LocationVisibilityPolicyV1Schema,
+  PlaceCommunitySummaryV1Schema,
   PlaceRatingAggregateV1Schema,
   PlaceReviewV1Schema,
   ReportContentRequestV1Schema,
   ReportContentResponseV1Schema,
   SetReviewModerationRequestV1Schema,
   TravelPresenceV1Schema,
+  UpdateLocationVisibilityPolicyRequestV1Schema,
+  UpdateLocationVisibilityPolicyResponseV1Schema,
+  UpdateUserTravelProfileRequestV1Schema,
+  UpdateUserTravelProfileResponseV1Schema,
   UpsertPlaceReviewRequestV1Schema,
   UpsertPlaceReviewResponseV1Schema,
   UpsertTravelPresenceRequestV1Schema,
   UpsertTravelPresenceResponseV1Schema,
+  UserTravelProfileV1Schema,
+  type ApplyModerationActionRequestV1,
   type CommunityIdentity,
+  type ContentReportV1,
+  type ListModerationReportsRequestV1,
+  type ListPlacePresenceRequestV1,
   type ListPlaceReviewsRequestV1,
   type ListTravelPresenceRequestV1,
   type ParsedCommunityIdentity,
@@ -26,6 +42,8 @@ import {
   type PublicPlaceReviewV1,
   type ReportContentRequestV1,
   type SetReviewModerationRequestV1,
+  type UpdateLocationVisibilityPolicyRequestV1,
+  type UpdateUserTravelProfileRequestV1,
   type UpsertPlaceReviewRequestV1,
   type UpsertTravelPresenceRequestV1,
 } from "./contracts";
@@ -71,8 +89,207 @@ function idempotencyExpiresAt(now: string): string {
   return new Date(Date.parse(now) + 24 * 60 * 60_000).toISOString();
 }
 
+function defaultProfile(userId: string, now: string) {
+  return UserTravelProfileV1Schema.parse({
+    schemaVersion: 1,
+    userId,
+    displayName: userId,
+    homeCity: null,
+    travelStyles: [],
+    interests: [],
+    preferredLanguages: ["en"],
+    dietaryPreferences: [],
+    accessibilityPreferences: [],
+    updatedAt: now,
+  });
+}
+
+function defaultPrivacyPolicy(userId: string, now: string) {
+  return LocationVisibilityPolicyV1Schema.parse({
+    schemaVersion: 1,
+    userId,
+    tripVisibility: "group",
+    placePresenceVisibility: "private",
+    retentionPreference: "standard",
+    blockedUserIds: [],
+    updatedAt: now,
+  });
+}
+
+function reportAfterCursor(report: ContentReportV1, cursor: string | null): boolean {
+  if (!cursor) return true;
+  return report.reportId.localeCompare(cursor) > 0;
+}
+
 export class LoopinCommunityApplication {
   constructor(private readonly dependencies: CommunityDependencies) {}
+
+  async getMyProfile(identity: CommunityIdentity) {
+    const parsedIdentity = CommunityIdentitySchema.parse(identity);
+    const now = this.dependencies.clock.now();
+    return this.dependencies.repositories.profiles.get(parsedIdentity.userId)
+      ?? defaultProfile(parsedIdentity.userId, now);
+  }
+
+  async updateMyProfile(
+    identity: CommunityIdentity,
+    rawRequest: UpdateUserTravelProfileRequestV1,
+  ) {
+    const parsedIdentity = CommunityIdentitySchema.parse(identity);
+    const request = UpdateUserTravelProfileRequestV1Schema.parse(rawRequest);
+    if (request.userId && request.userId !== parsedIdentity.userId) {
+      throw new CommunityError("invalid-request", "Profiles can only be updated for the authenticated user.");
+    }
+    const now = this.dependencies.clock.now();
+    const profile = UserTravelProfileV1Schema.parse({
+      schemaVersion: 1,
+      userId: parsedIdentity.userId,
+      displayName: request.displayName.trim(),
+      homeCity: request.homeCity?.trim() || null,
+      travelStyles: request.travelStyles.map((item) => item.trim()),
+      interests: request.interests.map((item) => item.trim()),
+      preferredLanguages: request.preferredLanguages,
+      dietaryPreferences: request.dietaryPreferences.map((item) => item.trim()),
+      accessibilityPreferences: request.accessibilityPreferences.map((item) => item.trim()),
+      updatedAt: now,
+    });
+    await this.dependencies.repositories.profiles.save(profile);
+    return UpdateUserTravelProfileResponseV1Schema.parse({ schemaVersion: 1, profile });
+  }
+
+  async getMyPrivacy(identity: CommunityIdentity) {
+    const parsedIdentity = CommunityIdentitySchema.parse(identity);
+    const now = this.dependencies.clock.now();
+    return this.dependencies.repositories.privacyPolicies.get(parsedIdentity.userId)
+      ?? defaultPrivacyPolicy(parsedIdentity.userId, now);
+  }
+
+  async updateMyPrivacy(
+    identity: CommunityIdentity,
+    rawRequest: UpdateLocationVisibilityPolicyRequestV1,
+  ) {
+    const parsedIdentity = CommunityIdentitySchema.parse(identity);
+    const request = UpdateLocationVisibilityPolicyRequestV1Schema.parse(rawRequest);
+    if (request.blockedUserIds.includes(parsedIdentity.userId)) {
+      throw new CommunityError("invalid-request", "Users cannot block themselves.");
+    }
+    const now = this.dependencies.clock.now();
+    const blockedUserIds = [...new Set(request.blockedUserIds)].sort();
+    const policy = LocationVisibilityPolicyV1Schema.parse({
+      schemaVersion: 1,
+      userId: parsedIdentity.userId,
+      tripVisibility: request.tripVisibility,
+      placePresenceVisibility: request.placePresenceVisibility,
+      retentionPreference: request.retentionPreference,
+      blockedUserIds,
+      updatedAt: now,
+    });
+    await this.dependencies.repositories.privacyPolicies.save(policy);
+    await this.dependencies.repositories.blocks.setBlockedBy(parsedIdentity.userId, blockedUserIds);
+    return UpdateLocationVisibilityPolicyResponseV1Schema.parse({ schemaVersion: 1, policy });
+  }
+
+  async getPlaceCommunitySummary(identity: CommunityIdentity, tascoPlaceId: string) {
+    const parsedIdentity = CommunityIdentitySchema.parse(identity);
+    const now = this.dependencies.clock.now();
+    const reviews = await this.dependencies.repositories.reviews.listByPlace(tascoPlaceId);
+    const aggregate = calculatePlaceAggregate(tascoPlaceId, reviews, now);
+    const viewerReview = await this.dependencies.repositories.reviews.getByUserAndPlace({
+      tascoPlaceId,
+      userId: parsedIdentity.userId,
+    });
+    const commentCount = reviews.filter((review) => (
+      !review.deletedAt
+      && review.moderationState === "approved"
+      && (!review.expiresAt || Date.parse(review.expiresAt) > Date.parse(now))
+      && review.comment !== null
+      && review.comment.trim().length > 0
+    )).length;
+    return PlaceCommunitySummaryV1Schema.parse({
+      schemaVersion: 1,
+      tascoPlaceId,
+      averageRating: aggregate.averageRating,
+      reviewCount: aggregate.reviewCount,
+      commentCount,
+      viewerCanReview: true,
+      viewerHasReviewed: Boolean(viewerReview && !viewerReview.deletedAt),
+      source: "user-generated",
+    });
+  }
+
+  async listPlacePresence(identity: CommunityIdentity, rawRequest: ListPlacePresenceRequestV1) {
+    const parsedIdentity = CommunityIdentitySchema.parse(identity);
+    const request = ListPlacePresenceRequestV1Schema.parse(rawRequest);
+    const now = this.dependencies.clock.now();
+    const cursor = request.cursor ? decodePresenceCursor(request.cursor) : null;
+    const privacyContext = createViewerPrivacyContext(
+      parsedIdentity.userId,
+      new Set(await this.dependencies.repositories.blocks.listBlockedBy(parsedIdentity.userId)),
+      new Set(await this.dependencies.repositories.blocks.listBlockedUsersOf(parsedIdentity.userId)),
+    );
+    const page = (await this.dependencies.repositories.presence.listBySharedPlace(request.tascoPlaceId, now))
+      .filter((presence) => presence.visibility === "public")
+      .filter((presence) => authorVisibleToViewer(presence.userId, privacyContext))
+      .sort(comparePresence)
+      .map((presence) => toPublicPresence(presence, now))
+      .filter((presence): presence is NonNullable<typeof presence> => presence !== null)
+      .filter((presence) => (cursor ? presenceAfterCursor(presence, cursor) : true))
+      .slice(0, request.limit);
+
+    for (const item of page) assertPublicPayloadHasNoPrivateFields(item);
+
+    return ListTravelPresenceResponseV1Schema.parse({
+      schemaVersion: 1,
+      items: page,
+      nextCursor: page.length === request.limit && page.length > 0 ? encodePresenceCursor(page.at(-1)!) : null,
+      ordering: PRESENCE_ORDERING,
+    });
+  }
+
+  async listModerationReports(identity: CommunityIdentity, rawRequest: ListModerationReportsRequestV1) {
+    const parsedIdentity = CommunityIdentitySchema.parse(identity);
+    requireModerator(parsedIdentity);
+    const request = ListModerationReportsRequestV1Schema.parse(rawRequest);
+    const page = (await this.dependencies.repositories.reports.list(request.status))
+      .filter((report) => reportAfterCursor(report, request.cursor))
+      .slice(0, request.limit);
+    return ListModerationReportsResponseV1Schema.parse({
+      schemaVersion: 1,
+      items: page,
+      nextCursor: page.length === request.limit && page.length > 0 ? page.at(-1)!.reportId : null,
+      ordering: "createdAtDescReportIdAsc",
+    });
+  }
+
+  async applyModerationAction(identity: CommunityIdentity, rawRequest: ApplyModerationActionRequestV1) {
+    const parsedIdentity = CommunityIdentitySchema.parse(identity);
+    requireModerator(parsedIdentity);
+    const request = ApplyModerationActionRequestV1Schema.parse(rawRequest);
+    const now = this.dependencies.clock.now();
+    const report = await this.dependencies.repositories.reports.getById(request.reportId);
+    if (!report) throw new CommunityError("not-found", "The report does not exist.");
+    if (report.targetType === "place-review" && request.reviewModerationState) {
+      const review = await this.dependencies.repositories.reviews.getById(report.targetId);
+      if (review && !review.deletedAt) {
+        const updatedReview = PlaceReviewV1Schema.parse({
+          ...review,
+          moderationState: request.reviewModerationState,
+          updatedAt: now,
+        });
+        await this.dependencies.repositories.reviews.save(updatedReview);
+        await this.refreshAggregate(updatedReview.tascoPlaceId, now);
+      }
+    }
+    const updated = {
+      ...report,
+      status: "resolved" as const,
+      resolvedAt: now,
+      resolvedByUserId: parsedIdentity.userId,
+      resolution: request.action,
+    };
+    await this.dependencies.repositories.reports.save(updated);
+    return ApplyModerationActionResponseV1Schema.parse({ schemaVersion: 1, report: updated });
+  }
 
   async upsertPlaceReview(
     identity: CommunityIdentity,
@@ -400,6 +617,9 @@ export class LoopinCommunityApplication {
       details: request.details,
       createdAt: now,
       status: "open" as const,
+      resolvedAt: null,
+      resolvedByUserId: null,
+      resolution: null,
     };
     await this.dependencies.repositories.reports.save(report);
     await this.dependencies.repositories.idempotency.save(scope, request.idempotencyKey, {
