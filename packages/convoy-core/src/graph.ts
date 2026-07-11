@@ -189,6 +189,7 @@ export function calculateGraph(
 
   const candidateGraph: ConvoyGraph = {
     tripId: orderedNodes[0]?.tripId ?? previous?.graph.tripId ?? "unknown",
+    leaderMemberId: nodes.find((node) => node.role === "leader")?.memberId ?? previous?.graph.leaderMemberId ?? null,
     graphRevision: previous?.graph.graphRevision ?? 1,
     calculatedAt,
     overallState,

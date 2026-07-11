@@ -99,6 +99,7 @@ export type ConvoyComponent = {
 
 export type ConvoyGraph = {
   tripId: string;
+  leaderMemberId: string | null;
   graphRevision: number;
   calculatedAt: string;
   overallState: "together" | "stretched" | "split" | "degraded";
