@@ -19,9 +19,9 @@ export const MOCK_PLACES: readonly PlaceResult[] = [
   {
     id: TASCO_PLACE_IDS.minhChauRestStop,
     type: "poi",
-    name: "Minh Châu Rest Stop",
-    label: "Minh Châu Rest Stop",
-    address: "QL5, Km 62, Hưng Yên",
+    name: "Minh Chau Rest Stop",
+    label: "Minh Chau Rest Stop",
+    address: "QL5, Km 62, Hung Yen",
     category: "rest_stop",
     coordinates: { lat: 20.8724, lon: 106.0518 },
     distanceMeters: 0,
@@ -30,14 +30,14 @@ export const MOCK_PLACES: readonly PlaceResult[] = [
     tags: ["rest_stop", "parking", "restroom", "fuel"],
     rating: 4.4,
     openingHours: "00:00-24:00",
-    aiSummary: "Trạm nghỉ an toàn trên tuyến Hà Nội - Hạ Long, phù hợp cho đoàn xe tụ họp.",
+    aiSummary: "Safe rest stop on the Ha Noi to Ha Long route for convoy regrouping.",
   },
   {
     id: TASCO_PLACE_IDS.highwayShoulderKm62,
     type: "poi",
     name: "Highway Shoulder KM62",
     label: "Highway Shoulder KM62",
-    address: "QL5, Km 62, Hưng Yên",
+    address: "QL5, Km 62, Hung Yen",
     category: "road_shoulder",
     coordinates: { lat: 20.8719, lon: 106.0509 },
     distanceMeters: 120,
@@ -46,14 +46,14 @@ export const MOCK_PLACES: readonly PlaceResult[] = [
     tags: ["shoulder", "unsafe_stop"],
     rating: 1.2,
     openingHours: "00:00-24:00",
-    aiSummary: "Lề đường cao tốc, không phù hợp để tụ tập đoàn xe.",
+    aiSummary: "Road shoulder, unsuitable for a convoy regroup stop.",
   },
   {
     id: TASCO_PLACE_IDS.haLongServiceArea,
     type: "poi",
-    name: "Hạ Long Service Area",
-    label: "Hạ Long Service Area",
-    address: "QL18, Hạ Long, Quảng Ninh",
+    name: "Ha Long Service Area",
+    label: "Ha Long Service Area",
+    address: "QL18, Ha Long, Quang Ninh",
     category: "rest_stop",
     coordinates: { lat: 20.9571, lon: 107.0426 },
     distanceMeters: 0,
@@ -62,14 +62,14 @@ export const MOCK_PLACES: readonly PlaceResult[] = [
     tags: ["rest_stop", "parking", "fuel"],
     rating: 4.1,
     openingHours: "06:00-22:00",
-    aiSummary: "Khu dịch vụ gần Hạ Long, xa hơn so với điểm tụ tập tối ưu.",
+    aiSummary: "Service area near Ha Long with parking and fuel.",
   },
   {
     id: TASCO_PLACE_IDS.coffeeHouse,
     type: "poi",
     name: "The Coffee House",
     label: "The Coffee House",
-    address: "Thái Hà, Đống Đa, Hà Nội",
+    address: "Thai Ha, Dong Da, Ha Noi",
     category: "cafe",
     coordinates: { lat: 21.0129, lon: 105.8194 },
     distanceMeters: 1800,
@@ -82,9 +82,9 @@ export const MOCK_PLACES: readonly PlaceResult[] = [
   {
     id: TASCO_PLACE_IDS.hoanKiemLake,
     type: "poi",
-    name: "Hồ Hoàn Kiếm",
-    label: "Hồ Hoàn Kiếm",
-    address: "Hoàn Kiếm, Hà Nội",
+    name: "Hoan Kiem Lake",
+    label: "Hoan Kiem Lake",
+    address: "Hoan Kiem, Ha Noi",
     category: "landmark",
     coordinates: { lat: 21.0287, lon: 105.8521 },
     distanceMeters: 950,
@@ -99,7 +99,7 @@ export const MOCK_PLACES: readonly PlaceResult[] = [
     type: "poi",
     name: "Landmark 72",
     label: "Landmark 72",
-    address: "Phạm Hùng, Nam Từ Liêm, Hà Nội",
+    address: "Pham Hung, Nam Tu Liem, Ha Noi",
     category: "landmark",
     coordinates: { lat: 21.0166, lon: 105.7833 },
     distanceMeters: 420,
@@ -108,14 +108,14 @@ export const MOCK_PLACES: readonly PlaceResult[] = [
     tags: ["building", "landmark"],
     rating: 4.5,
     openingHours: "09:00-22:00",
-    aiSummary: "Large mixed-use landmark complex in Nam Từ Liêm.",
+    aiSummary: "Large mixed-use landmark complex in Nam Tu Liem.",
   },
   {
     id: TASCO_PLACE_IDS.phamHung,
     type: "address",
-    name: "Phạm Hùng",
-    label: "Phạm Hùng, Nam Từ Liêm",
-    address: "Phạm Hùng, Nam Từ Liêm, Hà Nội",
+    name: "Pham Hung",
+    label: "Pham Hung, Nam Tu Liem",
+    address: "Pham Hung, Nam Tu Liem, Ha Noi",
     category: "address",
     coordinates: { lat: 21.0166, lon: 105.7833 },
     distanceMeters: 12,
@@ -198,39 +198,57 @@ export function buildRankQuery(query: {
   };
 }
 
-export function buildGoldenRoutes(requestedAlternates: number): RouteResult[] {
-  const { origin, destination } = GOLDEN_ROUTE_R001;
+function routeCoordinates(locations: readonly { lat: number; lon: number }[]): Array<[number, number]> {
+  return locations.map((location) => [location.lon, location.lat]);
+}
+
+function routeDistanceMeters(locations: readonly { lat: number; lon: number }[]): number {
+  let total = 0;
+  for (let index = 1; index < locations.length; index += 1) {
+    total += haversineMeters(locations[index - 1]!, locations[index]!);
+  }
+  return total;
+}
+
+function routeDurationSeconds(distanceMeters: number): number {
+  return Math.max(60, Math.round((distanceMeters / 1_000 / 60) * 3_600));
+}
+
+function alternateCoordinates(locations: readonly { lat: number; lon: number }[]): Array<[number, number]> {
+  return locations.map((location, index) => {
+    if (index === 0 || index === locations.length - 1) return [location.lon, location.lat];
+    return [
+      Math.round((location.lon + 0.015) * 10_000) / 10_000,
+      Math.round((location.lat + 0.01) * 10_000) / 10_000,
+    ];
+  });
+}
+
+export function buildGoldenRoutes(
+  requestedAlternates: number,
+  locations: readonly { lat: number; lon: number }[] = [GOLDEN_ROUTE_R001.origin, GOLDEN_ROUTE_R001.destination],
+): RouteResult[] {
+  const distanceMeters = routeDistanceMeters(locations);
+  const durationSeconds = routeDurationSeconds(distanceMeters);
   const primaryGeometry = {
     type: "LineString" as const,
-    coordinates: [
-      [origin.lon, origin.lat],
-      [105.92, 21.01],
-      [106.05, 20.87],
-      [106.78, 20.93],
-      [destination.lon, destination.lat],
-    ] as Array<[number, number]>,
+    coordinates: routeCoordinates(locations),
   };
   const alternateGeometry = {
     type: "LineString" as const,
-    coordinates: [
-      [origin.lon, origin.lat],
-      [105.98, 21.04],
-      [106.12, 20.9],
-      [106.55, 20.94],
-      [destination.lon, destination.lat],
-    ] as Array<[number, number]>,
+    coordinates: alternateCoordinates(locations),
   };
   const routes: RouteResult[] = [
     {
       routeId: "route:r001-primary",
       sourceIndex: 0,
-      summary: { distanceMeters: 156_000, durationSeconds: 9_000 },
+      summary: { distanceMeters, durationSeconds },
       geometry: primaryGeometry,
       maneuvers: [
         {
-          instruction: "Tiếp tục an toàn theo QL5 về phía Hạ Long.",
-          distanceMeters: 156_000,
-          durationSeconds: 9_000,
+          instruction: "Continue safely on the requested route.",
+          distanceMeters,
+          durationSeconds,
           beginShapeIndex: 0,
           endShapeIndex: primaryGeometry.coordinates.length - 1,
           streetNames: ["QL5"],
@@ -239,19 +257,21 @@ export function buildGoldenRoutes(requestedAlternates: number): RouteResult[] {
     },
   ];
   if (requestedAlternates >= 1) {
+    const alternateDistanceMeters = Math.round(distanceMeters * 1.04);
+    const alternateDurationSeconds = Math.round(durationSeconds * 1.05);
     routes.push({
       routeId: "route:r001-alternate-1",
       sourceIndex: 1,
-      summary: { distanceMeters: 162_500, durationSeconds: 9_600 },
+      summary: { distanceMeters: alternateDistanceMeters, durationSeconds: alternateDurationSeconds },
       geometry: alternateGeometry,
       maneuvers: [
         {
-          instruction: "Đi theo tuyến thay thế qua Hưng Yên với ít điểm dừng hơn.",
-          distanceMeters: 162_500,
-          durationSeconds: 9_600,
+          instruction: "Use the alternate route if it remains appropriate for the convoy.",
+          distanceMeters: alternateDistanceMeters,
+          durationSeconds: alternateDurationSeconds,
           beginShapeIndex: 0,
           endShapeIndex: alternateGeometry.coordinates.length - 1,
-          streetNames: ["QL5", "Đường vành đai 3"],
+          streetNames: ["QL5", "Ring Road 3"],
         },
       ],
     });

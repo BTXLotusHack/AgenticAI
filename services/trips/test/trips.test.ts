@@ -11,6 +11,7 @@ import {
   FixedClock,
   LoopinTripsApplication,
   MemoryTripPlanningRepository,
+  createTripsHttpHandler,
 } from "../src/index.js";
 
 const now = "2026-07-19T08:00:00.000Z";
@@ -52,7 +53,7 @@ describe("LoopinTripsApplication", () => {
           schemaVersion: 1,
           dayId: "DAY002",
           stopId: "STOP999",
-          place: { ...GOLDEN_PLACES.hanoiOldQuarter, tags: [...(GOLDEN_PLACES.hanoiOldQuarter.tags ?? [])] },
+          place: GOLDEN_PLACES.hanoiOldQuarter,
         },
       ),
     ).rejects.toMatchObject({ code: "duplicate-stop" });
@@ -97,6 +98,16 @@ describe("LoopinTripsApplication", () => {
     expect(completed.lifecycle).toBe("completed");
   });
 
+  it("allows expired idempotency keys to be reused for later commands", async () => {
+    const { app, clock } = setup();
+    await app.publishTrip({ userId: "USER001" }, "PLAN001", { idempotencyKey: "reuse-after-expiry" });
+    clock.set("2026-07-21T09:00:00.000Z");
+
+    await expect(
+      app.activateTrip({ userId: "USER001" }, "PLAN001", { idempotencyKey: "reuse-after-expiry" }),
+    ).resolves.toMatchObject({ lifecycle: "active" });
+  });
+
   it("detects concurrent updates via optimistic versioning", async () => {
     const repository = new MemoryTripPlanningRepository([GOLDEN_PLANNED_TRIP]);
     const current = (await repository.get("PLAN001"))!;
@@ -124,7 +135,7 @@ describe("LoopinTripsApplication", () => {
         anchorCoordinates: GOLDEN_PLACES.hanoiOldQuarter.coordinates,
       },
     );
-    expect(recommendations[0]?.explanation).toContain("tasco:poi:");
+    expect(recommendations[0]?.explanation).toContain("poi:");
   });
 
   it("blocks itinerary edits after activation", async () => {
@@ -140,17 +151,69 @@ describe("LoopinTripsApplication", () => {
           dayId: "DAY002",
           stopId: "STOP999",
           place: {
-            schemaVersion: 1,
-            tascoPlaceId: "tasco:poi:POI999",
+            id: "poi:late-add",
+            provider: "tasco",
             name: "Late add",
-            label: "Late add",
             address: "Somewhere",
-            category: "Viewpoint",
             coordinates: { lat: 21, lon: 106 },
-            source: "tasco",
+            categories: ["viewpoint"],
+            sourceVersion: "tasco-mock-2026-06-25",
           },
         },
       ),
     ).rejects.toMatchObject({ code: "invalid-lifecycle" });
+  });
+});
+
+describe("Trips HTTP handler", () => {
+  it("routes create, list, invite, join and route refresh operations through validated service contracts", async () => {
+    const { app } = setup();
+    const handle = createTripsHttpHandler(app);
+    const identity = { userId: "USER001" };
+
+    const list = await handle({ method: "GET", path: "/v1/trips", identity });
+    const listBody = list.body as { items: Array<{ tripId: string }> };
+    expect(list.status).toBe(200);
+    expect(listBody.items[0]?.tripId).toBe("PLAN001");
+
+    const invite = await handle({
+      method: "POST",
+      path: "/v1/trips/PLAN001/invites",
+      identity,
+      body: { idempotencyKey: "invite-1" },
+    });
+    const inviteBody = invite.body as { joinCode: string };
+    expect(invite.status).toBe(201);
+    expect(inviteBody.joinCode).toMatch(/^[A-HJ-NP-Z2-9]{16}$/);
+
+    const join = await handle({
+      method: "POST",
+      path: "/v1/trips/join",
+      identity: { userId: "USER004" },
+      body: { schemaVersion: 1, joinCode: inviteBody.joinCode, displayName: "Guest Driver" },
+    });
+    const joinBody = join.body as { result: { schemaVersion: 1; tripId: string; memberId: string; role: string; consentRequirements: string[] } };
+    expect(join.status).toBe(200);
+    expect(joinBody.result).toMatchObject({
+      schemaVersion: 1,
+      tripId: "PLAN001",
+      memberId: "USER004",
+      role: "member",
+      consentRequirements: ["location-while-driving", "driver-alerts"],
+    });
+
+    const route = await handle({
+      method: "POST",
+      path: "/v1/trips/PLAN001/routes/refresh",
+      identity,
+      body: { idempotencyKey: "route-1" },
+    });
+    const routeBody = route.body as { route: { stopPlaceIds: string[] } };
+    expect(route.status).toBe(200);
+    expect(routeBody.route.stopPlaceIds).toEqual([
+      "poi:hanoi-old-quarter",
+      "poi:poi001-minh-chau-rest-stop",
+      "poi:ha-long-bai-chay",
+    ]);
   });
 });

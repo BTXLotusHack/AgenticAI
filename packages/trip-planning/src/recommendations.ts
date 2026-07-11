@@ -29,14 +29,14 @@ function normalized(value: number): number {
 
 function categoryMatchScore(place: TascoPlaceReferenceV1, preferences: TripPreferencesV1): number {
   if (preferences.interestTags.length === 0) return 0.5;
-  const haystack = `${place.category} ${(place.tags ?? []).join(" ")}`.toLowerCase();
+  const haystack = place.categories.join(" ").toLowerCase();
   const matches = preferences.interestTags.filter((tag) => haystack.includes(tag.toLowerCase()));
   return normalized(matches.length / preferences.interestTags.length);
 }
 
 function ratingScore(place: TascoPlaceReferenceV1): number {
-  if (place.rating === undefined) return 0.4;
-  return normalized(place.rating / 5);
+  if (place.ratingSummary === undefined) return 0.4;
+  return normalized(place.ratingSummary.averageRating / 5);
 }
 
 function distanceFitScore(place: TascoPlaceReferenceV1, anchor?: TascoCoordinates): number {
@@ -48,7 +48,7 @@ function distanceFitScore(place: TascoPlaceReferenceV1, anchor?: TascoCoordinate
 }
 
 function preferenceTagScore(place: TascoPlaceReferenceV1, preferences: TripPreferencesV1): number {
-  const tags = new Set((place.tags ?? []).map((tag) => tag.toLowerCase()));
+  const tags = new Set(place.categories.map((tag) => tag.toLowerCase()));
   if (tags.size === 0 || preferences.interestTags.length === 0) return 0.3;
   const overlap = preferences.interestTags.filter((tag) => tags.has(tag.toLowerCase())).length;
   return normalized(overlap / preferences.interestTags.length);
@@ -75,7 +75,7 @@ function explainScore(place: TascoPlaceReferenceV1, breakdown: RecommendationSco
   if (breakdown.distanceFit >= 0.15) parts.push("fits the current route anchor");
   if (breakdown.preferenceTag >= 0.1) parts.push("aligns with preference tags");
   if (parts.length === 0) parts.push("eligible Tasco-backed candidate");
-  return `${place.name} (${place.tascoPlaceId}): ${parts.join(", ")}.`;
+  return `${place.name} (${place.id}): ${parts.join(", ")}.`;
 }
 
 export function rankPlaceRecommendations(input: {
@@ -88,7 +88,7 @@ export function rankPlaceRecommendations(input: {
   const validated: TascoPlaceReferenceV1[] = [];
   for (const candidate of input.candidates) {
     validatePlaceReference(candidate);
-    if (validated.some((existing) => existing.tascoPlaceId === candidate.tascoPlaceId)) continue;
+    if (validated.some((existing) => existing.id === candidate.id)) continue;
     validated.push(candidate);
   }
   if (validated.length === 0) {
@@ -102,7 +102,7 @@ export function rankPlaceRecommendations(input: {
       return {
         schemaVersion: 1 as const,
         recommendationId: `${input.recommendationIdPrefix ?? input.tripId}:rec:${index + 1}`,
-        tascoPlaceId: place.tascoPlaceId,
+        tascoPlaceId: place.id,
         place,
         score: round(weightedScore / Object.values(TRIP_PLANNING_POLICY_V1.recommendationWeights).reduce((a, b) => a + b, 0)),
         weightedScore,

@@ -1,0 +1,372 @@
+{
+  "$id": "https://schemas.loopin.vn/contracts/tasco-route-preview-v1.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "properties": {
+    "destination": {
+      "additionalProperties": false,
+      "properties": {
+        "address": {
+          "maxLength": 500,
+          "minLength": 1,
+          "type": "string"
+        },
+        "categories": {
+          "items": {
+            "maxLength": 120,
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 16,
+          "minItems": 1,
+          "type": "array"
+        },
+        "coordinates": {
+          "additionalProperties": false,
+          "properties": {
+            "lat": {
+              "maximum": 90,
+              "minimum": -90,
+              "type": "number"
+            },
+            "lon": {
+              "maximum": 180,
+              "minimum": -180,
+              "type": "number"
+            }
+          },
+          "required": [
+            "lat",
+            "lon"
+          ],
+          "type": "object"
+        },
+        "id": {
+          "maxLength": 160,
+          "minLength": 1,
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 240,
+          "minLength": 1,
+          "type": "string"
+        },
+        "provider": {
+          "const": "tasco",
+          "type": "string"
+        },
+        "ratingSummary": {
+          "additionalProperties": false,
+          "properties": {
+            "averageRating": {
+              "maximum": 5,
+              "minimum": 0,
+              "type": "number"
+            },
+            "reviewCount": {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            },
+            "source": {
+              "const": "tasco",
+              "type": "string"
+            }
+          },
+          "required": [
+            "averageRating",
+            "reviewCount",
+            "source"
+          ],
+          "type": "object"
+        },
+        "sourceVersion": {
+          "maxLength": 160,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "provider",
+        "name",
+        "address",
+        "coordinates",
+        "categories",
+        "sourceVersion"
+      ],
+      "type": "object"
+    },
+    "geometry": {
+      "additionalProperties": false,
+      "properties": {
+        "coordinates": {
+          "items": {
+            "items": [
+              {
+                "maximum": 180,
+                "minimum": -180,
+                "type": "number"
+              },
+              {
+                "maximum": 90,
+                "minimum": -90,
+                "type": "number"
+              }
+            ],
+            "type": "array"
+          },
+          "minItems": 2,
+          "type": "array"
+        },
+        "type": {
+          "const": "LineString",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "coordinates"
+      ],
+      "type": "object"
+    },
+    "origin": {
+      "additionalProperties": false,
+      "properties": {
+        "address": {
+          "maxLength": 500,
+          "minLength": 1,
+          "type": "string"
+        },
+        "categories": {
+          "items": {
+            "maxLength": 120,
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 16,
+          "minItems": 1,
+          "type": "array"
+        },
+        "coordinates": {
+          "additionalProperties": false,
+          "properties": {
+            "lat": {
+              "maximum": 90,
+              "minimum": -90,
+              "type": "number"
+            },
+            "lon": {
+              "maximum": 180,
+              "minimum": -180,
+              "type": "number"
+            }
+          },
+          "required": [
+            "lat",
+            "lon"
+          ],
+          "type": "object"
+        },
+        "id": {
+          "maxLength": 160,
+          "minLength": 1,
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 240,
+          "minLength": 1,
+          "type": "string"
+        },
+        "provider": {
+          "const": "tasco",
+          "type": "string"
+        },
+        "ratingSummary": {
+          "additionalProperties": false,
+          "properties": {
+            "averageRating": {
+              "maximum": 5,
+              "minimum": 0,
+              "type": "number"
+            },
+            "reviewCount": {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            },
+            "source": {
+              "const": "tasco",
+              "type": "string"
+            }
+          },
+          "required": [
+            "averageRating",
+            "reviewCount",
+            "source"
+          ],
+          "type": "object"
+        },
+        "sourceVersion": {
+          "maxLength": 160,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "provider",
+        "name",
+        "address",
+        "coordinates",
+        "categories",
+        "sourceVersion"
+      ],
+      "type": "object"
+    },
+    "provider": {
+      "const": "tasco",
+      "type": "string"
+    },
+    "routeId": {
+      "maxLength": 160,
+      "minLength": 1,
+      "type": "string"
+    },
+    "sourceVersion": {
+      "maxLength": 160,
+      "minLength": 1,
+      "type": "string"
+    },
+    "summary": {
+      "additionalProperties": false,
+      "properties": {
+        "distanceMeters": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "durationSeconds": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "distanceMeters",
+        "durationSeconds"
+      ],
+      "type": "object"
+    },
+    "waypoints": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "address": {
+            "maxLength": 500,
+            "minLength": 1,
+            "type": "string"
+          },
+          "categories": {
+            "items": {
+              "maxLength": 120,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 16,
+            "minItems": 1,
+            "type": "array"
+          },
+          "coordinates": {
+            "additionalProperties": false,
+            "properties": {
+              "lat": {
+                "maximum": 90,
+                "minimum": -90,
+                "type": "number"
+              },
+              "lon": {
+                "maximum": 180,
+                "minimum": -180,
+                "type": "number"
+              }
+            },
+            "required": [
+              "lat",
+              "lon"
+            ],
+            "type": "object"
+          },
+          "id": {
+            "maxLength": 160,
+            "minLength": 1,
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 240,
+            "minLength": 1,
+            "type": "string"
+          },
+          "provider": {
+            "const": "tasco",
+            "type": "string"
+          },
+          "ratingSummary": {
+            "additionalProperties": false,
+            "properties": {
+              "averageRating": {
+                "maximum": 5,
+                "minimum": 0,
+                "type": "number"
+              },
+              "reviewCount": {
+                "maximum": 9007199254740991,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "source": {
+                "const": "tasco",
+                "type": "string"
+              }
+            },
+            "required": [
+              "averageRating",
+              "reviewCount",
+              "source"
+            ],
+            "type": "object"
+          },
+          "sourceVersion": {
+            "maxLength": 160,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "provider",
+          "name",
+          "address",
+          "coordinates",
+          "categories",
+          "sourceVersion"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    }
+  },
+  "required": [
+    "routeId",
+    "provider",
+    "origin",
+    "destination",
+    "waypoints",
+    "summary",
+    "geometry",
+    "sourceVersion"
+  ],
+  "title": "TascoRoutePreviewV1",
+  "type": "object",
+  "x-schema-version": 1
+}

@@ -1,10 +1,20 @@
 {
   "schemaVersion": 1,
   "tripId": "PLAN001",
-  "name": "Hà Nội → Hạ Long Family Trip",
+  "name": "Ha Noi to Ha Long Family Trip",
+  "description": "Two-day family convoy with a workbook-backed rest stop.",
   "lifecycle": "draft",
   "version": 1,
   "ownerUserId": "USER001",
+  "collaborators": [
+    {
+      "schemaVersion": 1,
+      "userId": "USER001",
+      "displayName": "Anh Minh",
+      "role": "owner",
+      "joinedAt": "2026-07-19T08:00:00.000Z"
+    }
+  ],
   "preferences": {
     "schemaVersion": 1,
     "travelMode": "auto",
@@ -29,29 +39,46 @@
         "schemaVersion": 1,
         "dayId": "DAY001",
         "date": "2026-07-20",
-        "label": "Hà Nội departure",
+        "label": "Ha Noi departure",
         "stops": [
           {
             "schemaVersion": 1,
             "stopId": "STOP001",
-            "tascoPlaceId": "tasco:poi:HN-OLD-QUARTER",
+            "tascoPlaceId": "poi:hanoi-old-quarter",
             "place": {
-              "schemaVersion": 1,
-              "tascoPlaceId": "tasco:poi:HN-OLD-QUARTER",
-              "name": "Hoàn Kiếm, Hà Nội",
-              "label": "Hoàn Kiếm, Hà Nội",
-              "address": "Hoàn Kiếm, Hà Nội, Việt Nam",
-              "category": "City Center",
+              "id": "poi:hanoi-old-quarter",
+              "provider": "tasco",
+              "name": "Ha Noi Old Quarter",
+              "address": "Hoan Kiem, Ha Noi, Viet Nam",
               "coordinates": { "lat": 21.0285, "lon": 105.8542 },
-              "source": "tasco",
-              "rating": 4.6,
-              "tags": ["culture", "food"]
+              "categories": ["city", "culture", "food"],
+              "ratingSummary": { "averageRating": 4.6, "reviewCount": 0, "source": "tasco" },
+              "sourceVersion": "tasco-mock-2026-06-25"
             },
             "sequence": 1,
             "dwellMinutes": 30
+          },
+          {
+            "schemaVersion": 1,
+            "stopId": "STOP002",
+            "tascoPlaceId": "poi:poi001-minh-chau-rest-stop",
+            "place": {
+              "id": "poi:poi001-minh-chau-rest-stop",
+              "provider": "tasco",
+              "name": "Minh Chau Rest Stop",
+              "address": "QL5, Hai Duong, Viet Nam",
+              "coordinates": { "lat": 20.95, "lon": 106.2 },
+              "categories": ["rest_stop", "rest", "parking"],
+              "ratingSummary": { "averageRating": 4.2, "reviewCount": 0, "source": "tasco" },
+              "sourceVersion": "tasco-mock-2026-06-25"
+            },
+            "sequence": 2,
+            "dwellMinutes": 20
           }
         ]
       }
     ]
-  }
+  },
+  "createdAt": "2026-07-19T08:00:00.000Z",
+  "updatedAt": "2026-07-19T08:00:00.000Z"
 }

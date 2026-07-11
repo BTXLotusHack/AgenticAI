@@ -3,10 +3,15 @@ import { z } from "zod";
 import {
   ConvoyGraphSchema,
   EventEnvelopeSchema,
+  JoinTripResultV1Schema,
   LocationTelemetryV1Schema,
   NotificationRequestSchema,
   ProjectedLocationV1Schema,
   SituationSchema,
+  TascoPlaceRefV1Schema,
+  TascoRoutePreviewV1Schema,
+  TripPlanSummaryV1Schema,
+  TripStopV1Schema,
 } from "./index";
 
 export const CONTRACT_SCHEMA_VERSION = 1;
@@ -19,6 +24,11 @@ export const contractSchemas = [
   ["ConvoyGraphV1", "convoy-graph-v1.schema.json", ConvoyGraphSchema],
   ["SituationV1", "situation-v1.schema.json", SituationSchema],
   ["NotificationRequestV1", "notification-request-v1.schema.json", NotificationRequestSchema],
+  ["TascoPlaceRefV1", "tasco-place-ref-v1.schema.json", TascoPlaceRefV1Schema],
+  ["TripStopV1", "trip-stop-v1.schema.json", TripStopV1Schema],
+  ["TascoRoutePreviewV1", "tasco-route-preview-v1.schema.json", TascoRoutePreviewV1Schema],
+  ["TripPlanSummaryV1", "trip-plan-summary-v1.schema.json", TripPlanSummaryV1Schema],
+  ["JoinTripResultV1", "join-trip-result-v1.schema.json", JoinTripResultV1Schema],
 ] as const;
 
 function sortJson(value: unknown): unknown {

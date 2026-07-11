@@ -120,6 +120,17 @@ interface MapsProvider {
 
 Tasco Maps is the preferred provider. Development and degraded-mode adapters can use fixture routes and MapLibre-compatible geometry. Provider responses are normalized before reaching domain logic.
 
+The local `@loopin/maps-facade` mock implements the hackathon Tasco API surface for search, autocomplete, POI details,
+nearby search, geocoding, reverse geocoding and route preview. It returns deterministic fixtures but preserves requested
+route origin, waypoint and destination geometry so trip-planning tests exercise real caller coordinates. The facade is a
+development and adapter contract, not proof that Tasco production credentials, quotas, route traffic data or POI freshness
+have been validated.
+
+The local `@loopin/trips` service consumes shared Tasco place references and trip-planning contracts. It owns pure
+create/list/update/stops/invite/join/route-refresh behavior and can be wrapped by API Lambda handlers. AWS authorization,
+DynamoDB persistence and production Tasco credential handling remain adapter responsibilities; the service must not trust
+caller-supplied ratings, source labels or route candidates as provider facts.
+
 ## 7. Scaling evolution
 
 ### Initial

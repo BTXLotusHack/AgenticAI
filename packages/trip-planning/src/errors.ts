@@ -19,11 +19,11 @@ export class TripPlanningError extends Error {
   }
 }
 
-export function assertTascoPlaceReference(place: { readonly tascoPlaceId: string; readonly source: string }): void {
-  if (!place.tascoPlaceId.startsWith("tasco:")) {
+export function assertTascoPlaceReference(place: { readonly id: string; readonly provider: string }): void {
+  if (!place.id.includes(":")) {
     throw new TripPlanningError("missing-tasco-place", "Every stop must reference a Tasco place ID.");
   }
-  if (place.source !== "tasco") {
+  if (place.provider !== "tasco") {
     throw new TripPlanningError("missing-tasco-place", "Place references must originate from Tasco.");
   }
 }

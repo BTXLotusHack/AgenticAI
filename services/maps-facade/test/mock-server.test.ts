@@ -27,7 +27,7 @@ describe("Tasco mock facade", () => {
     expect(autocomplete.suggestions[0]?.name).toContain("Minh");
 
     const poi = await client.poiDetails({ id: TASCO_PLACE_IDS.minhChauRestStop });
-    expect(poi.poi.name).toBe("Minh Châu Rest Stop");
+    expect(poi.poi.name).toBe("Minh Chau Rest Stop");
 
     const reverse = await client.reverseGeocoding({ lat: 21.0166, lon: 105.7833 });
     expect(reverse.results[0]?.coordinates.lat).toBeTypeOf("number");
@@ -35,8 +35,8 @@ describe("Tasco mock facade", () => {
     const nearby = await client.nearbySearch({ lat: 20.8724, lon: 106.0518, category: "rest_stop", limit: 3 });
     expect(nearby.results.length).toBeGreaterThan(0);
 
-    const geocode = await client.geocoding({ address: "Phạm Hùng Nam Từ Liêm Hà Nội" });
-    expect(geocode.results[0]?.name).toBe("Phạm Hùng");
+    const geocode = await client.geocoding({ address: "Pham Hung Nam Tu Liem Ha Noi" });
+    expect(geocode.results[0]?.name).toBe("Pham Hung");
 
     const route = await client.route({
       locations: [{ lat: 21.0285, lon: 105.8542 }, { lat: 20.9507, lon: 107.0732 }],
@@ -48,12 +48,12 @@ describe("Tasco mock facade", () => {
     await running.close();
   });
 
-  it("preserves Vietnamese diacritics and stable place IDs", async () => {
+  it("preserves stable place IDs for place text search", async () => {
     const running = await createTascoMockServer().listen(0);
     const client = new TascoMapsClient({ baseUrl: running.url });
-    const search = await client.search({ q: "Hồ Hoàn Kiếm" });
+    const search = await client.search({ q: "Hoan Kiem" });
     expect(search.results[0]?.id).toBe(TASCO_PLACE_IDS.hoanKiemLake);
-    expect(search.results[0]?.name).toBe("Hồ Hoàn Kiếm");
+    expect(search.results[0]?.name).toBe("Hoan Kiem Lake");
     await running.close();
   });
 
@@ -66,6 +66,40 @@ describe("Tasco mock facade", () => {
     });
     expect(route.routes.map((item) => item.routeId)).toEqual(["route:r001-primary", "route:r001-alternate-1"]);
     expect(route.routes[0]?.geometry.coordinates[0]).toEqual([105.8542, 21.0285]);
+    await running.close();
+  });
+
+  it("builds mock route geometry from requested locations", async () => {
+    const running = await createTascoMockServer().listen(0);
+    const client = new TascoMapsClient({ baseUrl: running.url });
+    const route = await client.route({
+      locations: [
+        { lat: 10.1, lon: 106.1 },
+        { lat: 10.2, lon: 106.2 },
+        { lat: 10.3, lon: 106.3 },
+      ],
+      alternates: 0,
+    });
+
+    expect(route.routes).toHaveLength(1);
+    expect(route.routes[0]?.geometry.coordinates).toEqual([
+      [106.1, 10.1],
+      [106.2, 10.2],
+      [106.3, 10.3],
+    ]);
+    await running.close();
+  });
+
+  it("rejects oversized route request bodies before parsing", async () => {
+    const running = await createTascoMockServer().listen(0);
+    const response = await fetch(`${running.url}/v1/route`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ locations: [{ lat: 10, lon: 106 }, { lat: 11, lon: 107 }], padding: "x".repeat(70_000) }),
+    });
+    const body = await response.json() as { error: { code: string } };
+    expect(response.status).toBe(413);
+    expect(body.error.code).toBe("invalid_request");
     await running.close();
   });
 

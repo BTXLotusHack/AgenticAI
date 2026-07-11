@@ -1,4 +1,5 @@
 import type { ItineraryDayV1, ItineraryStopV1, ItineraryV1, TascoPlaceReferenceV1 } from "./contracts.js";
+import { TascoPlaceReferenceV1Schema } from "./contracts.js";
 import { TripPlanningError, assertTascoPlaceReference } from "./errors.js";
 
 function parseIsoDate(date: string): number {
@@ -10,8 +11,12 @@ function parseIsoDate(date: string): number {
 }
 
 export function validatePlaceReference(place: TascoPlaceReferenceV1): void {
+  const parsed = TascoPlaceReferenceV1Schema.safeParse(place);
+  if (!parsed.success) {
+    throw new TripPlanningError("missing-tasco-place", "Place references must match the shared Tasco place contract.");
+  }
   assertTascoPlaceReference(place);
-  if (place.tascoPlaceId !== place.tascoPlaceId.trim()) {
+  if (place.id !== place.id.trim()) {
     throw new TripPlanningError("missing-tasco-place", "Tasco place IDs must not contain leading or trailing whitespace.");
   }
 }
@@ -62,7 +67,7 @@ function validateDayStops(day: ItineraryDayV1): void {
 
 export function validateStopReference(stop: ItineraryStopV1): void {
   validatePlaceReference(stop.place);
-  if (stop.tascoPlaceId !== stop.place.tascoPlaceId) {
+  if (stop.tascoPlaceId !== stop.place.id) {
     throw new TripPlanningError("missing-tasco-place", `Stop ${stop.stopId} must keep a consistent Tasco place ID.`);
   }
 }

@@ -28,7 +28,7 @@ function categoryCostMinorUnits(category: string): number {
 }
 
 export function estimateStopCostMinorUnits(stop: ItineraryStopV1): number {
-  return categoryCostMinorUnits(stop.place.category);
+  return categoryCostMinorUnits(stop.place.categories.join(" "));
 }
 
 export function estimateLegDistanceMeters(stops: readonly ItineraryStopV1[]): number {
