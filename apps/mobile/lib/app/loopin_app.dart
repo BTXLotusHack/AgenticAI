@@ -73,22 +73,24 @@ final class _AppShell extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Loopin'),
         actions: <Widget>[
-          Padding(
-            padding: const EdgeInsets.only(right: 20),
-            child: Center(
-              child: Semantics(
-                label: '${config.environment.name} environment',
-                child: Text(
-                  config.environment.name.toUpperCase(),
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: LoopinTheme.loopinGreen,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 1.2,
+          if (config.environment != AppEnvironment.prod)
+            Padding(
+              padding: const EdgeInsets.only(right: 20),
+              child: Center(
+                child: Semantics(
+                  label: '${config.environment.name} environment',
+                  excludeSemantics: true,
+                  child: Text(
+                    config.environment.name.toUpperCase(),
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: LoopinTheme.loopinGreen,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.2,
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
         ],
       ),
       body: SafeArea(child: child),

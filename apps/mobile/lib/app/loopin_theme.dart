@@ -19,6 +19,7 @@ abstract final class LoopinTheme {
           onSurface: roadInk,
           secondaryContainer: softSage,
           tertiary: safetyAmber,
+          onTertiary: roadInk,
         );
 
     return ThemeData(

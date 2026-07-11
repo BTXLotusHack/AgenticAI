@@ -21,7 +21,7 @@
     "preview": "npm run preview --workspace @loopin/web --",
     "lint": "npm run lint --workspaces --if-present",
     "mobile:analyze": "cd apps/mobile && flutter analyze",
-    "mobile:format-check": "cd apps/mobile && dart format --output=none --set-exit-if-changed lib/app lib/main.dart test",
+    "mobile:format-check": "cd apps/mobile && dart run tool/format_check.dart",
     "mobile:test": "cd apps/mobile && flutter test",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present --",

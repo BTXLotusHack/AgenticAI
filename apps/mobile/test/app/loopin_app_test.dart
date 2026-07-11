@@ -19,6 +19,39 @@ void main() {
     expect(find.text('LOCAL'), findsOneWidget);
   });
 
+  testWidgets('non-production environment has one concise announcement', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    try {
+      await tester.pumpWidget(
+        LoopinApp(config: config, initialState: AppViewState.ready),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        tester.getSemantics(find.text('LOCAL')).label,
+        'local environment',
+      );
+    } finally {
+      semantics.dispose();
+    }
+  });
+
+  testWidgets('production does not expose an environment badge', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      LoopinApp(
+        config: AppEnvironmentConfig.forName('prod'),
+        initialState: AppViewState.ready,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('PROD'), findsNothing);
+  });
+
   for (final scenario in <({AppViewState state, String message})>[
     (state: AppViewState.loading, message: 'Preparing your trip'),
     (state: AppViewState.error, message: 'Loopin needs attention'),
