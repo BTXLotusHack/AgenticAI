@@ -236,9 +236,12 @@ describe("ordered telemetry application flow", () => {
     expect(leader.recommendations[0]?.selectedCandidate?.poiId).toBe("POI001");
     expect(rear.recommendations).toEqual([]);
     expect(rear.graph.orderedMemberIds).not.toContain("M003");
+    expect(rear.situations).toEqual([]);
     expect(rear.notifications.every((notification) => notification.recipientMemberId === "M004")).toBe(true);
     expect(realtime.messages.every((message) => message.payload.schemaVersion === 1)).toBe(true);
     expect(domainEvents.messages.some((message) => message.payload.eventType === "SituationConfirmed")).toBe(true);
+    const confirmedEvent = domainEvents.messages.find((message) => message.payload.eventType === "SituationConfirmed");
+    expect((confirmedEvent?.payload.payload.situation as { lifecycle: string }).lifecycle).toBe("confirmed");
 
     const recommendationId = leader.recommendations[0]!.recommendationId;
     await expect(
@@ -255,12 +258,14 @@ describe("ordered telemetry application flow", () => {
       idempotencyKey: "approve-leader",
     });
     expect(approved.recommendation.state).toBe("approved");
+    const realtimeCount = realtime.messages.length;
     const duplicateApproval = await app.approveRegroup({ userId: "USER001" }, "TRIP001", recommendationId, {
       schemaVersion: 1,
       commandId: "approve-leader-retry",
       idempotencyKey: "approve-leader",
     });
     expect(duplicateApproval).toEqual(approved);
+    expect(realtime.messages).toHaveLength(realtimeCount);
   });
 
   it("rejects an expired regroup recommendation", async () => {

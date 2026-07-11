@@ -318,7 +318,7 @@ export class LoopinApplication {
       generatedAt: state.graphState.graph.calculatedAt,
       viewer: { memberId: viewer.memberId, role: viewer.role },
       graph: graphForViewer(state, viewer),
-      situations: state.situation ? [state.situation] : [],
+      situations: viewer.role === "leader" && state.situation ? [state.situation] : [],
       recommendations: viewer.role === "leader" ? state.recommendations : [],
       notifications: state.notifications.filter((notification) => notification.recipientMemberId === viewer.memberId),
     });
@@ -385,7 +385,14 @@ export class LoopinApplication {
       const next: TripState = {
         ...nextBase,
         outbox: changed
-          ? [...state.outbox, ...this.buildStateMessages(nextBase, telemetry.eventId, receivedAt, notifications, transition.transition)]
+          ? [...state.outbox, ...this.buildStateMessages(
+              nextBase,
+              telemetry.eventId,
+              receivedAt,
+              notifications,
+              transition.transition,
+              transition.situation,
+            )]
           : state.outbox,
       };
       if (!(await this.dependencies.repository.putIfVersion(next, state.version))) continue;
@@ -413,10 +420,12 @@ export class LoopinApplication {
       const state = await this.requireTrip(tripId);
       const member = memberForIdentity(state, identity);
       if (member.role !== "leader") throw new ApplicationError("forbidden", "Only the trip leader may approve regrouping.");
+      const now = this.dependencies.clock.now();
       const recommendation = state.recommendations.find((candidate) => candidate.recommendationId === recommendationId);
       if (!recommendation) throw new ApplicationError("not-found", "The regroup recommendation does not exist.");
       const fingerprint = JSON.stringify({ command: "approve-regroup", tripId, recommendationId, userId: identity.userId });
-      const receipt = state.commandReceipts.find((candidate) => candidate.idempotencyKey === request.idempotencyKey);
+      const receipt = state.commandReceipts.find((candidate) =>
+        candidate.idempotencyKey === request.idempotencyKey && Date.parse(candidate.expiresAt) > Date.parse(now));
       if (receipt) {
         if (receipt.fingerprint !== fingerprint) {
           throw new ApplicationError("conflict", "The idempotency key was already used for a different command.");
@@ -431,7 +440,6 @@ export class LoopinApplication {
         throw new ApplicationError("conflict", "The regroup recommendation cannot be approved.");
       }
       const selectedCandidate = recommendation.selectedCandidate;
-      const now = this.dependencies.clock.now();
       if (Date.parse(now) >= Date.parse(recommendation.expiresAt)) {
         throw new ApplicationError("conflict", "The regroup recommendation has expired.");
       }
@@ -502,6 +510,7 @@ export class LoopinApplication {
     occurredAt: string,
     notifications: readonly NotificationRequest[],
     situationTransition: "none" | "confirmed" | "updated" | "notified" | "resolved",
+    situationFact: Situation | undefined,
   ): OutboxMessage[] {
     const graph = state.graphState!.graph;
     const domainEvent: EventEnvelope = {
@@ -543,7 +552,7 @@ export class LoopinApplication {
       },
     ];
 
-    if (situationTransition !== "none" && state.situation) {
+    if (situationTransition !== "none" && situationFact) {
       const eventType = situationTransition === "confirmed"
         ? "SituationConfirmed"
         : situationTransition === "resolved"
@@ -553,7 +562,7 @@ export class LoopinApplication {
           : "SituationUpdated";
       const situationEvent: EventEnvelope = {
         schemaVersion: 1,
-        eventId: `situation:${state.situation.situationId}:${situationTransition}:${graph.graphRevision}`,
+        eventId: `situation:${situationFact.situationId}:${situationTransition}:${graph.graphRevision}:${state.snapshotRevision}`,
         eventType,
         occurredAt,
         producedAt: occurredAt,
@@ -561,7 +570,7 @@ export class LoopinApplication {
         causationId,
         tripId: state.tripId,
         producer: "loopin-application",
-        payload: { situation: state.situation },
+        payload: { situation: situationFact },
       };
       const situationRealtime = RealtimeEventV1Schema.parse({
         schemaVersion: 1,
@@ -573,7 +582,7 @@ export class LoopinApplication {
         eventType,
         occurredAt,
         expiresAt: new Date(Date.parse(occurredAt) + 15 * 60_000).toISOString(),
-        payload: { situation: state.situation },
+        payload: { situation: situationFact },
       });
       messages.push(
         { messageId: situationEvent.eventId, publisher: "domain", channel: `trip.${state.tripId}.events`, payload: situationEvent },
@@ -617,7 +626,7 @@ export class LoopinApplication {
       const next: TripState = {
         ...state,
         version: state.version + 1,
-        outbox: state.outbox.filter((candidate) => candidate.messageId !== message.messageId),
+        outbox: state.outbox.slice(1),
       };
       await this.dependencies.repository.putIfVersion(next, state.version);
     }
