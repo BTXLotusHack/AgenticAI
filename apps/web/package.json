@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "images:optimize": "node scripts/optimize-images.mjs",
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint .",
@@ -38,6 +39,7 @@
     "eslint-plugin-react-refresh": "0.5.3",
     "globals": "17.7.0",
     "jsdom": "29.1.1",
+    "sharp": "^0.35.3",
     "tailwindcss": "4.3.2",
     "typescript": "5.9.3",
     "typescript-eslint": "8.63.0",

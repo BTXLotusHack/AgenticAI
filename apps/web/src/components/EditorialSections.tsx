@@ -59,14 +59,21 @@ function SocialJourney() {
   return (
     <section aria-labelledby="social-title" className="social-journey">
       <div className="social-journey__media" ref={mediaRef}>
-        <motion.img
-          alt="Five cars traveling together on a winding green mountain road"
-          height="1100"
-          loading="lazy"
-          src="/images/loopin-convoy.jpg"
-          style={{ y: reduceMotion ? 0 : imageY }}
-          width="1800"
-        />
+        <picture>
+          <source
+            sizes="100vw"
+            srcSet="/images/loopin-convoy-960.webp 960w, /images/loopin-convoy-1600.webp 1600w"
+            type="image/webp"
+          />
+          <motion.img
+            alt="Five cars traveling together on a winding green mountain road"
+            height="1013"
+            loading="lazy"
+            src="/images/loopin-convoy.jpg"
+            style={{ y: reduceMotion ? 0 : imageY }}
+            width="1800"
+          />
+        </picture>
         <div aria-hidden="true" className="social-journey__wash" />
         <div className="social-journey__copy">
           <p>Private coordination for people who travel together</p>

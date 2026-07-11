@@ -20,15 +20,22 @@ export function HeroRoute() {
 
   return (
     <section className="hero" id="top">
-      <img
-        alt="A winding mountain road through the green valleys of northern Vietnam"
-        className="hero__image"
-        decoding="async"
-        fetchPriority="high"
-        height="1600"
-        src="/images/loopin-hero.jpg"
-        width="2400"
-      />
+      <picture>
+        <source
+          sizes="100vw"
+          srcSet="/images/loopin-hero-960.webp 960w, /images/loopin-hero-1600.webp 1600w"
+          type="image/webp"
+        />
+        <img
+          alt="A winding mountain road through the green valleys of northern Vietnam"
+          className="hero__image"
+          decoding="async"
+          fetchPriority="high"
+          height="1600"
+          src="/images/loopin-hero.jpg"
+          width="2400"
+        />
+      </picture>
       <div aria-hidden="true" className="hero__wash" />
 
       <div className="hero__route" aria-hidden="true">
