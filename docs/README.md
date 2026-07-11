@@ -26,6 +26,7 @@ Design records:
 - [2026-07-11 Loopin Local and AWS Service Vertical Slice Plan](superpowers/plans/2026-07-11-loopin-aws-service-vertical-slice.md)
 - [2026-07-11 Loopin Flutter Driver Client Plan](superpowers/plans/2026-07-11-loopin-flutter-driver-client.md)
 - [2026-07-12 Infrastructure Handoff Branch Design](superpowers/specs/2026-07-12-loopin-infra-handoff-design.md)
+- [2026-07-12 Infrastructure Handoff Implementation Plan](superpowers/plans/2026-07-12-loopin-infra-handoff.md)
 
 Accepted architecture decisions:
 
