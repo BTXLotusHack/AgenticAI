@@ -1,63 +1,131 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:go_router/go_router.dart';
 
+import '../auth/auth_controller.dart';
+import '../auth/auth_state.dart';
+import '../auth/ui/confirm_screen.dart';
+import '../auth/ui/sign_in_screen.dart';
+import '../auth/ui/sign_up_screen.dart';
 import 'app_environment.dart';
 import 'loopin_theme.dart';
 
 enum AppViewState { loading, ready, error, degraded }
 
-final class LoopinApp extends StatefulWidget {
+const _authRoutes = <String>{'/sign-in', '/sign-up', '/confirm'};
+
+final class LoopinApp extends StatelessWidget {
   const LoopinApp({
     required this.config,
     this.initialState = AppViewState.ready,
+    this.overrides = const <Override>[],
     super.key,
   });
 
   final AppEnvironmentConfig config;
   final AppViewState initialState;
 
-  @override
-  State<LoopinApp> createState() => _LoopinAppState();
-}
-
-final class _LoopinAppState extends State<LoopinApp> {
-  late final GoRouter _router = _createRouter(widget.initialState);
-
-  @override
-  void dispose() {
-    _router.dispose();
-    super.dispose();
-  }
+  /// Extra provider overrides, used by tests to seed auth state without
+  /// touching real Cognito or secure storage.
+  final List<Override> overrides;
 
   @override
   Widget build(BuildContext context) {
     return ProviderScope(
-      overrides: [appEnvironmentProvider.overrideWithValue(widget.config)],
-      child: MaterialApp.router(
-        title: 'Loopin',
-        debugShowCheckedModeBanner: false,
-        theme: LoopinTheme.light,
-        routerConfig: _router,
-      ),
+      overrides: <Override>[
+        appEnvironmentProvider.overrideWithValue(config),
+        ...overrides,
+      ],
+      child: _LoopinRouterHost(initialState: initialState),
     );
   }
 }
 
-GoRouter _createRouter(AppViewState initialState) {
-  return GoRouter(
-    routes: <RouteBase>[
-      ShellRoute(
-        builder: (context, state, child) => _AppShell(child: child),
-        routes: <RouteBase>[
-          GoRoute(
-            path: '/',
-            builder: (context, state) => _FoundationView(state: initialState),
-          ),
-        ],
-      ),
-    ],
-  );
+/// Owns the [GoRouter] and keeps it in sync with auth state so sign-in/out
+/// redirects happen automatically.
+final class _LoopinRouterHost extends ConsumerStatefulWidget {
+  const _LoopinRouterHost({required this.initialState});
+
+  final AppViewState initialState;
+
+  @override
+  ConsumerState<_LoopinRouterHost> createState() => _LoopinRouterHostState();
+}
+
+final class _LoopinRouterHostState extends ConsumerState<_LoopinRouterHost> {
+  late final ValueNotifier<AuthState> _authListenable;
+  late final ProviderSubscription<AuthState> _subscription;
+  late final GoRouter _router;
+
+  @override
+  void initState() {
+    super.initState();
+    _authListenable = ValueNotifier<AuthState>(ref.read(authControllerProvider));
+    _subscription = ref.listenManual<AuthState>(
+      authControllerProvider,
+      (_, next) => _authListenable.value = next,
+    );
+    _router = _createRouter();
+  }
+
+  @override
+  void dispose() {
+    _subscription.close();
+    _router.dispose();
+    _authListenable.dispose();
+    super.dispose();
+  }
+
+  GoRouter _createRouter() {
+    return GoRouter(
+      refreshListenable: _authListenable,
+      redirect: _redirect,
+      routes: <RouteBase>[
+        GoRoute(path: '/sign-in', builder: (_, _) => const SignInScreen()),
+        GoRoute(path: '/sign-up', builder: (_, _) => const SignUpScreen()),
+        GoRoute(
+          path: '/confirm',
+          builder: (_, state) =>
+              ConfirmScreen(email: state.uri.queryParameters['email'] ?? ''),
+        ),
+        ShellRoute(
+          builder: (_, _, child) => _AppShell(child: child),
+          routes: <RouteBase>[
+            GoRoute(
+              path: '/',
+              builder: (_, _) => _HomeView(initialState: widget.initialState),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  String? _redirect(BuildContext context, GoRouterState state) {
+    final auth = ref.read(authControllerProvider);
+    final location = state.matchedLocation;
+
+    // Still restoring a persisted session: park on the splash ('/') so a
+    // returning user is never flashed the sign-in screen.
+    if (auth is AuthUnknown) return location == '/' ? null : '/';
+
+    final loggedIn = auth is AuthAuthenticated;
+    final onAuthRoute = _authRoutes.contains(location);
+    if (!loggedIn && !onAuthRoute) return '/sign-in';
+    if (loggedIn && onAuthRoute) return '/';
+    return null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp.router(
+      title: 'Loopin',
+      debugShowCheckedModeBanner: false,
+      theme: LoopinTheme.light,
+      routerConfig: _router,
+    );
+  }
 }
 
 final class _AppShell extends ConsumerWidget {
@@ -68,6 +136,7 @@ final class _AppShell extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final config = ref.watch(appEnvironmentProvider);
+    final authed = ref.watch(authControllerProvider) is AuthAuthenticated;
 
     return Scaffold(
       appBar: AppBar(
@@ -75,7 +144,7 @@ final class _AppShell extends ConsumerWidget {
         actions: <Widget>[
           if (config.environment != AppEnvironment.prod)
             Padding(
-              padding: const EdgeInsets.only(right: 20),
+              padding: const EdgeInsets.only(right: 8),
               child: Center(
                 child: Semantics(
                   label: '${config.environment.name} environment',
@@ -91,10 +160,31 @@ final class _AppShell extends ConsumerWidget {
                 ),
               ),
             ),
+          if (authed)
+            IconButton(
+              tooltip: 'Sign out',
+              icon: const Icon(Icons.logout),
+              onPressed: () => ref.read(authControllerProvider.notifier).signOut(),
+            ),
         ],
       ),
       body: SafeArea(child: child),
     );
+  }
+}
+
+final class _HomeView extends ConsumerWidget {
+  const _HomeView({required this.initialState});
+
+  final AppViewState initialState;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final auth = ref.watch(authControllerProvider);
+    // Show a loading splash until the session is resolved; the router keeps an
+    // unauthenticated user off this route entirely.
+    final state = auth is AuthAuthenticated ? initialState : AppViewState.loading;
+    return _FoundationView(state: state);
   }
 }
 

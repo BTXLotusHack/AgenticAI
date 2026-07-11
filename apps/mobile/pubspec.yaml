@@ -2,7 +2,7 @@ name: loopin_mobile
 description: Loopin's low-distraction driver application.
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
-publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+publish_to: "none" # Remove this line if you wish to publish to pub.dev
 
 # The following defines the version and build number for your application.
 # A version number is three numbers separated by dots, like 1.2.43
@@ -19,7 +19,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 1.0.0+1
 
 environment:
-  sdk: '>=3.12.0 <4.0.0'
+  sdk: ">=3.11.0 <4.0.0"
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -44,6 +44,11 @@ dependencies:
   path: ^1.9.1
   path_provider: ^2.1.6
   sqlite3: ^3.3.4
+  # Auth: pure-Dart Cognito SRP client (no native Amplify config) + secure token
+  # storage. The deployed user-pool client is public (no secret) and SRP-only.
+  amazon_cognito_identity_dart_2: ^3.6.7
+  flutter_secure_storage: ^9.2.4
+  http: ^1.2.2
 
 dev_dependencies:
   flutter_test:
@@ -56,7 +61,7 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
   build_runner: ^2.15.1
-  freezed: ^3.2.6-dev.1
+  freezed: ^3.2.5
   json_serializable: ^6.14.0
   drift_dev: ^2.34.0
   mocktail: ^1.0.5
@@ -66,7 +71,6 @@ dev_dependencies:
 
 # The following section is specific to Flutter packages.
 flutter:
-
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
   # the material Icons class.

@@ -1,16 +1,42 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loopin_mobile/app/app_environment.dart';
 import 'package:loopin_mobile/app/loopin_app.dart';
+import 'package:loopin_mobile/auth/auth_controller.dart';
+import 'package:loopin_mobile/auth/auth_state.dart';
+
+/// Seeds [AuthController] with a fixed state so widget tests never touch real
+/// Cognito or secure storage.
+class _StubAuthController extends AuthController {
+  _StubAuthController(this._state);
+
+  final AuthState _state;
+
+  @override
+  AuthState build() => _state;
+}
+
+List<Override> _auth(AuthState state) => <Override>[
+  authControllerProvider.overrideWith(() => _StubAuthController(state)),
+];
+
+final _signedIn = AuthAuthenticated(
+  const AuthUser(userId: 'u1', email: 'driver@example.com'),
+);
 
 void main() {
   final config = AppEnvironmentConfig.forName('local');
 
-  testWidgets('router shell presents the ready foundation state', (
+  testWidgets('authenticated shell presents the ready foundation state', (
     tester,
   ) async {
     await tester.pumpWidget(
-      LoopinApp(config: config, initialState: AppViewState.ready),
+      LoopinApp(
+        config: config,
+        initialState: AppViewState.ready,
+        overrides: _auth(_signedIn),
+      ),
     );
     await tester.pumpAndSettle();
 
@@ -19,13 +45,32 @@ void main() {
     expect(find.text('LOCAL'), findsOneWidget);
   });
 
+  testWidgets('unauthenticated users land on the sign-in screen', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      LoopinApp(
+        config: config,
+        overrides: _auth(const AuthUnauthenticated()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Welcome back'), findsOneWidget);
+    expect(find.text('Create an account'), findsOneWidget);
+  });
+
   testWidgets('non-production environment has one concise announcement', (
     tester,
   ) async {
     final semantics = tester.ensureSemantics();
     try {
       await tester.pumpWidget(
-        LoopinApp(config: config, initialState: AppViewState.ready),
+        LoopinApp(
+          config: config,
+          initialState: AppViewState.ready,
+          overrides: _auth(_signedIn),
+        ),
       );
       await tester.pumpAndSettle();
 
@@ -45,6 +90,7 @@ void main() {
       LoopinApp(
         config: AppEnvironmentConfig.forName('prod'),
         initialState: AppViewState.ready,
+        overrides: _auth(_signedIn),
       ),
     );
     await tester.pumpAndSettle();
@@ -61,7 +107,11 @@ void main() {
       tester,
     ) async {
       await tester.pumpWidget(
-        LoopinApp(config: config, initialState: scenario.state),
+        LoopinApp(
+          config: config,
+          initialState: scenario.state,
+          overrides: _auth(_signedIn),
+        ),
       );
       await tester.pump();
 
@@ -71,7 +121,11 @@ void main() {
 
   testWidgets('degraded state explains offline delivery', (tester) async {
     await tester.pumpWidget(
-      LoopinApp(config: config, initialState: AppViewState.degraded),
+      LoopinApp(
+        config: config,
+        initialState: AppViewState.degraded,
+        overrides: _auth(_signedIn),
+      ),
     );
     await tester.pump();
 
