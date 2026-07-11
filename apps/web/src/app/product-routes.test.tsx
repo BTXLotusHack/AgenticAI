@@ -1,0 +1,107 @@
+import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router-dom';
+import { beforeEach, describe, expect, it } from 'vitest';
+
+import { App } from './App';
+
+function renderRoute(path: string) {
+  return render(
+    <MemoryRouter initialEntries={[path]}>
+      <App />
+    </MemoryRouter>,
+  );
+}
+
+describe('Agent 1 product routes', () => {
+  beforeEach(() => window.sessionStorage.clear());
+
+  it.each([
+    ['/login', /log in to loopin/i],
+    ['/signup', /create your loopin account/i],
+    ['/forgot-password', /recover your account/i],
+    ['/reset-password', /set a new password/i],
+    ['/onboarding', /shape your travel profile/i],
+    ['/app', /today's trips/i],
+    ['/app/trips', /trip library/i],
+    ['/app/trips/new', /build a tasco-backed trip/i],
+    ['/app/trips/TRIP001', /hà nội to hạ long/i],
+    ['/app/trips/TRIP001/itinerary', /itinerary editor/i],
+    ['/app/trips/TRIP001/share', /share trip/i],
+    ['/app/trips/TRIP001/live', /hà nội.*hạ long/i],
+    ['/app/trips/TRIP001/summary', /the convoy is together again/i],
+    ['/app/explore', /tasco explore/i],
+    ['/app/places/POI001', /minh châu rest stop/i],
+    ['/app/now', /day-of-trip command center/i],
+    ['/app/settings', /settings/i],
+  ])('renders %s', async (path, heading) => {
+    if (path.endsWith('/summary')) {
+      window.sessionStorage.setItem(
+        'loopin:demo-session-v1',
+        JSON.stringify({
+          schemaVersion: 1,
+          tripId: 'TRIP001',
+          setupComplete: true,
+          frameIndex: 7,
+          approvedCandidateId: 'POI001',
+          auditEntries: [
+            {
+              schemaVersion: 1,
+              eventType: 'DemoTripCompleted',
+              occurredAt: '2026-07-20T00:01:15.000Z',
+              tripId: 'TRIP001',
+              frameIndex: 7,
+              graphRevision: 7,
+            },
+          ],
+        }),
+      );
+    }
+    renderRoute(path);
+
+    expect(await screen.findByRole('heading', { name: heading })).toBeVisible();
+  });
+
+  it('wraps authenticated routes in a keyboard-accessible product shell', async () => {
+    renderRoute('/app/trips/TRIP001');
+
+    expect(await screen.findByRole('banner', { name: /loopin product/i })).toBeVisible();
+    const nav = screen.getByRole('navigation', { name: /app sections/i });
+    for (const label of ['Dashboard', 'Trips', 'Explore', 'Now', 'Settings']) {
+      expect(within(nav).getByRole('link', { name: label })).toBeVisible();
+    }
+    expect(screen.getByRole('link', { name: /open live trip/i })).toHaveAttribute(
+      'href',
+      '/app/trips/TRIP001/live',
+    );
+    expect(screen.getByText(/freshness 18 s/i)).toBeVisible();
+    expect(screen.getByText(/confidence high/i)).toBeVisible();
+  });
+
+  it('keeps auth forms fixture-backed and validates required fields locally', async () => {
+    const user = userEvent.setup();
+    renderRoute('/login');
+
+    expect(await screen.findByText(/fixture auth boundary/i)).toBeVisible();
+    await user.click(screen.getByRole('button', { name: /continue/i }));
+
+    expect(screen.getByText(/email is required/i)).toBeVisible();
+    expect(screen.getByText(/password is required/i)).toBeVisible();
+    expect(screen.queryByText(/token|secret|credential/i)).not.toBeInTheDocument();
+  });
+
+  it('shows trip planning, explore, and settings degraded states instead of blank pages', async () => {
+    renderRoute('/app/trips/new');
+    expect(await screen.findByText(/tasco fixture mode/i)).toBeVisible();
+    expect(screen.getByText(/route refresh failed/i)).toBeVisible();
+
+    renderRoute('/app/explore');
+    expect(await screen.findByText(/loading tasco places/i)).toBeVisible();
+    expect(screen.getByText(/no hidden gems match/i)).toBeVisible();
+
+    renderRoute('/app/settings');
+    expect(await screen.findByText(/location visibility/i)).toBeVisible();
+    expect(screen.getByText(/retention preference/i)).toBeVisible();
+    expect(screen.getByText(/notification quiet hours/i)).toBeVisible();
+  });
+});
