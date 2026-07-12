@@ -119,3 +119,16 @@ export async function loadLiveTripState(tripId: string): Promise<LiveTripState |
   const state = response.Item?.["state"];
   return state && typeof state === "object" ? (state as LiveTripState) : null;
 }
+
+export async function loadLiveSnapshot(tripId: string): Promise<LiveSnapshotV1 | null> {
+  const response = await ddb.send(
+    new GetCommand({
+      TableName: tableName(),
+      Key: keys.liveSnapshot(tripId),
+    }),
+  );
+  const snapshot = response.Item?.["snapshot"];
+  return snapshot && typeof snapshot === "object"
+    ? (snapshot as LiveSnapshotV1)
+    : null;
+}

@@ -334,6 +334,38 @@ void main() {
     expect(find.text('Selected group'), findsOneWidget);
   });
 
+  testWidgets('live map simulator draws members, links, and alerts', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      LoopinApp(
+        config: config,
+        initialState: AppViewState.ready,
+        overrides: _auth(_signedIn),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Map'));
+    await tester.pumpAndSettle();
+    expect(find.text('Live convoy map'), findsOneWidget);
+
+    final simulatorButton = find.widgetWithText(
+      OutlinedButton,
+      'Start simulator',
+    );
+    await tester.ensureVisible(simulatorButton);
+    await tester.tap(simulatorButton);
+    await tester.pump();
+    expect(find.text('Graph 1 - together'), findsOneWidget);
+    expect(find.text('M001'), findsWidgets);
+    expect(find.text('M004'), findsWidgets);
+
+    await tester.pump(const Duration(seconds: 7));
+    expect(find.text('Split observed'), findsOneWidget);
+    expect(find.text('Graph 4 - split'), findsOneWidget);
+  });
+
   testWidgets('create group validates short names before calling the API', (
     tester,
   ) async {

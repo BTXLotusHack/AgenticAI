@@ -10,6 +10,7 @@ Terraform stack in [`../infra`](../infra).
 | Fast path | `telemetry-processor` | Kinesis batch | IoT/Kinesis projected telemetry -> **Lambda** -> convoy-core -> DynamoDB live state/events -> AppSync `publishRealtimeEvent` -> live clients |
 | Control path | `create-team` | `POST /teams` | API Gateway (Cognito JWT) -> **Lambda** -> DynamoDB |
 | Control path | `invite-user` | `POST /teams/{teamId}/invites` | API Gateway (Cognito JWT) -> **Lambda** -> DynamoDB -> SNS push |
+| Control path | `get-live-snapshot` | `GET /teams/{teamId}/live-snapshot` | API Gateway (Cognito JWT) -> **Lambda** -> DynamoDB `LIVE#SNAPSHOT` |
 
 ## Layout
 

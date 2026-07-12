@@ -69,6 +69,12 @@ data "archive_file" "remove_member" {
   output_path = "${path.module}/.build/remove-member.zip"
 }
 
+data "archive_file" "get_live_snapshot" {
+  type        = "zip"
+  source_dir  = "${path.module}/${var.backend_dist_dir}/get-live-snapshot"
+  output_path = "${path.module}/.build/get-live-snapshot.zip"
+}
+
 # --- Control-plane data store -------------------------------------------------
 
 module "data" {
@@ -148,6 +154,8 @@ module "api" {
   list_team_members_hash = data.archive_file.list_team_members.output_base64sha256
   remove_member_zip      = data.archive_file.remove_member.output_path
   remove_member_hash     = data.archive_file.remove_member.output_base64sha256
+  get_live_snapshot_zip  = data.archive_file.get_live_snapshot.output_path
+  get_live_snapshot_hash = data.archive_file.get_live_snapshot.output_base64sha256
   allowed_origins        = concat(var.allowed_web_origins, [module.web.url])
 }
 

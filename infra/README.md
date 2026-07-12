@@ -13,7 +13,7 @@ Primary region: `ap-southeast-1`.
 | `identity` | Cognito user pool + app client | Both |
 | `realtime` | AppSync GraphQL API (Cognito + IAM auth), NONE data source, publish resolver | Fast |
 | `telemetry` | Kinesis stream, IoT topic rule + role, processor Lambda, event source mapping | Fast |
-| `api` | HTTP API, Cognito JWT authorizer, `create-team` + `invite-user` Lambdas, routes | Control |
+| `api` | HTTP API, Cognito JWT authorizer, team/group Lambdas and live-snapshot route | Control |
 | `notifications` | SNS platform applications for APNs/FCM (optional, `enable_push`) | Control |
 | `web` | Private S3 origin, CloudFront OAC, TLS redirect, security headers and SPA fallback | Delivery |
 

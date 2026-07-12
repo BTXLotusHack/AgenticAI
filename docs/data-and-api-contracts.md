@@ -231,6 +231,16 @@ GET    /v1/trips/{tripId}/situations
 POST   /v1/trips/{tripId}/situations/{situationId}/acknowledge
 ```
 
+The deployed team-scoped API also exposes the authorized live-map snapshot used
+by mobile AppSync subscribers:
+
+```text
+GET    /teams/{teamId}/live-snapshot
+```
+
+AppSync `liveSnapshotUpdated` events carry revisions; clients refetch this
+snapshot to render member positions, graph edges, freshness and confidence.
+
 ### Regroup and commands
 
 ```text

@@ -13,6 +13,7 @@ final class GroupNotification {
     required this.createdAt,
     this.teamId,
     this.inviteId,
+    this.memberId,
   });
 
   final String id;
@@ -21,6 +22,7 @@ final class GroupNotification {
   final DateTime createdAt;
   final String? teamId;
   final String? inviteId;
+  final String? memberId;
 }
 
 final class GroupNotificationsController
@@ -33,6 +35,7 @@ final class GroupNotificationsController
     required String body,
     String? teamId,
     String? inviteId,
+    String? memberId,
   }) {
     final now = DateTime.now();
     final notification = GroupNotification(
@@ -42,6 +45,7 @@ final class GroupNotificationsController
       createdAt: now,
       teamId: teamId,
       inviteId: inviteId,
+      memberId: memberId,
     );
     state = <GroupNotification>[notification, ...state].take(20).toList();
   }

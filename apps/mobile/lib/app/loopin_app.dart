@@ -9,6 +9,8 @@ import '../auth/auth_state.dart';
 import '../auth/ui/confirm_screen.dart';
 import '../auth/ui/sign_in_screen.dart';
 import '../auth/ui/sign_up_screen.dart';
+import '../features/live_map/live_map_controller.dart';
+import '../features/live_map/live_map_view.dart';
 import '../groups/create_group_controller.dart';
 import '../groups/group_notifications.dart';
 import '../groups/group_repository.dart';
@@ -345,7 +347,17 @@ final class _NotificationsSheet extends ConsumerWidget {
                     trailing: notification.teamId == null
                         ? null
                         : const Icon(Icons.chevron_right),
-                    onTap: notification.teamId == null
+                    onTap: notification.memberId != null
+                        ? () {
+                            ref
+                                .read(_homeTabProvider.notifier)
+                                .select(_HomeTab.map);
+                            ref
+                                .read(liveMapControllerProvider.notifier)
+                                .focusMember(notification.memberId!);
+                            Navigator.of(context).pop();
+                          }
+                        : notification.teamId == null
                         ? null
                         : () async {
                             ref
@@ -1677,7 +1689,7 @@ final class _MapTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: <Widget>[
-        const _DriverHero(),
+        const LiveMapPanel(),
         const SizedBox(height: 18),
         const _LiveGuidancePanel(),
         const SizedBox(height: 18),
@@ -1828,50 +1840,6 @@ final class _ProfilePanel extends StatelessWidget {
               'Voice alerts on. Trip location sharing only during active trips.',
               style: TextStyle(color: LoopinTheme.mutedInk, height: 1.4),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-final class _DriverHero extends StatelessWidget {
-  const _DriverHero();
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      label: 'Driver trip overview for TRIP001 from Hanoi to Ha Long',
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(22),
-        decoration: BoxDecoration(
-          color: LoopinTheme.deepRoad,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            const _Kicker('Driver mode'),
-            const SizedBox(height: 10),
-            Text(
-              'Ha Noi to Ha Long',
-              style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                color: Colors.white,
-                fontSize: 40,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'M004 is ready to publish trip-scoped telemetry after consent. '
-              'Live guidance remains server-authorized.',
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: const Color(0xFFD8E8DD),
-                fontSize: 16,
-              ),
-            ),
-            const SizedBox(height: 26),
-            const _RouteStrip(),
           ],
         ),
       ),

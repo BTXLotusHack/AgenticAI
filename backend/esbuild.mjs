@@ -19,6 +19,7 @@ const HANDLERS = {
   "list-my-teams": "src/handlers/list-my-teams.ts",
   "list-team-members": "src/handlers/list-team-members.ts",
   "remove-member": "src/handlers/remove-member.ts",
+  "get-live-snapshot": "src/handlers/get-live-snapshot.ts",
 };
 
 await rm("dist", { recursive: true, force: true });

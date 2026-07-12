@@ -23,6 +23,8 @@ variable "list_team_members_zip" { type = string }
 variable "list_team_members_hash" { type = string }
 variable "remove_member_zip" { type = string }
 variable "remove_member_hash" { type = string }
+variable "get_live_snapshot_zip" { type = string }
+variable "get_live_snapshot_hash" { type = string }
 
 # --- Shared Lambda execution role (control plane) -----------------------------
 resource "aws_iam_role" "api" {
@@ -83,7 +85,7 @@ resource "aws_apigatewayv2_api" "http" {
     for_each = length(var.allowed_origins) == 0 ? [] : [1]
     content {
       allow_origins  = var.allowed_origins
-      allow_methods  = ["GET", "POST", "PATCH", "DELETE", "OPTIONS"]
+      allow_methods  = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
       allow_headers  = ["authorization", "content-type", "x-request-id"]
       expose_headers = ["x-request-id"]
       max_age        = 3600
@@ -269,6 +271,23 @@ resource "aws_lambda_function" "remove_member" {
   }
 }
 
+resource "aws_lambda_function" "get_live_snapshot" {
+  function_name    = "${var.name_prefix}-get-live-snapshot"
+  role             = aws_iam_role.api.arn
+  runtime          = "nodejs22.x"
+  handler          = "index.handler"
+  filename         = var.get_live_snapshot_zip
+  source_code_hash = var.get_live_snapshot_hash
+  timeout          = 10
+  memory_size      = 256
+
+  environment {
+    variables = {
+      TABLE_NAME = var.table_name
+    }
+  }
+}
+
 # --- Integrations + routes ----------------------------------------------------
 resource "aws_apigatewayv2_integration" "create_team" {
   api_id                 = aws_apigatewayv2_api.http.id
@@ -330,6 +349,13 @@ resource "aws_apigatewayv2_integration" "remove_member" {
   api_id                 = aws_apigatewayv2_api.http.id
   integration_type       = "AWS_PROXY"
   integration_uri        = aws_lambda_function.remove_member.invoke_arn
+  payload_format_version = "2.0"
+}
+
+resource "aws_apigatewayv2_integration" "get_live_snapshot" {
+  api_id                 = aws_apigatewayv2_api.http.id
+  integration_type       = "AWS_PROXY"
+  integration_uri        = aws_lambda_function.get_live_snapshot.invoke_arn
   payload_format_version = "2.0"
 }
 
@@ -405,6 +431,14 @@ resource "aws_apigatewayv2_route" "remove_member" {
   authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
 }
 
+resource "aws_apigatewayv2_route" "get_live_snapshot" {
+  api_id             = aws_apigatewayv2_api.http.id
+  route_key          = "GET /teams/{teamId}/live-snapshot"
+  target             = "integrations/${aws_apigatewayv2_integration.get_live_snapshot.id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+}
+
 # --- Invoke permissions -------------------------------------------------------
 resource "aws_lambda_permission" "create_team" {
   statement_id  = "AllowApiGwCreateTeam"
@@ -474,6 +508,14 @@ resource "aws_lambda_permission" "remove_member" {
   statement_id  = "AllowApiGwRemoveMember"
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.remove_member.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_apigatewayv2_api.http.execution_arn}/*/*"
+}
+
+resource "aws_lambda_permission" "get_live_snapshot" {
+  statement_id  = "AllowApiGwGetLiveSnapshot"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.get_live_snapshot.function_name
   principal     = "apigateway.amazonaws.com"
   source_arn    = "${aws_apigatewayv2_api.http.execution_arn}/*/*"
 }
