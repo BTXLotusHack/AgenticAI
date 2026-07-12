@@ -36,7 +36,12 @@ passed through Dart defines or bundled assets.
 flutter run --dart-define=LOOPIN_ENV=local
 ```
 
-The default is `local`. Unknown names fail closed during bootstrap.
+The default is `prod`, so Android Studio runs against the deployed
+`ap-southeast-1` API Gateway, AppSync, Cognito, IoT and Kinesis resources
+without extra run arguments. Unknown names fail closed during bootstrap. On an
+Android emulator, `local` points at `10.0.2.2:8787` so the app can reach a
+backend process running on the host machine; these are public identifiers, not
+credentials.
 
 ## Checks
 

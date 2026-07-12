@@ -6,7 +6,7 @@ import 'app/loopin_app.dart';
 void main() {
   const environmentName = String.fromEnvironment(
     'LOOPIN_ENV',
-    defaultValue: 'local',
+    defaultValue: 'prod',
   );
   final config = AppEnvironmentConfig.forName(environmentName);
 
