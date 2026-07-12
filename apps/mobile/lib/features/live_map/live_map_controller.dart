@@ -1,13 +1,15 @@
 import 'dart:async';
-import 'dart:math';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:logging/logging.dart';
 
 import '../../groups/group_notifications.dart';
 import 'live_map_models.dart';
 import 'live_map_realtime.dart';
 import 'live_map_repository.dart';
+
+final _log = Logger('LiveMapController');
 
 final liveMapControllerProvider =
     NotifierProvider<LiveMapController, LiveMapState>(LiveMapController.new);
@@ -49,17 +51,19 @@ final class LiveMapController extends Notifier<LiveMapState> {
           .listen(
             _handleRealtimeEvent,
             onError: (Object error) {
+              _log.warning('Realtime error: $error');
               state = state.copyWith(
                 status: LiveMapConnectionStatus.degraded,
                 errorMessage:
-                    'Realtime link degraded. Snapshot remains visible.',
+                    'Realtime link degraded: $error',
               );
             },
           );
-    } catch (_) {
+    } catch (e) {
+      _log.severe('Connection failed: $e');
       state = state.copyWith(
         status: LiveMapConnectionStatus.degraded,
-        errorMessage: 'Could not connect to live map for $tripId.',
+        errorMessage: 'Could not connect to live map for $tripId: $e',
       );
     }
   }
@@ -184,57 +188,54 @@ final class LiveMapController extends Notifier<LiveMapState> {
 
   LiveMapState _simulatedState(int tick) {
     final now = DateTime.now();
+    // Path: Hanoi center heading North-East
     final base = <LatLng>[
-      const LatLng(21.0279, 105.8342),
-      const LatLng(21.0396, 105.8539),
-      const LatLng(21.0518, 105.8738),
-      const LatLng(21.0672, 105.8970),
+      const LatLng(21.0279, 105.8342), // Leader
+      const LatLng(21.0270, 105.8335), // Member 2 (Following)
+      const LatLng(21.0260, 105.8325), // Member 3 (Rear)
     ];
+
     final members = <LiveMapMember>[
       for (var i = 0; i < base.length; i++)
         LiveMapMember(
-          memberId: 'M00${i + 1}',
+          memberId: i == 0 ? 'LEADER' : 'RIDER-00$i',
           point: LatLng(
-            base[i].latitude + sin((tick + i) / 5) * 0.002,
-            base[i].longitude + tick * 0.0017 + cos((tick + i) / 6) * 0.001,
+            base[i].latitude + (tick * 0.0005), // Moving North
+            base[i].longitude + (tick * 0.0008) + (i == 2 && tick > 10 ? - (tick - 10) * 0.0002 : 0), // Member 3 drifts away after tick 10
           ),
-          accuracyMeters: i == 3 && tick >= 3 ? 44 : 14 + i * 3,
-          confidenceLabel: i == 3 && tick >= 3 ? 'medium' : 'high',
-          connectivityLabel: i == 3 && tick >= 4 ? 'stale' : 'healthy',
+          accuracyMeters: i == 2 && tick > 10 ? 35 : 10,
+          confidenceLabel: i == 2 && tick > 12 ? 'low' : 'high',
+          connectivityLabel: i == 2 && tick > 15 ? 'degraded' : 'healthy',
           observedAt: now.subtract(
-            Duration(seconds: i == 3 && tick >= 4 ? 24 : 4),
+            Duration(seconds: i == 2 && tick > 15 ? 12 : 2),
           ),
-          routeProgressMeters: 1100 + (tick * 90) + (i * 700),
-          headingDegrees: 68,
-          speedKmh: (45 - i).toDouble(),
+          routeProgressMeters: 500 + (tick * 20) - (i * 100),
+          headingDegrees: 45,
+          speedKmh: i == 2 && tick > 10 ? 30 : 50,
         ),
     ];
-    final split = tick >= 3;
+
+    bool isSplit = tick > 12;
+
     return LiveMapState(
       status: LiveMapConnectionStatus.simulating,
       tripId: 'TRIP001',
       snapshotRevision: tick + 1,
       graphRevision: tick + 1,
-      overallState: split ? 'split' : 'together',
+      overallState: isSplit ? 'split' : 'together',
       members: members,
       links: <LiveMapLink>[
         LiveMapLink(
-          aheadMemberId: 'M001',
-          behindMemberId: 'M002',
+          aheadMemberId: 'LEADER',
+          behindMemberId: 'RIDER-001',
           state: LiveMapLinkState.connected,
-          routeGapMeters: 220,
+          routeGapMeters: 120,
         ),
         LiveMapLink(
-          aheadMemberId: 'M002',
-          behindMemberId: 'M003',
-          state: LiveMapLinkState.connected,
-          routeGapMeters: 260,
-        ),
-        LiveMapLink(
-          aheadMemberId: 'M003',
-          behindMemberId: 'M004',
-          state: split ? LiveMapLinkState.split : LiveMapLinkState.stretched,
-          routeGapMeters: split ? 980 : 480,
+          aheadMemberId: 'RIDER-001',
+          behindMemberId: 'RIDER-002',
+          state: isSplit ? LiveMapLinkState.split : LiveMapLinkState.stretched,
+          routeGapMeters: isSplit ? 800 : 250,
         ),
       ],
       lastUpdate: now,
