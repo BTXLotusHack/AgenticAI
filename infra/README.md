@@ -5,6 +5,18 @@ store (Firehose/S3/Athena) and the SQS buffering layer by design.
 
 Primary region: `ap-southeast-1`.
 
+## Current production outputs
+
+The latest public production endpoints and resource identifiers are recorded in
+[`environments/prod.outputs.env.example`](environments/prod.outputs.env.example).
+This manifest contains no credentials. Browser-safe values are mirrored in
+`apps/web/.env.example`; operational identifiers such as the DynamoDB table,
+Kinesis stream and IoT topic filter remain outside the browser bundle.
+
+After a Terraform apply, refresh both manifests from `terraform output` so the
+checked-in handoff does not drift from AWS. The applications still start in
+fixture/local mode unless their production adapters are explicitly selected.
+
 ## Modules
 
 | Module | Resources | Plane |
