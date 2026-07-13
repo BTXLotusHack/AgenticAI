@@ -10,7 +10,7 @@
 
 ## Global Constraints
 
-- Branches use the `codex/` prefix; every independently verifiable task ends in a focused commit; any future pull request targets `dev`.
+- Branches use the `codex/` prefix; every independently verifiable task ends in a focused commit; any future pull request targets `main`.
 - Domain code remains free of React, AWS SDKs, databases, timers, environment variables, and network access.
 - External and asynchronous contracts use numeric `schemaVersion: 1`; events are immutable and state carries explicit revisions.
 - All timestamps are UTC ISO 8601 strings; distance, duration, speed, accuracy, and ETA fields include explicit units.
@@ -265,4 +265,4 @@ The runnable core demo is the dependency for, but does not pretend to complete, 
 4. Maps/geospatial: Tasco adapter, route normalization, map matching, progress, ETA, POI normalization, PostGIS history, and deterministic fixture fallback.
 5. Production hardening: authorization/privacy deletion, push delivery, runbooks, load/failure testing, shadow policy calibration, and migration triggers for ECS/Flink.
 
-Each follow-on receives its own Obra plan and branch, targets `dev`, and must preserve the contracts and deterministic safety authority delivered here.
+Each follow-on receives its own Obra plan and branch, targets `main`, and must preserve the contracts and deterministic safety authority delivered here.
